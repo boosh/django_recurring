@@ -29,11 +29,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        initRecurrenceSetWidget('{{ widget.name }}', {
-        {
-            recurrence_rules | safe
-        }
-    })
-        ;
+        initRecurrenceSetWidget('{{ widget.name }}', {{recurrence_rules | safe}});
     });
 </script>
