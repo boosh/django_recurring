@@ -1,5 +1,7 @@
 Welcome to django-recurring's documentation!
-======================================
+============================================
+
+django-recurring is a powerful Django app that allows you to create and manage recurring events using the dateutil rruleset functionality. It provides a flexible and intuitive way to handle complex recurrence patterns in your Django projects.
 
 .. toctree::
    :maxdepth: 2
@@ -8,7 +10,12 @@ Welcome to django-recurring's documentation!
    readme
    installation
    usage
-   modules
+   examples
+   models
+   forms
+   widgets
+   admin
+   management_commands
    contributing
    history
 
