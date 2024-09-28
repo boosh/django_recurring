@@ -6,6 +6,8 @@ from dateutil.rrule import (
     MO, TU, WE, TH, FR, SA, SU, rrule, rruleset
 )
 from django.db import models
+from django.utils import timezone as django_timezone
+from django.utils.translation import gettext_lazy as _
 from icalendar import Event, vRecur, vDDDTypes
 
 # todo - create this in migrations
@@ -13,22 +15,21 @@ UTC_ID = 1
 
 
 class Timezone(models.Model):
-    name = models.CharField(max_length=64, unique=True)
+    name = models.CharField(max_length=64, unique=True, help_text=_("The name of the timezone"))
 
     def __str__(self):
         return self.name
 
 
 class RecurrenceRule(models.Model):
-    FREQUENCIES = (
-        (YEARLY, 'YEARLY'),
-        (MONTHLY, 'MONTHLY'),
-        (WEEKLY, 'WEEKLY'),
-        (DAILY, 'DAILY'),
-        (HOURLY, 'HOURLY'),
-        (MINUTELY, 'MINUTELY'),
-        (SECONDLY, 'SECONDLY'),
-    )
+    class Frequency(models.IntegerChoices):
+        YEARLY = YEARLY, _('YEARLY')
+        MONTHLY = MONTHLY, _('MONTHLY')
+        WEEKLY = WEEKLY, _('WEEKLY')
+        DAILY = DAILY, _('DAILY')
+        HOURLY = HOURLY, _('HOURLY')
+        MINUTELY = MINUTELY, _('MINUTELY')
+        SECONDLY = SECONDLY, _('SECONDLY')
 
     WEEKDAYS = (
         (MO.weekday, 'MO'),
@@ -40,21 +41,22 @@ class RecurrenceRule(models.Model):
         (SU.weekday, 'SU'),
     )
 
-    frequency = models.IntegerField(choices=FREQUENCIES)
-    interval = models.IntegerField(default=1)
-    wkst = models.IntegerField(choices=WEEKDAYS, null=True, blank=True)
-    count = models.IntegerField(null=True, blank=True)
-    until = models.DateTimeField(null=True, blank=True)
-    bysetpos = models.CharField(max_length=128, null=True, blank=True)
-    bymonth = models.CharField(max_length=64, null=True, blank=True)
-    bymonthday = models.CharField(max_length=128, null=True, blank=True)
-    byyearday = models.CharField(max_length=128, null=True, blank=True)
-    byweekno = models.CharField(max_length=128, null=True, blank=True)
-    byweekday = models.CharField(max_length=64, null=True, blank=True)
-    byhour = models.CharField(max_length=128, null=True, blank=True)
-    byminute = models.CharField(max_length=128, null=True, blank=True)
-    bysecond = models.CharField(max_length=128, null=True, blank=True)
-    timezone = models.ForeignKey(Timezone, on_delete=models.SET_DEFAULT, default=UTC_ID)
+    frequency = models.IntegerField(choices=Frequency.choices, help_text=_("The frequency of the recurrence"))
+    interval = models.IntegerField(default=1, help_text=_("The interval between each freq iteration"))
+    wkst = models.IntegerField(choices=WEEKDAYS, null=True, blank=True, help_text=_("The week start day"))
+    count = models.IntegerField(null=True, blank=True, help_text=_("How many occurrences will be generated"))
+    until = models.DateTimeField(null=True, blank=True, help_text=_("A date to repeat until"))
+    bysetpos = models.CharField(max_length=128, null=True, blank=True, help_text=_("By position (BYSETPOS)"))
+    bymonth = models.CharField(max_length=64, null=True, blank=True, help_text=_("By month (BYMONTH)"))
+    bymonthday = models.CharField(max_length=128, null=True, blank=True, help_text=_("By month day (BYMONTHDAY)"))
+    byyearday = models.CharField(max_length=128, null=True, blank=True, help_text=_("By year day (BYYEARDAY)"))
+    byweekno = models.CharField(max_length=128, null=True, blank=True, help_text=_("By week number (BYWEEKNO)"))
+    byweekday = models.CharField(max_length=64, null=True, blank=True, help_text=_("By weekday (BYDAY)"))
+    byhour = models.CharField(max_length=128, null=True, blank=True, help_text=_("By hour (BYHOUR)"))
+    byminute = models.CharField(max_length=128, null=True, blank=True, help_text=_("By minute (BYMINUTE)"))
+    bysecond = models.CharField(max_length=128, null=True, blank=True, help_text=_("By second (BYSECOND)"))
+    timezone = models.ForeignKey(Timezone, on_delete=models.SET_DEFAULT, default=UTC_ID,
+                                 help_text=_("The timezone for this rule"))
 
     def __str__(self):
         return f"RecurrenceRule (Frequency: {self.get_frequency_display()}, Timezone: {self.timezone.name})"
@@ -63,6 +65,9 @@ class RecurrenceRule(models.Model):
         if field:
             return json.loads(field)
         return None
+
+    def get_frequency_display(self):
+        return self.Frequency(self.frequency).name
 
     def to_rrule(self):
         weekday_map = {0: MO, 1: TU, 2: WE, 3: TH, 4: FR, 5: SA, 6: SU}
@@ -79,7 +84,7 @@ class RecurrenceRule(models.Model):
         if self.count is not None:
             kwargs['count'] = self.count
         if self.until is not None:
-            kwargs['until'] = self.until.astimezone(tz)
+            kwargs['until'] = self.until.astimezone(tz) if self.until.tzinfo else tz.localize(self.until)
         if self.bysetpos:
             kwargs['bysetpos'] = self._parse_int_list(self.bysetpos)
         if self.bymonth:
@@ -111,7 +116,7 @@ class RecurrenceRule(models.Model):
 
     def to_ical(self):
         recur = vRecur()
-        recur['FREQ'] = [freq for freq, name in self.FREQUENCIES if freq == self.frequency][0]
+        recur['FREQ'] = self.Frequency(self.frequency).name
         recur['INTERVAL'] = self.interval
 
         if self.wkst is not None:
@@ -134,7 +139,7 @@ class RecurrenceRule(models.Model):
         recur = vRecur.from_ical(ical_string)
         rule = cls()
 
-        rule.frequency = [freq for freq, name in cls.FREQUENCIES if name == recur['FREQ'][0]][0]
+        rule.frequency = cls.Frequency[recur['FREQ'][0]].value
         rule.interval = recur.get('INTERVAL', 1)
         rule.timezone, _ = Timezone.objects.get_or_create(name=timezone)
 
@@ -155,9 +160,14 @@ class RecurrenceRule(models.Model):
 
 
 class RecurrenceSet(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    timezone = models.ForeignKey(Timezone, on_delete=models.SET_DEFAULT, default=UTC_ID)
+    name = models.CharField(max_length=255, help_text=_("The name of the recurrence set"))
+    description = models.TextField(blank=True, help_text=_("A description of the recurrence set"))
+    timezone = models.ForeignKey(Timezone, on_delete=models.SET_DEFAULT, default=UTC_ID,
+                                 help_text=_("The timezone for this recurrence set"))
+    next_occurrence = models.DateTimeField(null=True, blank=True,
+                                           help_text=_("The next occurrence of this recurrence set"))
+    previous_occurrence = models.DateTimeField(null=True, blank=True,
+                                               help_text=_("The previous occurrence of this recurrence set"))
 
     def __str__(self):
         return f"{self.name} (Timezone: {self.timezone.name})"
@@ -166,31 +176,31 @@ class RecurrenceSet(models.Model):
         rset = rruleset()
         tz = pytz.timezone(self.timezone.name)
 
-        for rule in self.rules.filter(is_exclusion=False):
+        for rule in self.recurrencesetrules.filter(is_exclusion=False):
             rset.rrule(rule.recurrence_rule.to_rrule())
 
-        for rule in self.rules.filter(is_exclusion=True):
+        for rule in self.recurrencesetrules.filter(is_exclusion=True):
             rset.exrule(rule.recurrence_rule.to_rrule())
 
         for date in self.dates.filter(is_exclusion=False):
-            rset.rdate(date.date.astimezone(tz))
+            rset.rdate(date.date.astimezone(tz) if date.date.tzinfo else tz.localize(date.date))
 
         for date in self.dates.filter(is_exclusion=True):
-            rset.exdate(date.date.astimezone(tz))
+            rset.exdate(date.date.astimezone(tz) if date.date.tzinfo else tz.localize(date.date))
 
         return rset
 
     def to_ical(self):
         event = Event()
-        for rule in self.rules.filter(is_exclusion=False):
+        for rule in self.recurrencesetrules.filter(is_exclusion=False):
             event.add('rrule', rule.recurrence_rule.to_ical())
-        for rule in self.rules.filter(is_exclusion=True):
+        for rule in self.recurrencesetrules.filter(is_exclusion=True):
             event.add('exrule', rule.recurrence_rule.to_ical())
         for date in self.dates.filter(is_exclusion=False):
-            event.add('rdate', date.date.astimezone(pytz.UTC))
+            event.add('rdate', date.date.astimezone(pytz.UTC) if date.date.tzinfo else pytz.UTC.localize(date.date))
         for date in self.dates.filter(is_exclusion=True):
-            event.add('exdate', date.date.astimezone(pytz.UTC))
-        event.add('tzid', self.timezone)
+            event.add('exdate', date.date.astimezone(pytz.UTC) if date.date.tzinfo else pytz.UTC.localize(date.date))
+        event.add('tzid', self.timezone.name)
         return event.to_ical().decode('utf-8')
 
     @classmethod
@@ -222,22 +232,61 @@ class RecurrenceSet(models.Model):
 
         return recurrence_set
 
+    def recalculate_occurrences(self):
+        rruleset = self.to_rruleset()
+        now = django_timezone.now()
+        tz = pytz.timezone(self.timezone.name)
+
+        # Calculate next occurrence
+        next_occurrences = list(rruleset.after(now, inc=False, count=1))
+        self.next_occurrence = next_occurrences[0].astimezone(tz) if next_occurrences else None
+
+        # Calculate previous occurrence
+        prev_occurrences = list(rruleset.before(now, inc=False, count=1))
+        self.previous_occurrence = prev_occurrences[0].astimezone(tz) if prev_occurrences else None
+
+        self.save()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.recalculate_occurrences()
+
 
 class RecurrenceSetRule(models.Model):
-    recurrence_set = models.ForeignKey(RecurrenceSet, on_delete=models.CASCADE, related_name='rules')
-    recurrence_rule = models.ForeignKey(RecurrenceRule, on_delete=models.CASCADE)
-    is_exclusion = models.BooleanField(default=False)
+    recurrence_set = models.ForeignKey(RecurrenceSet, on_delete=models.CASCADE, related_name='recurrencesetrules',
+                                       help_text=_("The recurrence set this rule belongs to"))
+    recurrence_rule = models.ForeignKey(RecurrenceRule, on_delete=models.CASCADE, help_text=_("The recurrence rule"))
+    is_exclusion = models.BooleanField(default=False, help_text=_("Whether this rule is an exclusion rule"))
 
     def __str__(self):
         rule_type = "Exclusion" if self.is_exclusion else "Inclusion"
         return f"{rule_type} Rule for {self.recurrence_set}"
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.recurrence_set.recalculate_occurrences()
+
+    def delete(self, *args, **kwargs):
+        recurrence_set = self.recurrence_set
+        super().delete(*args, **kwargs)
+        recurrence_set.recalculate_occurrences()
+
 
 class RecurrenceDate(models.Model):
-    recurrence_set = models.ForeignKey(RecurrenceSet, on_delete=models.CASCADE, related_name='dates')
-    date = models.DateTimeField()
-    is_exclusion = models.BooleanField(default=False)
+    recurrence_set = models.ForeignKey(RecurrenceSet, on_delete=models.CASCADE, related_name='dates',
+                                       help_text=_("The recurrence set this date belongs to"))
+    date = models.DateTimeField(help_text=_("The date of recurrence or exclusion"))
+    is_exclusion = models.BooleanField(default=False, help_text=_("Whether this date is an exclusion date"))
 
     def __str__(self):
         date_type = "Exclusion" if self.is_exclusion else "Inclusion"
         return f"{date_type} Date for {self.recurrence_set}: {self.date}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.recurrence_set.recalculate_occurrences()
+
+    def delete(self, *args, **kwargs):
+        recurrence_set = self.recurrence_set
+        super().delete(*args, **kwargs)
+        recurrence_set.recalculate_occurrences()
