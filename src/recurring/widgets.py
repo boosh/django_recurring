@@ -16,6 +16,7 @@ class RecurrenceSetWidget(forms.Widget):
         if value is None:
             value = ''
         context['widget']['value'] = value
+        context['recurrence_rules'] = RecurrenceRule.objects.all()
         return mark_safe(renderer.render(self.template_name, context))
 
 
