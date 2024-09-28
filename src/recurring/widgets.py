@@ -13,4 +13,7 @@ class RRuleWidget(forms.Widget):
 
     def render(self, name, value, attrs=None, renderer=None):
         context = self.get_context(name, value, attrs)
+        if value is None:
+            value = ''
+        context['widget']['value'] = value
         return mark_safe(renderer.render(self.template_name, context))

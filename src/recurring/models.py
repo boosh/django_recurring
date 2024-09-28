@@ -233,19 +233,22 @@ class RecurrenceSet(models.Model):
         return recurrence_set
 
     def recalculate_occurrences(self):
-        rruleset = self.to_rruleset()
-        now = django_timezone.now()
-        tz = pytz.timezone(self.timezone.name)
+        try:
+            rruleset = self.to_rruleset()
+            now = django_timezone.now()
+            tz = pytz.timezone(self.timezone.name)
 
-        # Calculate next occurrence
-        next_occurrences = list(rruleset.after(now, inc=False, count=1))
-        self.next_occurrence = next_occurrences[0].astimezone(tz) if next_occurrences else None
+            # Calculate next occurrence
+            next_occurrences = list(rruleset.after(now, inc=False, count=1))
+            self.next_occurrence = next_occurrences[0].astimezone(tz) if next_occurrences else None
 
-        # Calculate previous occurrence
-        prev_occurrences = list(rruleset.before(now, inc=False, count=1))
-        self.previous_occurrence = prev_occurrences[0].astimezone(tz) if prev_occurrences else None
+            # Calculate previous occurrence
+            prev_occurrences = list(rruleset.before(now, inc=False, count=1))
+            self.previous_occurrence = prev_occurrences[0].astimezone(tz) if prev_occurrences else None
 
-        self.save()
+            self.save()
+        except Exception as e:
+            print(f"Error recalculating occurrences for RecurrenceSet {self.id}: {str(e)}")
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

@@ -13,6 +13,9 @@ class RecurrenceRuleForm(forms.ModelForm):
             'frequency': RRuleWidget(),
         }
 
+    def __str__(self):
+        return f"RecurrenceRuleForm for {self.instance}"
+
 
 class RecurrenceRuleAdmin(admin.ModelAdmin):
     form = RecurrenceRuleForm
