@@ -85,3 +85,70 @@ The RecurrenceSetWidget and RecurrenceRuleWidget are automatically used in the a
             }
 
 For more detailed usage examples, please refer to the Examples section.
+
+Using with Custom Models
+------------------------
+
+Here's an example of how to use django-recurring with your own models to add recurrence to an Event model:
+
+.. code-block:: python
+
+    from django.db import models
+    from recurring.models import RecurrenceSet
+
+    class Event(models.Model):
+        title = models.CharField(max_length=200)
+        description = models.TextField(blank=True)
+        start_time = models.TimeField()
+        duration = models.DurationField()
+        recurrence_set = models.ForeignKey(RecurrenceSet, on_delete=models.SET_NULL, null=True, blank=True)
+
+        def __str__(self):
+            return self.title
+
+        def get_occurrences(self, start_date, end_date):
+            if not self.recurrence_set:
+                return []
+
+            rruleset = self.recurrence_set.to_rruleset()
+            occurrences = []
+
+            for dt in rruleset.between(start_date, end_date):
+                occurrence_start = dt.replace(hour=self.start_time.hour, minute=self.start_time.minute)
+                occurrence_end = occurrence_start + self.duration
+                occurrences.append((occurrence_start, occurrence_end))
+
+            return occurrences
+
+In this example:
+
+1. We define an `Event` model with a `ForeignKey` to `RecurrenceSet`.
+2. The `get_occurrences` method uses the `RecurrenceSet` to generate all occurrences of the event between two dates.
+
+You can use this model in your views like this:
+
+.. code-block:: python
+
+    from django.shortcuts import render
+    from .models import Event
+    from datetime import datetime, timedelta
+
+    def event_list(request):
+        start_date = datetime.now().date()
+        end_date = start_date + timedelta(days=30)  # Show events for the next 30 days
+
+        events = Event.objects.all()
+        occurrences = []
+
+        for event in events:
+            event_occurrences = event.get_occurrences(start_date, end_date)
+            for start, end in event_occurrences:
+                occurrences.append({
+                    'title': event.title,
+                    'start': start,
+                    'end': end,
+                })
+
+        return render(request, 'event_list.html', {'occurrences': occurrences})
+
+This view fetches all events and their occurrences for the next 30 days, which you can then display in your template.
