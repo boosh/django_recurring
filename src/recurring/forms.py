@@ -51,14 +51,24 @@ class RecurrenceSetForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
             self.rule_formset = RecurrenceSetRuleFormSet(
-                instance=self.instance, prefix="rules"
+                instance=self.instance,
+                data=self.data if self.is_bound else None,
+                prefix="rules"
             )
             self.date_formset = RecurrenceDateFormSet(
-                instance=self.instance, prefix="dates"
+                instance=self.instance,
+                data=self.data if self.is_bound else None,
+                prefix="dates"
             )
         else:
-            self.rule_formset = RecurrenceSetRuleFormSet(prefix="rules")
-            self.date_formset = RecurrenceDateFormSet(prefix="dates")
+            self.rule_formset = RecurrenceSetRuleFormSet(
+                data=self.data if self.is_bound else None,
+                prefix="rules"
+            )
+            self.date_formset = RecurrenceDateFormSet(
+                data=self.data if self.is_bound else None,
+                prefix="dates"
+            )
 
     def is_valid(self):
         return all(
@@ -78,3 +88,33 @@ class RecurrenceSetForm(forms.ModelForm):
             self.date_formset.instance = instance
             self.date_formset.save()
         return instance
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.errors:
+            return cleaned_data
+
+        formset_errors = []
+        if not self.rule_formset.is_valid():
+            formset_errors.append(f"Rule formset errors: {self.rule_formset.errors}")
+        if not self.date_formset.is_valid():
+            formset_errors.append(f"Date formset errors: {self.date_formset.errors}")
+
+        if formset_errors:
+            raise forms.ValidationError(
+                "Please correct the errors in the formsets:\n" + "\n".join(formset_errors)
+            )
+
+        # Add more detailed error checking
+        if not self.rule_formset.forms and not self.date_formset.forms:
+            raise forms.ValidationError("You must add at least one rule or date to the recurrence set.")
+
+        for form in self.rule_formset.forms:
+            if form.errors:
+                raise forms.ValidationError(f"Error in rule: {form.errors}")
+
+        for form in self.date_formset.forms:
+            if form.errors:
+                raise forms.ValidationError(f"Error in date: {form.errors}")
+
+        return cleaned_data
