@@ -1,10 +1,5 @@
-import json
-
 from django import forms
-from django.core import serializers
 from django.utils.safestring import mark_safe
-
-from .models import RecurrenceRule
 
 
 class RecurrenceSetWidget(forms.Widget):
@@ -23,11 +18,6 @@ class RecurrenceSetWidget(forms.Widget):
         if value is None:
             value = ""
         context["widget"]["value"] = value
-
-        # Serialize RecurrenceRule queryset to JSON
-        recurrence_rules = RecurrenceRule.objects.all()
-        serialized_rules = serializers.serialize('json', recurrence_rules)
-        context["recurrence_rules"] = mark_safe(json.dumps(json.loads(serialized_rules)))
 
         # Add formsets to the context
         if self.form and hasattr(self.form, "rule_formset") and hasattr(self.form, "date_formset"):

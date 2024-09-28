@@ -40,7 +40,7 @@ RecurrenceDateFormSet = inlineformset_factory(
 
 
 class RecurrenceSetForm(forms.ModelForm):
-    recurrence_set = forms.CharField(required=False)
+    recurrence_set = forms.CharField(required=False, widget=RecurrenceSetWidget)
 
     class Meta:
         model = RecurrenceSet
@@ -98,6 +98,13 @@ class RecurrenceSetForm(forms.ModelForm):
         if self.errors:
             return cleaned_data
 
+        recurrence_set_data = cleaned_data.get('recurrence_set')
+        if recurrence_set_data:
+            try:
+                RecurrenceSet.from_ical(recurrence_set_data)
+            except ValueError as e:
+                raise forms.ValidationError(f"Invalid iCal data: {str(e)}")
+
         formset_errors = []
         if not self.rule_formset.is_valid():
             formset_errors.append(f"Rule formset errors: {self.rule_formset.errors}")
@@ -110,7 +117,7 @@ class RecurrenceSetForm(forms.ModelForm):
             )
 
         # Add more detailed error checking
-        if not self.rule_formset.forms and not self.date_formset.forms:
+        if not self.rule_formset.forms and not self.date_formset.forms and not recurrence_set_data:
             raise forms.ValidationError("You must add at least one rule or date to the recurrence set.")
 
         for form in self.rule_formset.forms:

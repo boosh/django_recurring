@@ -1,90 +1,32 @@
-function initRecurrenceSetWidget(name, recurrenceRules) {
+function initRecurrenceSetWidget(name) {
     const widget = document.getElementById(`recurrence-set-widget-${name}`);
     const input = document.getElementById(`id_${name}`);
     const form = document.getElementById(`recurrence-set-form-${name}`);
     const text = document.getElementById(`recurrence-set-text-${name}`);
 
-    if (!widget) {
-        console.error(`Element with ID "recurrence-set-widget-${name}" not found`);
-        return;
-    }
-    if (!input) {
-        console.error(`Element with ID "id_${name}" not found`);
-        return;
-    }
-    if (!form) {
-        console.error(`Element with ID "recurrence-set-form-${name}" not found`);
-        return;
-    }
-    if (!text) {
-        console.error(`Element with ID "recurrence-set-text-${name}" not found`);
+    if (!widget || !input || !form || !text) {
+        console.error('One or more required elements not found');
         return;
     }
 
-    console.log('Widget:', widget);
-    console.log('Input:', input);
-    console.log('Form:', form);
-    console.log('Text:', text);
-
-    const recurrenceSetForm = new RecurrenceSetForm(form, recurrenceRules);
+    const recurrenceSetForm = new RecurrenceSetForm(form);
 
     recurrenceSetForm.onChange = function (recurrenceSet) {
         if (recurrenceSet) {
-            input.value = JSON.stringify(recurrenceSet);
+            input.value = recurrenceSetToICal(recurrenceSet);
             text.textContent = recurrenceSetToText(recurrenceSet);
         }
     };
 
     if (input.value) {
-        console.log('Input value:', input.value);
         try {
             const recurrenceSet = parseICalString(input.value);
             recurrenceSetForm.setRecurrenceSet(recurrenceSet);
             text.textContent = recurrenceSetToText(recurrenceSet);
         } catch (error) {
             console.error('Error parsing input value:', error);
-            console.log('Raw input value:', input.value);
             text.textContent = 'Error: Invalid recurrence set data';
         }
-    } else {
-        console.log('Input value is empty');
-    }
-
-    function parseICalString(icalString) {
-        const lines = icalString.split('\n');
-        const recurrenceSet = {
-            rules: [],
-            dates: []
-        };
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (line.startsWith('RRULE:')) {
-                recurrenceSet.rules.push({
-                    recurrence_rule: line.substring(6),
-                    is_exclusion: false
-                });
-            } else if (line.startsWith('EXRULE:')) {
-                recurrenceSet.rules.push({
-                    recurrence_rule: line.substring(7),
-                    is_exclusion: true
-                });
-            } else if (line.startsWith('RDATE:')) {
-                recurrenceSet.dates.push({
-                    date: line.substring(6),
-                    is_exclusion: false
-                });
-            } else if (line.startsWith('EXDATE:')) {
-                recurrenceSet.dates.push({
-                    date: line.substring(7),
-                    is_exclusion: true
-                });
-            } else if (line.startsWith('TZID:')) {
-                recurrenceSet.timezone = line.substring(5);
-            }
-        }
-
-        return recurrenceSet;
     }
 
     // Add event listeners for the add rule and add date buttons
@@ -100,9 +42,8 @@ function initRecurrenceSetWidget(name, recurrenceRules) {
 }
 
 class RecurrenceSetForm {
-    constructor(container, recurrenceRules) {
+    constructor(container) {
         this.container = container;
-        this.recurrenceRules = recurrenceRules;
         this.recurrenceSet = {
             rules: [],
             dates: []
@@ -118,11 +59,18 @@ class RecurrenceSetForm {
     addRule() {
         const ruleContainer = document.createElement('div');
         ruleContainer.className = 'rule-container';
-        const ruleForm = new RecurrenceRuleForm(ruleContainer, this.recurrenceRules);
+        const ruleForm = new RecurrenceRuleForm(ruleContainer);
         this.container.querySelector('#rules-container').appendChild(ruleContainer);
 
         ruleForm.onChange = (rule) => {
-            this.recurrenceSet.rules.push(rule);
+            if (rule) {
+                this.recurrenceSet.rules.push(rule);
+            } else {
+                const index = this.recurrenceSet.rules.findIndex(r => r === ruleForm.rule);
+                if (index !== -1) {
+                    this.recurrenceSet.rules.splice(index, 1);
+                }
+            }
             this.onChange(this.recurrenceSet);
         };
     }
@@ -143,21 +91,7 @@ class RecurrenceSetForm {
             dateContainer.remove();
             this.updateDates();
         });
-    }
-
-    updateDates() {
-        this.recurrenceSet.dates = Array.from(this.container.querySelectorAll('.date-container')).map(container => {
-            return {
-                date: container.querySelector('.date-input').value,
-                isExclusion: container.querySelector('.exclusion-checkbox').checked
-            };
-        });
-        this.onChange(this.recurrenceSet);
-    }
-
-    onChange(recurrenceSet) {
-        // This method will be overridden to handle changes
-        console.log('RecurrenceSet changed:', recurrenceSet);
+        this.updateDates();
     }
 
     updateDates() {
@@ -178,7 +112,7 @@ class RecurrenceSetForm {
         recurrenceSet.rules.forEach(rule => {
             const ruleContainer = document.createElement('div');
             ruleContainer.className = 'rule-container';
-            const ruleForm = new RecurrenceRuleForm(ruleContainer, this.recurrenceRules);
+            const ruleForm = new RecurrenceRuleForm(ruleContainer);
             this.container.querySelector('#rules-container').appendChild(ruleContainer);
             ruleForm.setRule(rule);
         });
@@ -193,6 +127,7 @@ class RecurrenceSetForm {
             `;
             this.container.querySelector('#dates-container').appendChild(dateContainer);
         });
+        this.updateDates();
     }
 
     onChange(recurrenceSet) {
@@ -201,37 +136,55 @@ class RecurrenceSetForm {
 }
 
 class RecurrenceRuleForm {
-    constructor(container, recurrenceRules) {
+    constructor(container) {
         this.container = container;
-        this.recurrenceRules = recurrenceRules;
         this.rule = null;
         this.createForm();
     }
 
     createForm() {
         this.container.innerHTML = `
-            <select class="rule-select">
-                <option value="">Select a rule</option>
-                ${this.recurrenceRules.map(rule => `<option value="${rule.id}">${rule.name}</option>`).join('')}
+            <select class="frequency-select">
+                <option value="YEARLY">Yearly</option>
+                <option value="MONTHLY">Monthly</option>
+                <option value="WEEKLY">Weekly</option>
+                <option value="DAILY">Daily</option>
             </select>
+            <input type="number" class="interval-input" min="1" value="1">
+            <label><input type="checkbox" class="exclusion-checkbox"> Exclusion</label>
             <button type="button" class="remove-rule">Remove Rule</button>
         `;
 
-        this.container.querySelector('.rule-select').addEventListener('change', (e) => {
-            const ruleId = e.target.value;
-            this.rule = this.recurrenceRules.find(r => r.id == ruleId);
-            this.onChange(this.rule);
-        });
-
+        this.container.querySelector('.frequency-select').addEventListener('change', () => this.updateRule());
+        this.container.querySelector('.interval-input').addEventListener('change', () => this.updateRule());
+        this.container.querySelector('.exclusion-checkbox').addEventListener('change', () => this.updateRule());
         this.container.querySelector('.remove-rule').addEventListener('click', () => {
             this.container.remove();
             this.onChange(null);
         });
+
+        this.updateRule();
+    }
+
+    updateRule() {
+        const frequency = this.container.querySelector('.frequency-select').value;
+        const interval = parseInt(this.container.querySelector('.interval-input').value, 10);
+        const isExclusion = this.container.querySelector('.exclusion-checkbox').checked;
+
+        this.rule = {
+            frequency: frequency,
+            interval: interval,
+            isExclusion: isExclusion
+        };
+
+        this.onChange(this.rule);
     }
 
     setRule(rule) {
         this.rule = rule;
-        this.container.querySelector('.rule-select').value = rule.id;
+        this.container.querySelector('.frequency-select').value = rule.frequency;
+        this.container.querySelector('.interval-input').value = rule.interval;
+        this.container.querySelector('.exclusion-checkbox').checked = rule.isExclusion;
     }
 
     onChange(rule) {
@@ -242,7 +195,7 @@ class RecurrenceRuleForm {
 function recurrenceSetToText(recurrenceSet) {
     let text = 'Recurrence Set:\n';
     recurrenceSet.rules.forEach((rule, index) => {
-        text += `Rule ${index + 1}: ${rule.name}\n`;
+        text += `Rule ${index + 1}: ${rule.frequency} (Interval: ${rule.interval}, ${rule.isExclusion ? 'Exclusion' : 'Inclusion'})\n`;
     });
     recurrenceSet.dates.forEach((date, index) => {
         text += `Date ${index + 1}: ${date.date} (${date.isExclusion ? 'Exclusion' : 'Inclusion'})\n`;
@@ -250,5 +203,50 @@ function recurrenceSetToText(recurrenceSet) {
     return text;
 }
 
-// This file was previously named recurrence_set_widget.js
-// Add your JavaScript code for the RecurrenceSetWidget here
+function recurrenceSetToICal(recurrenceSet) {
+    let ical = '';
+    recurrenceSet.rules.forEach(rule => {
+        const prefix = rule.isExclusion ? 'EXRULE:' : 'RRULE:';
+        ical += `${prefix}FREQ=${rule.frequency};INTERVAL=${rule.interval}\n`;
+    });
+    recurrenceSet.dates.forEach(date => {
+        const prefix = date.isExclusion ? 'EXDATE:' : 'RDATE:';
+        ical += `${prefix}${date.date.replace('T', '')}\n`;
+    });
+    return ical.trim();
+}
+
+function parseICalString(icalString) {
+    const lines = icalString.split('\n');
+    const recurrenceSet = {
+        rules: [],
+        dates: []
+    };
+
+    lines.forEach(line => {
+        if (line.startsWith('RRULE:') || line.startsWith('EXRULE:')) {
+            const isExclusion = line.startsWith('EXRULE:');
+            const parts = line.substring(isExclusion ? 7 : 6).split(';');
+            const rule = {
+                frequency: '',
+                interval: 1,
+                isExclusion: isExclusion
+            };
+            parts.forEach(part => {
+                const [key, value] = part.split('=');
+                if (key === 'FREQ') rule.frequency = value;
+                if (key === 'INTERVAL') rule.interval = parseInt(value, 10);
+            });
+            recurrenceSet.rules.push(rule);
+        } else if (line.startsWith('RDATE:') || line.startsWith('EXDATE:')) {
+            const isExclusion = line.startsWith('EXDATE:');
+            const date = line.substring(isExclusion ? 7 : 6);
+            recurrenceSet.dates.push({
+                date: date.substring(0, 4) + '-' + date.substring(4, 6) + '-' + date.substring(6, 8) + 'T' + date.substring(9, 11) + ':' + date.substring(11, 13),
+                isExclusion: isExclusion
+            });
+        }
+    });
+
+    return recurrenceSet;
+}
