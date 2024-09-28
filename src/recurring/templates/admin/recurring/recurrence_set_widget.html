@@ -1,4 +1,3 @@
-{% load static %}
 <div class="recurrence-set-widget" id="recurrence-set-widget-{{ widget.name }}">
     <input id="{{ widget.attrs.id }}" name="{{ widget.name }}" type="hidden"
            value="{{ widget.value|default_if_none:'' }}">
@@ -28,12 +27,8 @@
     <div class="recurrence-set-text" id="recurrence-set-text-{{ widget.name }}"></div>
 </div>
 
-<script src="{% static 'admin/js/vendor/rrule.min.js' %}"></script>
-<script src="{% static 'admin/js/rrule_widget.js' %}"></script>
 <script>
-    console.log('Template script loaded');
     document.addEventListener('DOMContentLoaded', function () {
-        console.log('DOMContentLoaded event fired');
         initRecurrenceSetWidget('{{ widget.name }}', {
         {
             recurrence_rules | safe
