@@ -1,0 +1,10 @@
+pip
+bump2version
+wheel
+watchdog
+tox
+coverage
+Sphinx
+twine
+ruff
+Django
