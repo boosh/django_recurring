@@ -16,6 +16,10 @@ function initRecurrenceSetWidget(name, recurrenceRules) {
         recurrenceSetForm.setRecurrenceSet(recurrenceSet);
         text.textContent = recurrenceSetToText(recurrenceSet);
     }
+
+    // Add event listeners for the add rule and add date buttons
+    form.querySelector('#add-rule').addEventListener('click', () => recurrenceSetForm.addRule());
+    form.querySelector('#add-date').addEventListener('click', () => recurrenceSetForm.addDate());
 }
 
 class RecurrenceSetForm {
@@ -62,6 +66,21 @@ class RecurrenceSetForm {
             dateContainer.remove();
             this.updateDates();
         });
+    }
+
+    updateDates() {
+        this.recurrenceSet.dates = Array.from(this.container.querySelectorAll('.date-container')).map(container => {
+            return {
+                date: container.querySelector('.date-input').value,
+                isExclusion: container.querySelector('.exclusion-checkbox').checked
+            };
+        });
+        this.onChange(this.recurrenceSet);
+    }
+
+    onChange(recurrenceSet) {
+        // This method will be overridden to handle changes
+        console.log('RecurrenceSet changed:', recurrenceSet);
     }
 
     updateDates() {
@@ -153,3 +172,6 @@ function recurrenceSetToText(recurrenceSet) {
     });
     return text;
 }
+
+// This file was previously named recurrence_set_widget.js
+// Add your JavaScript code for the RecurrenceSetWidget here

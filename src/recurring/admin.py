@@ -3,8 +3,6 @@ from django.contrib import admin
 from .forms import (
     RecurrenceRuleForm,
     RecurrenceSetForm,
-    RecurrenceSetRuleFormSet,
-    RecurrenceDateFormSet,
 )
 from .models import (
     Timezone,
@@ -27,40 +25,51 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        if obj:
-            form.rule_formset = RecurrenceSetRuleFormSet(instance=obj)
-            form.date_formset = RecurrenceDateFormSet(instance=obj)
-        else:
-            form.rule_formset = RecurrenceSetRuleFormSet()
-            form.date_formset = RecurrenceDateFormSet()
         return form
 
     def save_model(self, request, obj, form, change):
         try:
             super().save_model(request, obj, form, change)
+            if 'recurrence_set' in form.cleaned_data:
+                ical_data = form.cleaned_data['recurrence_set']
+                if ical_data:
+                    # Clear existing rules and dates
+                    obj.recurrencesetrules.all().delete()
+                    obj.dates.all().delete()
+
+                    # Create new RecurrenceSet from iCal data
+                    new_set = RecurrenceSet.from_ical(ical_data)
+
+                    # Copy rules and dates from new_set to obj
+                    for rule in new_set.recurrencesetrules.all():
+                        rule.pk = None
+                        rule.recurrence_set = obj
+                        rule.save()
+                    for date in new_set.dates.all():
+                        date.pk = None
+                        date.recurrence_set = obj
+                        date.save()
+
+                    # Delete the temporary RecurrenceSet
+                    new_set.delete()
+
+                    # Recalculate occurrences
+                    obj.recalculate_occurrences()
         except forms.ValidationError as e:
             self.message_user(request, str(e), level=messages.ERROR)
             return
 
     def save_related(self, request, form, formsets, change):
-        try:
-            super().save_related(request, form, formsets, change)
-            form.save_m2m()
-            form.rule_formset.save()
-            form.date_formset.save()
-        except forms.ValidationError as e:
-            self.message_user(request, str(e), level=messages.ERROR)
+        super().save_related(request, form, formsets, change)
+        form.save_m2m()
 
     def save_formset(self, request, form, formset, change):
-        try:
-            instances = formset.save(commit=False)
-            for obj in formset.deleted_objects:
-                obj.delete()
-            for instance in instances:
-                instance.save()
-            formset.save_m2m()
-        except forms.ValidationError as e:
-            self.message_user(request, str(e), level=messages.ERROR)
+        instances = formset.save(commit=False)
+        for obj in formset.deleted_objects:
+            obj.delete()
+        for instance in instances:
+            instance.save()
+        formset.save_m2m()
 
 
 admin.site.register(Timezone)

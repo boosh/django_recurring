@@ -8,8 +8,12 @@ class RecurrenceSetWidget(forms.Widget):
     template_name = "admin/recurring/recurrence_set_widget.html"
 
     class Media:
-        js = ("admin/js/vendor/rrule.min.js", "admin/js/recurrence_set_widget.js")
-        css = {"all": ("admin/css/recurrence_set_widget.css",)}
+        js = ("admin/js/vendor/rrule.min.js", "admin/js/rrule_widget.js")
+        css = {"all": ("admin/css/rrule_widget.css",)}
+
+    def __init__(self, attrs=None, form=None):
+        super().__init__(attrs)
+        self.form = form
 
     def render(self, name, value, attrs=None, renderer=None):
         context = self.get_context(name, value, attrs)
@@ -19,7 +23,7 @@ class RecurrenceSetWidget(forms.Widget):
         context["recurrence_rules"] = RecurrenceRule.objects.all()
 
         # Add formsets to the context
-        if hasattr(self.form, "rule_formset") and hasattr(self.form, "date_formset"):
+        if self.form and hasattr(self.form, "rule_formset") and hasattr(self.form, "date_formset"):
             context["rule_formset"] = self.form.rule_formset
             context["date_formset"] = self.form.date_formset
 

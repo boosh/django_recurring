@@ -40,15 +40,15 @@ RecurrenceDateFormSet = inlineformset_factory(
 
 
 class RecurrenceSetForm(forms.ModelForm):
+    recurrence_set = forms.CharField(required=False)
+
     class Meta:
         model = RecurrenceSet
-        fields = ["name", "description", "timezone"]
-        widgets = {
-            "recurrence_set": RecurrenceSetWidget(),
-        }
+        fields = ["name", "description", "timezone", "recurrence_set"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['recurrence_set'].widget = RecurrenceSetWidget(form=self)
         if self.instance.pk:
             self.rule_formset = RecurrenceSetRuleFormSet(
                 instance=self.instance,
@@ -69,6 +69,10 @@ class RecurrenceSetForm(forms.ModelForm):
                 data=self.data if self.is_bound else None,
                 prefix="dates"
             )
+
+        # Populate the recurrence_set field with existing data
+        if self.instance.pk:
+            self.initial['recurrence_set'] = self.instance.to_ical()
 
     def is_valid(self):
         return all(

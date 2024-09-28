@@ -33,3 +33,6 @@ input[type="number"], input[type="date"], input[type="datetime-local"] {
 #byweekday label {
     margin-right: 10px;
 }
+
+/* This file was previously named recurrence_set_widget.css */
+/* Add your CSS styles for the RecurrenceSetWidget here */
