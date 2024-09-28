@@ -1,25 +1,102 @@
 function initRecurrenceSetWidget(name, recurrenceRules) {
     const widget = document.getElementById(`recurrence-set-widget-${name}`);
-    const input = document.getElementById(name);
+    const input = document.getElementById(`id_${name}`);
     const form = document.getElementById(`recurrence-set-form-${name}`);
     const text = document.getElementById(`recurrence-set-text-${name}`);
+
+    if (!widget) {
+        console.error(`Element with ID "recurrence-set-widget-${name}" not found`);
+        return;
+    }
+    if (!input) {
+        console.error(`Element with ID "id_${name}" not found`);
+        return;
+    }
+    if (!form) {
+        console.error(`Element with ID "recurrence-set-form-${name}" not found`);
+        return;
+    }
+    if (!text) {
+        console.error(`Element with ID "recurrence-set-text-${name}" not found`);
+        return;
+    }
+
+    console.log('Widget:', widget);
+    console.log('Input:', input);
+    console.log('Form:', form);
+    console.log('Text:', text);
 
     const recurrenceSetForm = new RecurrenceSetForm(form, recurrenceRules);
 
     recurrenceSetForm.onChange = function (recurrenceSet) {
-        input.value = JSON.stringify(recurrenceSet);
-        text.textContent = recurrenceSetToText(recurrenceSet);
+        if (recurrenceSet) {
+            input.value = JSON.stringify(recurrenceSet);
+            text.textContent = recurrenceSetToText(recurrenceSet);
+        }
     };
 
     if (input.value) {
-        const recurrenceSet = JSON.parse(input.value);
-        recurrenceSetForm.setRecurrenceSet(recurrenceSet);
-        text.textContent = recurrenceSetToText(recurrenceSet);
+        console.log('Input value:', input.value);
+        try {
+            const recurrenceSet = parseICalString(input.value);
+            recurrenceSetForm.setRecurrenceSet(recurrenceSet);
+            text.textContent = recurrenceSetToText(recurrenceSet);
+        } catch (error) {
+            console.error('Error parsing input value:', error);
+            console.log('Raw input value:', input.value);
+            text.textContent = 'Error: Invalid recurrence set data';
+        }
+    } else {
+        console.log('Input value is empty');
+    }
+
+    function parseICalString(icalString) {
+        const lines = icalString.split('\n');
+        const recurrenceSet = {
+            rules: [],
+            dates: []
+        };
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith('RRULE:')) {
+                recurrenceSet.rules.push({
+                    recurrence_rule: line.substring(6),
+                    is_exclusion: false
+                });
+            } else if (line.startsWith('EXRULE:')) {
+                recurrenceSet.rules.push({
+                    recurrence_rule: line.substring(7),
+                    is_exclusion: true
+                });
+            } else if (line.startsWith('RDATE:')) {
+                recurrenceSet.dates.push({
+                    date: line.substring(6),
+                    is_exclusion: false
+                });
+            } else if (line.startsWith('EXDATE:')) {
+                recurrenceSet.dates.push({
+                    date: line.substring(7),
+                    is_exclusion: true
+                });
+            } else if (line.startsWith('TZID:')) {
+                recurrenceSet.timezone = line.substring(5);
+            }
+        }
+
+        return recurrenceSet;
     }
 
     // Add event listeners for the add rule and add date buttons
-    form.querySelector('#add-rule').addEventListener('click', () => recurrenceSetForm.addRule());
-    form.querySelector('#add-date').addEventListener('click', () => recurrenceSetForm.addDate());
+    const addRuleButton = form.querySelector('#add-rule');
+    const addDateButton = form.querySelector('#add-date');
+
+    if (addRuleButton) {
+        addRuleButton.addEventListener('click', () => recurrenceSetForm.addRule());
+    }
+    if (addDateButton) {
+        addDateButton.addEventListener('click', () => recurrenceSetForm.addDate());
+    }
 }
 
 class RecurrenceSetForm {

@@ -2,6 +2,10 @@
     <input id="{{ widget.attrs.id }}" name="{{ widget.name }}" type="hidden"
            value="{{ widget.value|default_if_none:'' }}">
     <div id="recurrence-set-form-{{ widget.name }}">
+    <!-- Ensure this div is not empty -->
+    {% if not rule_formset and not date_formset %}
+        <p>No rules or dates defined yet.</p>
+    {% endif %}
         <h3>Rules</h3>
         {{ rule_formset.management_form }}
         <div id="rules-container">
@@ -29,6 +33,14 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        initRecurrenceSetWidget('{{ widget.name }}', {{recurrence_rules | safe }});
+        if (typeof initRecurrenceSetWidget === 'function') {
+            try {
+                initRecurrenceSetWidget('{{ widget.name }}', {{ recurrence_rules | safe }});
+            } catch (error) {
+                console.error('Error initializing RecurrenceSetWidget:', error);
+            }
+        } else {
+            console.error('initRecurrenceSetWidget function is not defined');
+        }
     });
 </script>
