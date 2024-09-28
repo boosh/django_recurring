@@ -1,0 +1,6 @@
+<div id="rrule-widget-{{ widget.name }}">
+    <input id="{{ widget.attrs.id }}" name="{{ widget.name }}" type="hidden"
+           value="{{ widget.value|default_if_none:'' }}">
+    <div id="rrule-form-{{ widget.name }}"></div>
+    <div id="rrule-text-{{ widget.name }}"></div>
+</div>
