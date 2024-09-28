@@ -1,20 +1,7 @@
-from django import forms
 from django.contrib import admin
 
+from .forms import RecurrenceRuleForm
 from .models import Timezone, RecurrenceRule, RecurrenceSet, RecurrenceSetRule, RecurrenceDate
-from .widgets import RRuleWidget
-
-
-class RecurrenceRuleForm(forms.ModelForm):
-    class Meta:
-        model = RecurrenceRule
-        fields = '__all__'
-        widgets = {
-            'frequency': RRuleWidget(),
-        }
-
-    def __str__(self):
-        return f"RecurrenceRuleForm for {self.instance}"
 
 
 class RecurrenceRuleAdmin(admin.ModelAdmin):
