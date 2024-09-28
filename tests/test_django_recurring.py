@@ -5,7 +5,13 @@ import pytz
 from dateutil.rrule import DAILY, WEEKLY, MONTHLY, YEARLY, MO, WE, FR
 from django.test import TestCase
 from django.utils import timezone
-from recurring.models import Timezone, RecurrenceRule, RecurrenceSet, RecurrenceSetRule, RecurrenceDate
+from recurring.models import (
+    Timezone,
+    RecurrenceRule,
+    RecurrenceSet,
+    RecurrenceSetRule,
+    RecurrenceDate,
+)
 
 
 class TimezoneModelTest(TestCase):
@@ -20,9 +26,7 @@ class RecurrenceRuleModelTest(TestCase):
 
     def test_recurrence_rule_creation(self):
         rule = RecurrenceRule.objects.create(
-            frequency=DAILY,
-            interval=1,
-            timezone=self.timezone
+            frequency=DAILY, interval=1, timezone=self.timezone
         )
         self.assertEqual(str(rule), "RecurrenceRule (Frequency: DAILY, Timezone: UTC)")
 
@@ -31,7 +35,7 @@ class RecurrenceRuleModelTest(TestCase):
             frequency=WEEKLY,
             interval=2,
             byweekday=json.dumps([MO.weekday, WE.weekday, FR.weekday]),
-            timezone=self.timezone
+            timezone=self.timezone,
         )
         rrule_obj = rule.to_rrule()
         self.assertEqual(rrule_obj._freq, WEEKLY)
@@ -43,7 +47,7 @@ class RecurrenceRuleModelTest(TestCase):
             frequency=MONTHLY,
             interval=1,
             bymonthday=json.dumps([1, 15]),
-            timezone=self.timezone
+            timezone=self.timezone,
         )
         ical_string = rule.to_ical()
         self.assertIn("FREQ=MONTHLY", ical_string)
@@ -64,7 +68,7 @@ class RecurrenceRuleModelTest(TestCase):
             bymonth=json.dumps([3, 6, 9, 12]),
             byweekday=json.dumps([MO.weekday, FR.weekday]),
             bysetpos=json.dumps([1, -1]),
-            timezone=self.timezone
+            timezone=self.timezone,
         )
         rrule_obj = rule.to_rrule()
         self.assertEqual(rrule_obj._freq, YEARLY)
@@ -75,10 +79,7 @@ class RecurrenceRuleModelTest(TestCase):
     def test_rrule_with_until(self):
         until_date = timezone.now() + timedelta(days=30)
         rule = RecurrenceRule.objects.create(
-            frequency=DAILY,
-            interval=1,
-            until=until_date,
-            timezone=self.timezone
+            frequency=DAILY, interval=1, until=until_date, timezone=self.timezone
         )
         rrule_obj = rule.to_rrule()
         self.assertEqual(rrule_obj._until, until_date.replace(tzinfo=pytz.UTC))
@@ -88,27 +89,37 @@ class RecurrenceSetModelTest(TestCase):
     def setUp(self):
         self.timezone = Timezone.objects.create(name="UTC")
         self.recurrence_set = RecurrenceSet.objects.create(
-            name="Test Set",
-            description="A test recurrence set",
-            timezone=self.timezone
+            name="Test Set", description="A test recurrence set", timezone=self.timezone
         )
 
     def test_recurrence_set_creation(self):
         self.assertEqual(str(self.recurrence_set), "Test Set (Timezone: UTC)")
 
     def test_to_rruleset(self):
-        rule1 = RecurrenceRule.objects.create(frequency=DAILY, interval=1, timezone=self.timezone)
-        rule2 = RecurrenceRule.objects.create(frequency=WEEKLY, interval=1, timezone=self.timezone)
-        RecurrenceSetRule.objects.create(recurrence_set=self.recurrence_set, recurrence_rule=rule1)
-        RecurrenceSetRule.objects.create(recurrence_set=self.recurrence_set, recurrence_rule=rule2, is_exclusion=True)
+        rule1 = RecurrenceRule.objects.create(
+            frequency=DAILY, interval=1, timezone=self.timezone
+        )
+        rule2 = RecurrenceRule.objects.create(
+            frequency=WEEKLY, interval=1, timezone=self.timezone
+        )
+        RecurrenceSetRule.objects.create(
+            recurrence_set=self.recurrence_set, recurrence_rule=rule1
+        )
+        RecurrenceSetRule.objects.create(
+            recurrence_set=self.recurrence_set, recurrence_rule=rule2, is_exclusion=True
+        )
 
         rruleset = self.recurrence_set.to_rruleset()
         self.assertEqual(len(rruleset._rrule), 1)
         self.assertEqual(len(rruleset._exrule), 1)
 
     def test_recalculate_occurrences(self):
-        rule = RecurrenceRule.objects.create(frequency=DAILY, interval=1, timezone=self.timezone)
-        RecurrenceSetRule.objects.create(recurrence_set=self.recurrence_set, recurrence_rule=rule)
+        rule = RecurrenceRule.objects.create(
+            frequency=DAILY, interval=1, timezone=self.timezone
+        )
+        RecurrenceSetRule.objects.create(
+            recurrence_set=self.recurrence_set, recurrence_rule=rule
+        )
 
         now = timezone.now()
         self.recurrence_set.recalculate_occurrences()
@@ -117,8 +128,12 @@ class RecurrenceSetModelTest(TestCase):
         self.assertGreater(self.recurrence_set.next_occurrence, now)
 
     def test_to_ical(self):
-        rule = RecurrenceRule.objects.create(frequency=DAILY, interval=1, timezone=self.timezone)
-        RecurrenceSetRule.objects.create(recurrence_set=self.recurrence_set, recurrence_rule=rule)
+        rule = RecurrenceRule.objects.create(
+            frequency=DAILY, interval=1, timezone=self.timezone
+        )
+        RecurrenceSetRule.objects.create(
+            recurrence_set=self.recurrence_set, recurrence_rule=rule
+        )
 
         ical_string = self.recurrence_set.to_ical()
         self.assertIn("RRULE:FREQ=DAILY;INTERVAL=1", ical_string)
@@ -142,21 +157,30 @@ END:VEVENT"""
             frequency=WEEKLY,
             interval=1,
             byweekday=json.dumps([MO.weekday, WE.weekday, FR.weekday]),
-            timezone=self.timezone
+            timezone=self.timezone,
         )
         rule2 = RecurrenceRule.objects.create(
             frequency=MONTHLY,
             interval=1,
             bymonthday=json.dumps([1, 15]),
-            timezone=self.timezone
+            timezone=self.timezone,
         )
-        RecurrenceSetRule.objects.create(recurrence_set=self.recurrence_set, recurrence_rule=rule1)
-        RecurrenceSetRule.objects.create(recurrence_set=self.recurrence_set, recurrence_rule=rule2)
+        RecurrenceSetRule.objects.create(
+            recurrence_set=self.recurrence_set, recurrence_rule=rule1
+        )
+        RecurrenceSetRule.objects.create(
+            recurrence_set=self.recurrence_set, recurrence_rule=rule2
+        )
 
         now = timezone.now()
-        RecurrenceDate.objects.create(recurrence_set=self.recurrence_set, date=now + timedelta(days=1))
-        RecurrenceDate.objects.create(recurrence_set=self.recurrence_set, date=now + timedelta(days=2),
-                                      is_exclusion=True)
+        RecurrenceDate.objects.create(
+            recurrence_set=self.recurrence_set, date=now + timedelta(days=1)
+        )
+        RecurrenceDate.objects.create(
+            recurrence_set=self.recurrence_set,
+            date=now + timedelta(days=2),
+            is_exclusion=True,
+        )
 
         self.recurrence_set.recalculate_occurrences()
 
@@ -172,13 +196,16 @@ END:VEVENT"""
 class RecurrenceSetRuleModelTest(TestCase):
     def setUp(self):
         self.timezone = Timezone.objects.create(name="UTC")
-        self.recurrence_set = RecurrenceSet.objects.create(name="Test Set", timezone=self.timezone)
-        self.rule = RecurrenceRule.objects.create(frequency=DAILY, interval=1, timezone=self.timezone)
+        self.recurrence_set = RecurrenceSet.objects.create(
+            name="Test Set", timezone=self.timezone
+        )
+        self.rule = RecurrenceRule.objects.create(
+            frequency=DAILY, interval=1, timezone=self.timezone
+        )
 
     def test_recurrence_set_rule_creation(self):
         set_rule = RecurrenceSetRule.objects.create(
-            recurrence_set=self.recurrence_set,
-            recurrence_rule=self.rule
+            recurrence_set=self.recurrence_set, recurrence_rule=self.rule
         )
         self.assertEqual(str(set_rule), f"Inclusion Rule for {self.recurrence_set}")
 
@@ -186,14 +213,13 @@ class RecurrenceSetRuleModelTest(TestCase):
         set_rule = RecurrenceSetRule.objects.create(
             recurrence_set=self.recurrence_set,
             recurrence_rule=self.rule,
-            is_exclusion=True
+            is_exclusion=True,
         )
         self.assertEqual(str(set_rule), f"Exclusion Rule for {self.recurrence_set}")
 
     def test_recurrence_set_rule_save_and_delete(self):
         set_rule = RecurrenceSetRule.objects.create(
-            recurrence_set=self.recurrence_set,
-            recurrence_rule=self.rule
+            recurrence_set=self.recurrence_set, recurrence_rule=self.rule
         )
         self.assertIsNotNone(self.recurrence_set.next_occurrence)
 
@@ -205,30 +231,32 @@ class RecurrenceSetRuleModelTest(TestCase):
 class RecurrenceDateModelTest(TestCase):
     def setUp(self):
         self.timezone = Timezone.objects.create(name="UTC")
-        self.recurrence_set = RecurrenceSet.objects.create(name="Test Set", timezone=self.timezone)
+        self.recurrence_set = RecurrenceSet.objects.create(
+            name="Test Set", timezone=self.timezone
+        )
 
     def test_recurrence_date_creation(self):
         date = timezone.now()
         recurrence_date = RecurrenceDate.objects.create(
-            recurrence_set=self.recurrence_set,
-            date=date
+            recurrence_set=self.recurrence_set, date=date
         )
-        self.assertEqual(str(recurrence_date), f"Inclusion Date for {self.recurrence_set}: {date}")
+        self.assertEqual(
+            str(recurrence_date), f"Inclusion Date for {self.recurrence_set}: {date}"
+        )
 
     def test_recurrence_date_exclusion(self):
         date = timezone.now()
         recurrence_date = RecurrenceDate.objects.create(
-            recurrence_set=self.recurrence_set,
-            date=date,
-            is_exclusion=True
+            recurrence_set=self.recurrence_set, date=date, is_exclusion=True
         )
-        self.assertEqual(str(recurrence_date), f"Exclusion Date for {self.recurrence_set}: {date}")
+        self.assertEqual(
+            str(recurrence_date), f"Exclusion Date for {self.recurrence_set}: {date}"
+        )
 
     def test_recurrence_date_save_and_delete(self):
         date = timezone.now() + timedelta(days=1)
         recurrence_date = RecurrenceDate.objects.create(
-            recurrence_set=self.recurrence_set,
-            date=date
+            recurrence_set=self.recurrence_set, date=date
         )
         self.recurrence_set.refresh_from_db()
         self.assertEqual(self.recurrence_set.next_occurrence, date)

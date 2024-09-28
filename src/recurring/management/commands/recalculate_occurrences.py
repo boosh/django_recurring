@@ -4,7 +4,7 @@ from ...models import RecurrenceSet
 
 
 class Command(BaseCommand):
-    help = 'Recalculates next and previous occurrences for all RecurrenceSets'
+    help = "Recalculates next and previous occurrences for all RecurrenceSets"
 
     def handle(self, *args, **options):
         recurrence_sets = RecurrenceSet.objects.all()
@@ -16,4 +16,6 @@ class Command(BaseCommand):
             recurrence_set.recalculate_occurrences()
             self.stdout.write(f"Processed {i}/{total}: {recurrence_set.name}")
 
-        self.stdout.write(self.style.SUCCESS("Successfully recalculated all occurrences"))
+        self.stdout.write(
+            self.style.SUCCESS("Successfully recalculated all occurrences")
+        )
