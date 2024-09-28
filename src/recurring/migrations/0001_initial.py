@@ -10,6 +10,10 @@ class Migration(migrations.Migration):
     dependencies = [
     ]
 
+    def insert_utc_timezone(apps, schema_editor):
+        Timezone = apps.get_model('recurring', 'Timezone')
+        Timezone.objects.create(id=1, name='UTC')
+
     operations = [
         migrations.CreateModel(
             name='RecurrenceRule',
@@ -98,4 +102,5 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(default=1, help_text='The timezone for this rule',
                                     on_delete=django.db.models.deletion.SET_DEFAULT, to='recurring.timezone'),
         ),
+        migrations.RunPython(insert_utc_timezone),
     ]

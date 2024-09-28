@@ -24,7 +24,7 @@ from django.utils import timezone as django_timezone
 from django.utils.translation import gettext_lazy as _
 from icalendar import Event, vRecur, vDDDTypes
 
-# todo - create this in migrations
+# created in migrations
 UTC_ID = 1
 
 
