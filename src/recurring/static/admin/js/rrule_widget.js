@@ -234,11 +234,19 @@ class RecurrenceRuleForm {
         const interval = parseInt(this.container.querySelector('.interval-input').value, 10);
         const isExclusion = this.container.querySelector('.exclusion-checkbox').checked;
 
-        this.rule = {
-            frequency: frequency,
-            interval: interval,
-            isExclusion: isExclusion
-        };
+        if (!this.rule) {
+            this.rule = {};
+        }
+
+        this.rule.frequency = frequency;
+        this.rule.interval = interval;
+        this.rule.isExclusion = isExclusion;
+
+        // Remove properties that might not apply to the new frequency
+        delete this.rule.byweekday;
+        delete this.rule.bymonthday;
+        delete this.rule.byday;
+        delete this.rule.bymonth;
 
         if (frequency === 'WEEKLY') {
             const byweekday = Array.from(this.container.querySelectorAll('.weekday-checkbox:checked'))
