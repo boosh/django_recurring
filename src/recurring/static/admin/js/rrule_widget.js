@@ -172,6 +172,7 @@ class RecurrenceRuleForm {
             <div class="monthly-options" style="display: none;">
                 <label><input type="radio" name="monthly-type" value="day-of-month" checked> Day of month</label>
                 <label><input type="radio" name="monthly-type" value="day-of-week"> Day of week</label>
+                <label><input type="radio" name="monthly-type" value="month-name"> Month name</label>
                 <div class="day-of-month-options">
                     <input type="number" class="day-of-month" min="1" max="31" value="1">
                 </div>
@@ -193,67 +194,118 @@ class RecurrenceRuleForm {
                         <option value="SU">Sunday</option>
                     </select>
                 </div>
-            </div>
-            <div class="yearly-options" style="display: none;">
-                <label>Month: <select class="month-select">
-                    <option value="1">January</option>
-                    <option value="2">February</option>
-                    <option value="3">March</option>
-                    <option value="4">April</option>
-                    <option value="5">May</option>
-                    <option value="6">June</option>
-                    <option value="7">July</option>
-                    <option value="8">August</option>
-                    <option value="9">September</option>
-                    <option value="10">October</option>
-                    <option value="11">November</option>
-                    <option value="12">December</option>
-                </select></label>
+                <div class="month-name-options" style="display: none;">
+                    <select class="month-name">
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
             </div>
             <button type="button" class="remove-rule">Remove Rule</button>
         `;
 
-        this.container.querySelector('.frequency-select').addEventListener('change', () => this.updateVisibility());
-        this.container.querySelector('.interval-input').addEventListener('change', () => this.updateRule());
-        this.container.querySelector('.exclusion-checkbox').addEventListener('change', () => this.updateRule());
+        const frequencySelect = this.container.querySelector('.frequency-select');
+        if (frequencySelect) {
+            frequencySelect.addEventListener('change', () => this.updateVisibility());
+        }
+
+        const intervalInput = this.container.querySelector('.interval-input');
+        if (intervalInput) {
+            intervalInput.addEventListener('change', () => this.updateRule());
+        }
+
+        const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
+        if (exclusionCheckbox) {
+            exclusionCheckbox.addEventListener('change', () => this.updateRule());
+        }
+
         this.container.querySelectorAll('.weekday-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', () => this.updateRule());
         });
+
         this.container.querySelectorAll('input[name="monthly-type"]').forEach(radio => {
             radio.addEventListener('change', () => this.updateVisibility());
         });
-        this.container.querySelector('.day-of-month').addEventListener('change', () => this.updateRule());
-        this.container.querySelector('.week-of-month').addEventListener('change', () => this.updateRule());
-        this.container.querySelector('.day-of-week').addEventListener('change', () => this.updateRule());
-        this.container.querySelector('.month-select').addEventListener('change', () => this.updateRule());
-        this.container.querySelector('.remove-rule').addEventListener('click', () => {
-            this.container.remove();
-            this.onChange(null);
-        });
+
+        const dayOfMonth = this.container.querySelector('.day-of-month');
+        if (dayOfMonth) {
+            dayOfMonth.addEventListener('change', () => this.updateRule());
+        }
+
+        const weekOfMonth = this.container.querySelector('.week-of-month');
+        if (weekOfMonth) {
+            weekOfMonth.addEventListener('change', () => this.updateRule());
+        }
+
+        const dayOfWeek = this.container.querySelector('.day-of-week');
+        if (dayOfWeek) {
+            dayOfWeek.addEventListener('change', () => this.updateRule());
+        }
+
+        const removeRuleButton = this.container.querySelector('.remove-rule');
+        if (removeRuleButton) {
+            removeRuleButton.addEventListener('click', () => {
+                this.container.remove();
+                this.onChange(null);
+            });
+        }
 
         this.updateVisibility();
         this.updateRule();
     }
 
     updateVisibility() {
-        const frequency = this.container.querySelector('.frequency-select').value;
-        this.container.querySelector('.weekday-container').style.display = frequency === 'WEEKLY' ? 'block' : 'none';
-        this.container.querySelector('.monthly-options').style.display = frequency === 'MONTHLY' ? 'block' : 'none';
-        this.container.querySelector('.yearly-options').style.display = frequency === 'YEARLY' ? 'block' : 'none';
+        const frequencySelect = this.container.querySelector('.frequency-select');
+        if (!frequencySelect) return;
 
-        if (frequency === 'MONTHLY') {
-            const monthlyType = this.container.querySelector('input[name="monthly-type"]:checked').value;
-            this.container.querySelector('.day-of-month-options').style.display = monthlyType === 'day-of-month' ? 'block' : 'none';
-            this.container.querySelector('.day-of-week-options').style.display = monthlyType === 'day-of-week' ? 'block' : 'none';
+        const frequency = frequencySelect.value;
+        const weekdayContainer = this.container.querySelector('.weekday-container');
+        const monthlyOptions = this.container.querySelector('.monthly-options');
+
+        if (weekdayContainer) {
+            weekdayContainer.style.display = frequency === 'WEEKLY' ? 'block' : 'none';
+        }
+        if (monthlyOptions) {
+            monthlyOptions.style.display = frequency === 'MONTHLY' || frequency === 'YEARLY' ? 'block' : 'none';
+        }
+
+        if (frequency === 'MONTHLY' || frequency === 'YEARLY') {
+            const monthlyTypeRadio = this.container.querySelector('input[name="monthly-type"]:checked');
+            const dayOfMonthOptions = this.container.querySelector('.day-of-month-options');
+            const dayOfWeekOptions = this.container.querySelector('.day-of-week-options');
+            const monthNameOptions = this.container.querySelector('.month-name-options');
+
+            if (monthlyTypeRadio && dayOfMonthOptions && dayOfWeekOptions && monthNameOptions) {
+                const monthlyType = monthlyTypeRadio.value;
+                dayOfMonthOptions.style.display = monthlyType === 'day-of-month' ? 'block' : 'none';
+                dayOfWeekOptions.style.display = monthlyType === 'day-of-week' ? 'block' : 'none';
+                monthNameOptions.style.display = monthlyType === 'month-name' ? 'block' : 'none';
+            }
         }
 
         this.updateRule();
     }
 
     updateRule() {
-        const frequency = this.container.querySelector('.frequency-select').value;
-        const interval = parseInt(this.container.querySelector('.interval-input').value, 10);
-        const isExclusion = this.container.querySelector('.exclusion-checkbox').checked;
+        const frequencySelect = this.container.querySelector('.frequency-select');
+        const intervalInput = this.container.querySelector('.interval-input');
+        const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
+
+        if (!frequencySelect || !intervalInput || !exclusionCheckbox) return;
+
+        const frequency = frequencySelect.value;
+        const interval = parseInt(intervalInput.value, 10);
+        const isExclusion = exclusionCheckbox.checked;
 
         if (!this.rule) {
             this.rule = {};
@@ -275,17 +327,30 @@ class RecurrenceRuleForm {
             if (byweekday.length > 0) {
                 this.rule.byweekday = byweekday;
             }
-        } else if (frequency === 'MONTHLY') {
-            const monthlyType = this.container.querySelector('input[name="monthly-type"]:checked').value;
-            if (monthlyType === 'day-of-month') {
-                this.rule.bymonthday = parseInt(this.container.querySelector('.day-of-month').value, 10);
-            } else {
-                const weekOfMonth = parseInt(this.container.querySelector('.week-of-month').value, 10);
-                const dayOfWeek = this.container.querySelector('.day-of-week').value;
-                this.rule.byday = `${weekOfMonth}${dayOfWeek}`;
+        } else if (frequency === 'MONTHLY' || frequency === 'YEARLY') {
+            const monthlyTypeRadio = this.container.querySelector('input[name="monthly-type"]:checked');
+            if (monthlyTypeRadio) {
+                const monthlyType = monthlyTypeRadio.value;
+                if (monthlyType === 'day-of-month') {
+                    const dayOfMonthInput = this.container.querySelector('.day-of-month');
+                    if (dayOfMonthInput) {
+                        this.rule.bymonthday = parseInt(dayOfMonthInput.value, 10);
+                    }
+                } else if (monthlyType === 'day-of-week') {
+                    const weekOfMonthSelect = this.container.querySelector('.week-of-month');
+                    const dayOfWeekSelect = this.container.querySelector('.day-of-week');
+                    if (weekOfMonthSelect && dayOfWeekSelect) {
+                        const weekOfMonth = parseInt(weekOfMonthSelect.value, 10);
+                        const dayOfWeek = dayOfWeekSelect.value;
+                        this.rule.byday = `${weekOfMonth}${dayOfWeek}`;
+                    }
+                } else if (monthlyType === 'month-name') {
+                    const monthNameSelect = this.container.querySelector('.month-name');
+                    if (monthNameSelect) {
+                        this.rule.bymonth = parseInt(monthNameSelect.value, 10);
+                    }
+                }
             }
-        } else if (frequency === 'YEARLY') {
-            this.rule.bymonth = parseInt(this.container.querySelector('.month-select').value, 10);
         }
 
         this.onChange(this.rule);
@@ -293,24 +358,38 @@ class RecurrenceRuleForm {
 
     setRule(rule) {
         this.rule = rule;
-        this.container.querySelector('.frequency-select').value = rule.frequency;
-        this.container.querySelector('.interval-input').value = rule.interval;
-        this.container.querySelector('.exclusion-checkbox').checked = rule.isExclusion;
+        const frequencySelect = this.container.querySelector('.frequency-select');
+        const intervalInput = this.container.querySelector('.interval-input');
+        const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
+
+        if (frequencySelect) frequencySelect.value = rule.frequency;
+        if (intervalInput) intervalInput.value = rule.interval;
+        if (exclusionCheckbox) exclusionCheckbox.checked = rule.isExclusion;
 
         if (rule.frequency === 'WEEKLY' && rule.byweekday) {
             rule.byweekday.forEach(day => {
-                this.container.querySelector(`.weekday-checkbox[value="${day}"]`).checked = true;
+                const checkbox = this.container.querySelector(`.weekday-checkbox[value="${day}"]`);
+                if (checkbox) checkbox.checked = true;
             });
-        } else if (rule.frequency === 'MONTHLY') {
+        } else if (rule.frequency === 'MONTHLY' || rule.frequency === 'YEARLY') {
             if (rule.bymonthday) {
-                this.container.querySelector('input[name="monthly-type"][value="day-of-month"]').checked = true;
-                this.container.querySelector('.day-of-month').value = rule.bymonthday;
+                const dayOfMonthRadio = this.container.querySelector('input[name="monthly-type"][value="day-of-month"]');
+                const dayOfMonthInput = this.container.querySelector('.day-of-month');
+                if (dayOfMonthRadio) dayOfMonthRadio.checked = true;
+                if (dayOfMonthInput) dayOfMonthInput.value = rule.bymonthday;
             } else if (rule.byday) {
-                this.container.querySelector('input[name="monthly-type"][value="day-of-week"]').checked = true;
-                this.container.querySelector('.week-of-month').value = rule.byday;
+                const dayOfWeekRadio = this.container.querySelector('input[name="monthly-type"][value="day-of-week"]');
+                const weekOfMonthSelect = this.container.querySelector('.week-of-month');
+                const dayOfWeekSelect = this.container.querySelector('.day-of-week');
+                if (dayOfWeekRadio) dayOfWeekRadio.checked = true;
+                if (weekOfMonthSelect) weekOfMonthSelect.value = rule.byday.slice(0, -2);
+                if (dayOfWeekSelect) dayOfWeekSelect.value = rule.byday.slice(-2);
+            } else if (rule.bymonth) {
+                const monthNameRadio = this.container.querySelector('input[name="monthly-type"][value="month-name"]');
+                const monthNameSelect = this.container.querySelector('.month-name');
+                if (monthNameRadio) monthNameRadio.checked = true;
+                if (monthNameSelect) monthNameSelect.value = rule.bymonth;
             }
-        } else if (rule.frequency === 'YEARLY' && rule.bymonth) {
-            this.container.querySelector('.month-select').value = rule.bymonth;
         }
 
         this.updateVisibility();
@@ -348,9 +427,6 @@ function ruleToText(rule) {
             const dayCode = rule.byday.slice(-2);
             text += ` on the ${weeks[Math.abs(weekNum) - 1]} ${days[dayCode]}`;
         }
-    } else if (rule.frequency === 'YEARLY' && rule.bymonth) {
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        text += ` in ${months[rule.bymonth - 1]}`;
     }
 
     return text;
