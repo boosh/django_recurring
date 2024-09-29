@@ -469,15 +469,20 @@ class RecurrenceRuleForm {
             <button class="remove-date-range">Remove</button>
         `;
 
+        const startDateInput = dateRangeContainer.querySelector('.start-date');
+        const endDateInput = dateRangeContainer.querySelector('.end-date');
+        const exclusionCheckbox = dateRangeContainer.querySelector('.exclusion-checkbox');
+
+        console.log("Setting initial date values");
         if (dateRange) {
-            dateRangeContainer.querySelector('.start-date').value = dateRange.startDate;
-            dateRangeContainer.querySelector('.end-date').value = dateRange.endDate;
-            dateRangeContainer.querySelector('.exclusion-checkbox').checked = dateRange.isExclusion;
+            startDateInput.value = this.formatDateForInput(dateRange.startDate);
+            endDateInput.value = this.formatDateForInput(dateRange.endDate);
+            exclusionCheckbox.checked = dateRange.isExclusion || false;
         }
 
-        dateRangeContainer.querySelector('.start-date').addEventListener('change', () => this.updateRule());
-        dateRangeContainer.querySelector('.end-date').addEventListener('change', () => this.updateRule());
-        dateRangeContainer.querySelector('.exclusion-checkbox').addEventListener('change', () => this.updateRule());
+        startDateInput.addEventListener('change', () => this.updateRule());
+        endDateInput.addEventListener('change', () => this.updateRule());
+        exclusionCheckbox.addEventListener('change', () => this.updateRule());
         dateRangeContainer.querySelector('.remove-date-range').addEventListener('click', (e) => {
             e.preventDefault();
             dateRangeContainer.remove();
@@ -486,6 +491,12 @@ class RecurrenceRuleForm {
 
         this.container.querySelector('.date-ranges-container').appendChild(dateRangeContainer);
         this.updateRule();
+    }
+
+    formatDateForInput(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toISOString().split('T')[0];
     }
 
     formatNumberList(numbers) {
