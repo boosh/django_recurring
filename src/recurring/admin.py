@@ -33,9 +33,8 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
             if 'recurrence_set' in form.cleaned_data:
                 recurrence_set_data = form.cleaned_data['recurrence_set']
                 if recurrence_set_data:
-                    # Clear existing rules and dates
+                    # Clear existing rules
                     obj.recurrencesetrules.all().delete()
-                    obj.dates.all().delete()
 
                     # Create new RecurrenceSet from JSON data
                     recurrence_set_dict = json.loads(recurrence_set_data)

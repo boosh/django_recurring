@@ -42,28 +42,25 @@ class RecurrenceSetForm(forms.ModelForm):
                 logger.info(f"Recurrence set data: {recurrence_set_data}")
                 recurrence_set_dict = json.loads(recurrence_set_data)
 
-                logger.info("Clearing existing rules and dates")
+                logger.info("Clearing existing rules")
                 instance.recurrencesetrules.all().delete()
-                instance.dates.all().delete()
 
-                logger.info("Adding new rules")
+                logger.info("Adding new rules and date ranges")
                 for rule_data in recurrence_set_dict.get('rules', []):
                     rule = RecurrenceRule.from_dict(rule_data['rule'])
                     rule.save()
-                    RecurrenceSetRule.objects.create(
+                    recurrence_set_rule = RecurrenceSetRule.objects.create(
                         recurrence_set=instance,
                         recurrence_rule=rule,
                         is_exclusion=rule_data.get('is_exclusion', False)
                     )
 
-                logger.info("Adding new date ranges")
-                for rule in instance.recurrencesetrules.all():
-                    for date_range_data in rule_data.get('date_ranges', []):
+                    for date_range_data in rule_data.get('dateRanges', []):
                         RecurrenceRuleDateRange.objects.create(
-                            recurrence_rule=rule.recurrence_rule,
-                            start_date=parse_datetime(date_range_data['start_date']),
-                            end_date=parse_datetime(date_range_data['end_date']),
-                            is_exclusion=date_range_data.get('is_exclusion', False)
+                            recurrence_rule=rule,
+                            start_date=parse_datetime(date_range_data['startDate']),
+                            end_date=parse_datetime(date_range_data['endDate']),
+                            is_exclusion=date_range_data.get('isExclusion', False)
                         )
 
             logger.info("Recalculating occurrences")
@@ -103,18 +100,37 @@ class RecurrenceSetForm(forms.ModelForm):
                 for rule_data in recurrence_set_dict['rules']:
                     if not isinstance(rule_data, dict):
                         raise ValueError("Each rule must be a dictionary")
-                    rule = RecurrenceRule.from_dict(rule_data)
-                    rules_to_add.append((rule, rule_data.get('is_exclusion', False)))
 
-                # Process date ranges
-                for rule_data in recurrence_set_dict['rules']:
-                    if 'date_ranges' not in rule_data or not isinstance(rule_data['date_ranges'], list):
-                        raise ValueError("Each rule must contain a 'date_ranges' list")
-                    for date_range_data in rule_data['date_ranges']:
+                    # Create a new rule dictionary with the expected structure
+                    new_rule_data = {
+                        'rule': {
+                            'frequency': rule_data['frequency'],
+                            'interval': rule_data['interval'],
+                            'byweekday': rule_data['byweekday'],
+                            'bymonth': rule_data['bymonth'],
+                            'bymonthday': rule_data['bymonthday'],
+                            'bysetpos': rule_data['bysetpos'],
+                        },
+                        'is_exclusion': rule_data.get('isExclusion', False),
+                        'date_ranges': []
+                    }
+
+                    # Process date ranges
+                    if 'dateRanges' not in rule_data or not isinstance(rule_data['dateRanges'], list):
+                        raise ValueError("Each rule must contain a 'dateRanges' list")
+                    for date_range_data in rule_data['dateRanges']:
                         if not isinstance(date_range_data, dict):
                             raise ValueError("Each date range must be a dictionary")
-                        if 'start_date' not in date_range_data or 'end_date' not in date_range_data:
-                            raise ValueError("Each date range must have 'start_date' and 'end_date'")
+                        if 'startDate' not in date_range_data or 'endDate' not in date_range_data:
+                            raise ValueError("Each date range must have 'startDate' and 'endDate'")
+                        new_rule_data['date_ranges'].append({
+                            'start_date': date_range_data['startDate'],
+                            'end_date': date_range_data['endDate'],
+                            'is_exclusion': date_range_data.get('isExclusion', False)
+                        })
+
+                    rule = RecurrenceRule.from_dict(new_rule_data['rule'])
+                    rules_to_add.append((rule, new_rule_data['is_exclusion'], new_rule_data['date_ranges']))
 
                 # Store the processed data
                 self.rules_to_add = rules_to_add
@@ -127,7 +143,7 @@ class RecurrenceSetForm(forms.ModelForm):
                 self.add_error('recurrence_set', f"Error processing recurrence set data: {str(e)}")
 
         # Check if at least one rule with a date range is added
-        if not getattr(self, 'rules_to_add', []) or not any(rule_data.get('date_ranges') for rule_data in recurrence_set_dict.get('rules', [])):
+        if not getattr(self, 'rules_to_add', []) or not any(rule_data.get('dateRanges') for rule_data in recurrence_set_dict.get('rules', [])):
             self.add_error(None, "You must add at least one rule with a date range to the recurrence set.")
 
         logger.info(f"Cleaned data: {cleaned_data}")
