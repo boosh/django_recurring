@@ -3,8 +3,8 @@
            value="{{ widget.value|default_if_none:'' }}">
     <div id="recurrence-set-form-{{ widget.name }}">
     <!-- Ensure this div is not empty -->
-    {% if not rule_formset and not date_formset %}
-        <p>No rules or dates defined yet.</p>
+    {% if not rule_formset %}
+        <p>No rules defined yet.</p>
     {% endif %}
         <h3>Rules</h3>
         {{ rule_formset.management_form }}
@@ -16,17 +16,6 @@
             {% endfor %}
         </div>
         <button id="add-rule" type="button">Add Rule</button>
-
-        <h3>Dates</h3>
-        {{ date_formset.management_form }}
-        <div id="dates-container">
-            {% for form in date_formset %}
-            <div class="date-form">
-                {{ form.as_p }}
-            </div>
-            {% endfor %}
-        </div>
-        <button id="add-date" type="button">Add Date</button>
     </div>
     <div class="recurrence-set-text" id="recurrence-set-text-{{ widget.name }}"></div>
 </div>

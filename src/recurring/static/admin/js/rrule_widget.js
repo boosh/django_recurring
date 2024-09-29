@@ -29,20 +29,13 @@ function initRecurrenceSetWidget(name) {
         }
     }
 
-    // Add event listeners for the add rule and add date buttons
+    // Add event listener for the add rule button
     const addRuleButton = form.querySelector('#add-rule');
-    const addDateButton = form.querySelector('#add-date');
 
     if (addRuleButton) {
         addRuleButton.addEventListener('click', (e) => {
             e.preventDefault();
             recurrenceSetForm.addRule();
-        });
-    }
-    if (addDateButton) {
-        addDateButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            recurrenceSetForm.addDate();
         });
     }
 }
@@ -87,39 +80,10 @@ class RecurrenceSetForm {
         };
     }
 
-    addDate() {
-        const dateContainer = document.createElement('div');
-        dateContainer.className = 'date-container';
-        dateContainer.innerHTML = `
-            <input type="datetime-local" class="date-input">
-            <label><input type="checkbox" class="exclusion-checkbox"> Exclusion</label>
-            <button type="button" class="remove-date">Remove</button>
-        `;
-        this.container.querySelector('#dates-container').appendChild(dateContainer);
-
-        dateContainer.querySelector('.date-input').addEventListener('change', () => this.updateDates());
-        dateContainer.querySelector('.exclusion-checkbox').addEventListener('change', () => this.updateDates());
-        dateContainer.querySelector('.remove-date').addEventListener('click', () => {
-            dateContainer.remove();
-            this.updateDates();
-        });
-        this.updateDates();
-    }
-
-    updateDates() {
-        this.recurrenceSet.dates = Array.from(this.container.querySelectorAll('.date-container')).map(container => {
-            return {
-                date: container.querySelector('.date-input').value,
-                isExclusion: container.querySelector('.exclusion-checkbox').checked
-            };
-        });
-        this.onChange(this.recurrenceSet);
-    }
 
     setRecurrenceSet(recurrenceSet) {
         this.recurrenceSet = recurrenceSet;
         this.container.querySelector('#rules-container').innerHTML = '';
-        this.container.querySelector('#dates-container').innerHTML = '';
 
         recurrenceSet.rules.forEach(rule => {
             this.addRule();
@@ -127,14 +91,6 @@ class RecurrenceSetForm {
             const ruleForm = new RecurrenceRuleForm(lastRuleForm);
             ruleForm.setRule(rule);
         });
-
-        recurrenceSet.dates.forEach(date => {
-            this.addDate();
-            const lastDateContainer = this.container.querySelector('#dates-container .date-container:last-child');
-            lastDateContainer.querySelector('.date-input').value = date.date;
-            lastDateContainer.querySelector('.exclusion-checkbox').checked = date.isExclusion;
-        });
-        this.updateDates();
     }
 
     onChange(recurrenceSet) {
