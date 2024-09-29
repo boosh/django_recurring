@@ -82,6 +82,7 @@ function initRecurrenceSetWidget(name) {
     };
 
     const initialData = input.value || input.getAttribute('data-initial');
+    console.log(`parsing initial data ${initialData}`);
     if (initialData) {
         try {
             const parsedSet = parseICalString(initialData);
@@ -446,7 +447,7 @@ class RecurrenceRuleForm {
         this.container.querySelector('.date-ranges-container').innerHTML = '';
 
         // Add date ranges
-        if (this.rule.dateRanges && this.rule.dateRanges.length > 0) {
+        if (Array.isArray(this.rule.dateRanges) && this.rule.dateRanges.length > 0) {
             this.rule.dateRanges.forEach(dateRange => {
                 this.addDateRange(dateRange);
             });
@@ -605,7 +606,9 @@ function parseICalString(icalString) {
     const recurrenceSet = new RecurrenceSet();
 
     data.rules.forEach(ruleData => {
+        console.log("Parsing data");
         const rule = {
+            id: ruleData.rule.id,
             frequency: ruleData.rule.frequency,
             interval: ruleData.rule.interval,
             isExclusion: ruleData.isExclusion,
@@ -613,7 +616,7 @@ function parseICalString(icalString) {
             bymonth: ruleData.rule.bymonth || [],
             bymonthday: ruleData.rule.bymonthday || [],
             bysetpos: ruleData.rule.bysetpos || [],
-            dateRanges: ruleData.rule.dateRanges || []
+            dateRanges: Array.isArray(ruleData.dateRanges) ? ruleData.dateRanges : []
         };
         recurrenceSet.addRule(rule);
     });
