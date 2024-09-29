@@ -3,17 +3,9 @@
            value="{{ widget.value|default_if_none:'' }}"
            data-initial="{{ widget.attrs.data_initial|default_if_none:'' }}">
     <div id="recurrence-set-form-{{ widget.name }}">
-    {% if not rule_formset %}
-        <p>No rules defined yet.</p>
-    {% endif %}
         <h3>Rules</h3>
-        {{ rule_formset.management_form }}
         <div id="rules-container">
-            {% for form in rule_formset %}
-            <div class="rule-form">
-                {{ form.as_p }}
-            </div>
-            {% endfor %}
+            <!-- Rules will be dynamically added here by JavaScript -->
         </div>
         <button id="add-rule" type="button">Add Rule</button>
     </div>
