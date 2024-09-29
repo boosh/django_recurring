@@ -154,103 +154,36 @@ class RecurrenceRuleForm {
                 <option value="MONTHLY">Monthly</option>
                 <option value="WEEKLY">Weekly</option>
                 <option value="DAILY">Daily</option>
-                <option value="HOURLY">Hourly</option>
-                <option value="MINUTELY">Minutely</option>
-                <option value="SECONDLY">Secondly</option>
             </select>
             <input type="number" class="interval-input" min="1" value="1">
             <label><input type="checkbox" class="exclusion-checkbox"> Exclusion</label>
-            <div class="weekday-container" style="display: none;">
-                <label><input type="checkbox" class="weekday-checkbox" value="0"> Monday</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="1"> Tuesday</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="2"> Wednesday</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="3"> Thursday</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="4"> Friday</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="5"> Saturday</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="6"> Sunday</label>
+            <div class="byweekday-container">
+                <label><input type="checkbox" class="weekday-checkbox" value="MO"> Monday</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="TU"> Tuesday</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="WE"> Wednesday</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="TH"> Thursday</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="FR"> Friday</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="SA"> Saturday</label>
+                <label><input type="checkbox" class="weekday-checkbox" value="SU"> Sunday</label>
             </div>
-            <div class="monthly-options" style="display: none;">
-                <label><input type="radio" name="monthly-type" value="day-of-month" checked> Day of month</label>
-                <label><input type="radio" name="monthly-type" value="day-of-week"> Day of week</label>
-                <label><input type="radio" name="monthly-type" value="month-name"> Month name</label>
-                <div class="day-of-month-options">
-                    <input type="number" class="day-of-month" min="1" max="31" value="1">
-                </div>
-                <div class="day-of-week-options" style="display: none;">
-                    <select class="week-of-month">
-                        <option value="1">First</option>
-                        <option value="2">Second</option>
-                        <option value="3">Third</option>
-                        <option value="4">Fourth</option>
-                        <option value="-1">Last</option>
-                    </select>
-                    <select class="day-of-week">
-                        <option value="MO">Monday</option>
-                        <option value="TU">Tuesday</option>
-                        <option value="WE">Wednesday</option>
-                        <option value="TH">Thursday</option>
-                        <option value="FR">Friday</option>
-                        <option value="SA">Saturday</option>
-                        <option value="SU">Sunday</option>
-                    </select>
-                </div>
-                <div class="month-name-options" style="display: none;">
-                    <select class="month-name">
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
-                </div>
+            <div class="bymonthday-container">
+                <label>Days of month (comma-separated, e.g., 1-10,15,20-25):</label>
+                <input type="text" class="bymonthday-input">
+            </div>
+            <div class="bymonth-container">
+                <label>Months (comma-separated, e.g., 1-3,6-8):</label>
+                <input type="text" class="bymonth-input">
+            </div>
+            <div class="bysetpos-container">
+                <label>Set positions (comma-separated, e.g., 1,2,-1 for first, second, and last):</label>
+                <input type="text" class="bysetpos-input">
             </div>
             <button type="button" class="remove-rule">Remove Rule</button>
         `;
 
-        const frequencySelect = this.container.querySelector('.frequency-select');
-        if (frequencySelect) {
-            frequencySelect.addEventListener('change', () => this.updateVisibility());
-        }
-
-        const intervalInput = this.container.querySelector('.interval-input');
-        if (intervalInput) {
-            intervalInput.addEventListener('change', () => this.updateRule());
-        }
-
-        const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
-        if (exclusionCheckbox) {
-            exclusionCheckbox.addEventListener('change', () => this.updateRule());
-        }
-
-        this.container.querySelectorAll('.weekday-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', () => this.updateRule());
+        this.container.querySelectorAll('select, input').forEach(element => {
+            element.addEventListener('change', () => this.updateRule());
         });
-
-        this.container.querySelectorAll('input[name="monthly-type"]').forEach(radio => {
-            radio.addEventListener('change', () => this.updateVisibility());
-        });
-
-        const dayOfMonth = this.container.querySelector('.day-of-month');
-        if (dayOfMonth) {
-            dayOfMonth.addEventListener('change', () => this.updateRule());
-        }
-
-        const weekOfMonth = this.container.querySelector('.week-of-month');
-        if (weekOfMonth) {
-            weekOfMonth.addEventListener('change', () => this.updateRule());
-        }
-
-        const dayOfWeek = this.container.querySelector('.day-of-week');
-        if (dayOfWeek) {
-            dayOfWeek.addEventListener('change', () => this.updateRule());
-        }
 
         const removeRuleButton = this.container.querySelector('.remove-rule');
         if (removeRuleButton) {
@@ -260,39 +193,6 @@ class RecurrenceRuleForm {
             });
         }
 
-        this.updateVisibility();
-        this.updateRule();
-    }
-
-    updateVisibility() {
-        const frequencySelect = this.container.querySelector('.frequency-select');
-        if (!frequencySelect) return;
-
-        const frequency = frequencySelect.value;
-        const weekdayContainer = this.container.querySelector('.weekday-container');
-        const monthlyOptions = this.container.querySelector('.monthly-options');
-
-        if (weekdayContainer) {
-            weekdayContainer.style.display = frequency === 'WEEKLY' ? 'block' : 'none';
-        }
-        if (monthlyOptions) {
-            monthlyOptions.style.display = frequency === 'MONTHLY' ? 'block' : 'none';
-        }
-
-        if (frequency === 'MONTHLY') {
-            const monthlyTypeRadio = this.container.querySelector('input[name="monthly-type"]:checked');
-            const dayOfMonthOptions = this.container.querySelector('.day-of-month-options');
-            const dayOfWeekOptions = this.container.querySelector('.day-of-week-options');
-            const monthNameOptions = this.container.querySelector('.month-name-options');
-
-            if (monthlyTypeRadio && dayOfMonthOptions && dayOfWeekOptions && monthNameOptions) {
-                const monthlyType = monthlyTypeRadio.value;
-                dayOfMonthOptions.style.display = monthlyType === 'day-of-month' ? 'block' : 'none';
-                dayOfWeekOptions.style.display = monthlyType === 'day-of-week' ? 'block' : 'none';
-                monthNameOptions.style.display = monthlyType === 'month-name' ? 'block' : 'none';
-            }
-        }
-
         this.updateRule();
     }
 
@@ -300,60 +200,35 @@ class RecurrenceRuleForm {
         const frequencySelect = this.container.querySelector('.frequency-select');
         const intervalInput = this.container.querySelector('.interval-input');
         const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
+        const byweekdayInputs = this.container.querySelectorAll('.weekday-checkbox:checked');
+        const bymonthdayInput = this.container.querySelector('.bymonthday-input');
+        const bymonthInput = this.container.querySelector('.bymonth-input');
+        const bysetposInput = this.container.querySelector('.bysetpos-input');
 
         if (!frequencySelect || !intervalInput || !exclusionCheckbox) return;
 
-        const frequency = frequencySelect.value;
-        const interval = parseInt(intervalInput.value, 10);
-        const isExclusion = exclusionCheckbox.checked;
-
-        if (!this.rule) {
-            this.rule = {};
-        }
-
-        this.rule.frequency = frequency;
-        this.rule.interval = interval;
-        this.rule.isExclusion = isExclusion;
-
-        // Remove properties that might not apply to the new frequency
-        delete this.rule.byweekday;
-        delete this.rule.bymonthday;
-        delete this.rule.byday;
-        delete this.rule.bymonth;
-
-        if (frequency === 'WEEKLY') {
-            const byweekday = Array.from(this.container.querySelectorAll('.weekday-checkbox:checked'))
-                .map(checkbox => parseInt(checkbox.value, 10));
-            if (byweekday.length > 0) {
-                this.rule.byweekday = byweekday;
-            }
-        } else if (frequency === 'MONTHLY') {
-            const monthlyTypeRadio = this.container.querySelector('input[name="monthly-type"]:checked');
-            if (monthlyTypeRadio) {
-                const monthlyType = monthlyTypeRadio.value;
-                if (monthlyType === 'day-of-month') {
-                    const dayOfMonthInput = this.container.querySelector('.day-of-month');
-                    if (dayOfMonthInput) {
-                        this.rule.bymonthday = parseInt(dayOfMonthInput.value, 10);
-                    }
-                } else if (monthlyType === 'day-of-week') {
-                    const weekOfMonthSelect = this.container.querySelector('.week-of-month');
-                    const dayOfWeekSelect = this.container.querySelector('.day-of-week');
-                    if (weekOfMonthSelect && dayOfWeekSelect) {
-                        const weekOfMonth = parseInt(weekOfMonthSelect.value, 10);
-                        const dayOfWeek = dayOfWeekSelect.value;
-                        this.rule.byday = `${weekOfMonth}${dayOfWeek}`;
-                    }
-                } else if (monthlyType === 'month-name') {
-                    const monthNameSelect = this.container.querySelector('.month-name');
-                    if (monthNameSelect) {
-                        this.rule.bymonth = parseInt(monthNameSelect.value, 10);
-                    }
-                }
-            }
-        }
+        this.rule = {
+            frequency: frequencySelect.value,
+            interval: parseInt(intervalInput.value, 10),
+            isExclusion: exclusionCheckbox.checked,
+            byweekday: Array.from(byweekdayInputs).map(input => input.value),
+            bymonthday: this.parseNumberList(bymonthdayInput.value),
+            bymonth: this.parseNumberList(bymonthInput.value),
+            bysetpos: this.parseNumberList(bysetposInput.value)
+        };
 
         this.onChange(this.rule);
+    }
+
+    parseNumberList(input) {
+        if (!input) return [];
+        return input.split(',').flatMap(item => {
+            if (item.includes('-')) {
+                const [start, end] = item.split('-').map(Number);
+                return Array.from({length: end - start + 1}, (_, i) => start + i);
+            }
+            return Number(item);
+        });
     }
 
     setRule(rule) {
@@ -361,38 +236,37 @@ class RecurrenceRuleForm {
         const frequencySelect = this.container.querySelector('.frequency-select');
         const intervalInput = this.container.querySelector('.interval-input');
         const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
+        const byweekdayInputs = this.container.querySelectorAll('.weekday-checkbox');
+        const bymonthdayInput = this.container.querySelector('.bymonthday-input');
+        const bymonthInput = this.container.querySelector('.bymonth-input');
+        const bysetposInput = this.container.querySelector('.bysetpos-input');
 
         if (frequencySelect) frequencySelect.value = rule.frequency;
         if (intervalInput) intervalInput.value = rule.interval;
         if (exclusionCheckbox) exclusionCheckbox.checked = rule.isExclusion;
 
-        if (rule.frequency === 'WEEKLY' && rule.byweekday) {
-            rule.byweekday.forEach(day => {
-                const checkbox = this.container.querySelector(`.weekday-checkbox[value="${day}"]`);
-                if (checkbox) checkbox.checked = true;
-            });
-        } else if (rule.frequency === 'MONTHLY' || rule.frequency === 'YEARLY') {
-            if (rule.bymonthday) {
-                const dayOfMonthRadio = this.container.querySelector('input[name="monthly-type"][value="day-of-month"]');
-                const dayOfMonthInput = this.container.querySelector('.day-of-month');
-                if (dayOfMonthRadio) dayOfMonthRadio.checked = true;
-                if (dayOfMonthInput) dayOfMonthInput.value = rule.bymonthday;
-            } else if (rule.byday) {
-                const dayOfWeekRadio = this.container.querySelector('input[name="monthly-type"][value="day-of-week"]');
-                const weekOfMonthSelect = this.container.querySelector('.week-of-month');
-                const dayOfWeekSelect = this.container.querySelector('.day-of-week');
-                if (dayOfWeekRadio) dayOfWeekRadio.checked = true;
-                if (weekOfMonthSelect) weekOfMonthSelect.value = rule.byday.slice(0, -2);
-                if (dayOfWeekSelect) dayOfWeekSelect.value = rule.byday.slice(-2);
-            } else if (rule.bymonth) {
-                const monthNameRadio = this.container.querySelector('input[name="monthly-type"][value="month-name"]');
-                const monthNameSelect = this.container.querySelector('.month-name');
-                if (monthNameRadio) monthNameRadio.checked = true;
-                if (monthNameSelect) monthNameSelect.value = rule.bymonth;
-            }
-        }
+        byweekdayInputs.forEach(input => {
+            input.checked = rule.byweekday.includes(input.value);
+        });
 
-        this.updateVisibility();
+        if (bymonthdayInput) bymonthdayInput.value = this.formatNumberList(rule.bymonthday);
+        if (bymonthInput) bymonthInput.value = this.formatNumberList(rule.bymonth);
+        if (bysetposInput) bysetposInput.value = this.formatNumberList(rule.bysetpos);
+
+        this.updateRule();
+    }
+
+    formatNumberList(numbers) {
+        if (!numbers || numbers.length === 0) return '';
+        return numbers.sort((a, b) => a - b).reduce((acc, num, index, arr) => {
+            if (index === 0 || num !== arr[index - 1] + 1) {
+                if (index > 0) acc += ',';
+                acc += num;
+            } else if (index === arr.length - 1 || num !== arr[index + 1] - 1) {
+                acc += '-' + num;
+            }
+            return acc;
+        }, '');
     }
 
     onChange(rule) {
@@ -412,24 +286,50 @@ function recurrenceSetToText(recurrenceSet) {
 }
 
 function ruleToText(rule) {
-    let text = `${rule.frequency} (Interval: ${rule.interval}, ${rule.isExclusion ? 'Exclusion' : 'Inclusion'})`;
+    const frequency = rule.frequency.toLowerCase();
+    const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `${frequency}`;
+    let text = `${interval} (${rule.isExclusion ? 'Exclusion' : 'Inclusion'})`;
 
-    if (rule.frequency === 'WEEKLY' && rule.byweekday) {
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        text += ` on ${rule.byweekday.map(day => days[day]).join(', ')}`;
-    } else if (rule.frequency === 'MONTHLY') {
-        if (rule.bymonthday) {
-            text += ` on day ${rule.bymonthday}`;
-        } else if (rule.byday) {
-            const weeks = ['first', 'second', 'third', 'fourth', 'last'];
-            const days = {'MO': 'Monday', 'TU': 'Tuesday', 'WE': 'Wednesday', 'TH': 'Thursday', 'FR': 'Friday', 'SA': 'Saturday', 'SU': 'Sunday'};
-            const weekNum = parseInt(rule.byday.slice(0, -2), 10);
-            const dayCode = rule.byday.slice(-2);
-            text += ` on the ${weeks[Math.abs(weekNum) - 1]} ${days[dayCode]}`;
-        }
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    if (rule.byweekday && rule.byweekday.length > 0) {
+        text += ` on ${rule.byweekday.map(day => days[['MO','TU','WE','TH','FR','SA','SU'].indexOf(day)]).join(', ')}`;
+    }
+
+    if (rule.bymonthday && rule.bymonthday.length > 0) {
+        text += ` on day${rule.bymonthday.length > 1 ? 's' : ''} ${formatNumberList(rule.bymonthday)} of the month`;
+    }
+
+    if (rule.bymonth && rule.bymonth.length > 0) {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        text += ` in ${rule.bymonth.map(m => months[m - 1]).join(', ')}`;
+    }
+
+    if (rule.bysetpos && rule.bysetpos.length > 0) {
+        const positions = rule.bysetpos.map(pos => {
+            if (pos === 1) return '1st';
+            if (pos === 2) return '2nd';
+            if (pos === 3) return '3rd';
+            if (pos > 0) return `${pos}th`;
+            if (pos === -1) return 'last';
+            return `${Math.abs(pos)}th from last`;
+        });
+        text += ` (${positions.join(', ')})`;
     }
 
     return text;
+}
+
+function formatNumberList(numbers) {
+    if (!numbers || numbers.length === 0) return '';
+    return numbers.sort((a, b) => a - b).reduce((acc, num, index, arr) => {
+        if (index === 0 || num !== arr[index - 1] + 1) {
+            if (index > 0) acc += ', ';
+            acc += num;
+        } else if (index === arr.length - 1 || num !== arr[index + 1] - 1) {
+            acc += '-' + num;
+        }
+        return acc;
+    }, '');
 }
 
 function recurrenceSetToICal(recurrenceSet) {
