@@ -47,7 +47,7 @@ class RecurrenceSetForm(forms.ModelForm):
 
                 logger.info("Adding new rules")
                 for rule_data in recurrence_set_dict.get('rules', []):
-                    rule = RecurrenceRule.from_dict(rule_data)
+                    rule = RecurrenceRule.from_dict(rule_data['rule'])
                     rule.save()
                     RecurrenceSetRule.objects.create(
                         recurrence_set=instance,
@@ -59,7 +59,7 @@ class RecurrenceSetForm(forms.ModelForm):
                 for date_data in recurrence_set_dict.get('dates', []):
                     RecurrenceDate.objects.create(
                         recurrence_set=instance,
-                        date=date_data['date'],
+                        date=django_timezone.parse(date_data['date']),
                         is_exclusion=date_data.get('is_exclusion', False)
                     )
 

@@ -109,7 +109,7 @@ class RecurrenceRule(models.Model):
     def get_frequency_display(self):
         return self.Frequency(self.frequency).name
 
-    def to_rrule(self):
+    def to_rrule(self, start_date, end_date):
         weekday_map = {'MO': MO, 'TU': TU, 'WE': WE, 'TH': TH, 'FR': FR, 'SA': SA, 'SU': SU}
 
         kwargs = {
@@ -124,10 +124,9 @@ class RecurrenceRule(models.Model):
         if self.count is not None:
             kwargs["count"] = self.count
         if self.until is not None:
-            kwargs["until"] = (
-                self.until.astimezone(tz)
-                if self.until.tzinfo
-                else tz.localize(self.until)
+            kwargs["until"] = min(
+                self.until.astimezone(tz) if self.until.tzinfo else tz.localize(self.until),
+                end_date
             )
         if self.bysetpos:
             kwargs["bysetpos"] = self.bysetpos
@@ -148,7 +147,7 @@ class RecurrenceRule(models.Model):
         if self.bysecond:
             kwargs["bysecond"] = self.bysecond
 
-        return rrule(dtstart=django_timezone.now().astimezone(tz), **kwargs)
+        return rrule(dtstart=start_date.astimezone(tz), **kwargs)
 
     def to_dict(self):
         return {
@@ -190,6 +189,20 @@ class RecurrenceRule(models.Model):
         return rule
 
 
+class RecurrenceRuleDateRange(models.Model):
+    recurrence_rule = models.ForeignKey(
+        RecurrenceRule,
+        on_delete=models.CASCADE,
+        related_name="date_ranges",
+        help_text=_("The recurrence rule this date range belongs to"),
+    )
+    start_date = models.DateTimeField(help_text=_("The start date of the date range"))
+    end_date = models.DateTimeField(help_text=_("The end date of the date range"))
+
+    def __str__(self):
+        return f"Date Range for {self.recurrence_rule}: {self.start_date} to {self.end_date}"
+
+
 class RecurrenceSet(models.Model):
     name = models.CharField(
         max_length=255, help_text=_("The name of the recurrence set")
@@ -220,10 +233,12 @@ class RecurrenceSet(models.Model):
         tz = pytz.timezone(self.timezone.name)
 
         for rule in self.recurrencesetrules.filter(is_exclusion=False):
-            rset.rrule(rule.recurrence_rule.to_rrule())
+            for date_range in rule.recurrence_rule.date_ranges.all():
+                rset.rrule(rule.recurrence_rule.to_rrule(date_range.start_date, date_range.end_date))
 
         for rule in self.recurrencesetrules.filter(is_exclusion=True):
-            rset.exrule(rule.recurrence_rule.to_rrule())
+            for date_range in rule.recurrence_rule.date_ranges.all():
+                rset.exrule(rule.recurrence_rule.to_rrule(date_range.start_date, date_range.end_date))
 
         for date in self.dates.filter(is_exclusion=False):
             rset.rdate(
@@ -245,7 +260,14 @@ class RecurrenceSet(models.Model):
             'rules': [
                 {
                     'is_exclusion': rule.is_exclusion,
-                    'rule': rule.recurrence_rule.to_dict()
+                    'rule': rule.recurrence_rule.to_dict(),
+                    'date_ranges': [
+                        {
+                            'start_date': date_range.start_date.isoformat(),
+                            'end_date': date_range.end_date.isoformat()
+                        }
+                        for date_range in rule.recurrence_rule.date_ranges.all()
+                    ]
                 }
                 for rule in self.recurrencesetrules.all()
             ],
@@ -271,11 +293,17 @@ class RecurrenceSet(models.Model):
         for rule_data in data.get('rules', []):
             rule = RecurrenceRule.from_dict(rule_data['rule'])
             rule.save()
-            RecurrenceSetRule.objects.create(
+            recurrence_set_rule = RecurrenceSetRule.objects.create(
                 recurrence_set=recurrence_set,
                 recurrence_rule=rule,
                 is_exclusion=rule_data['is_exclusion']
             )
+            for date_range_data in rule_data.get('date_ranges', []):
+                RecurrenceRuleDateRange.objects.create(
+                    recurrence_rule=rule,
+                    start_date=django_timezone.parse(date_range_data['start_date']),
+                    end_date=django_timezone.parse(date_range_data['end_date'])
+                )
 
         for date_data in data.get('dates', []):
             RecurrenceDate.objects.create(
