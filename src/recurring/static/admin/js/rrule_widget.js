@@ -276,10 +276,10 @@ class RecurrenceRuleForm {
             weekdayContainer.style.display = frequency === 'WEEKLY' ? 'block' : 'none';
         }
         if (monthlyOptions) {
-            monthlyOptions.style.display = frequency === 'MONTHLY' || frequency === 'YEARLY' ? 'block' : 'none';
+            monthlyOptions.style.display = frequency === 'MONTHLY' ? 'block' : 'none';
         }
 
-        if (frequency === 'MONTHLY' || frequency === 'YEARLY') {
+        if (frequency === 'MONTHLY') {
             const monthlyTypeRadio = this.container.querySelector('input[name="monthly-type"]:checked');
             const dayOfMonthOptions = this.container.querySelector('.day-of-month-options');
             const dayOfWeekOptions = this.container.querySelector('.day-of-week-options');
@@ -327,7 +327,7 @@ class RecurrenceRuleForm {
             if (byweekday.length > 0) {
                 this.rule.byweekday = byweekday;
             }
-        } else if (frequency === 'MONTHLY' || frequency === 'YEARLY') {
+        } else if (frequency === 'MONTHLY') {
             const monthlyTypeRadio = this.container.querySelector('input[name="monthly-type"]:checked');
             if (monthlyTypeRadio) {
                 const monthlyType = monthlyTypeRadio.value;
