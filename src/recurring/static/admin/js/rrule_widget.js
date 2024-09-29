@@ -172,14 +172,27 @@ class RecurrenceRuleForm {
             <div class="monthly-options" style="display: none;">
                 <label><input type="radio" name="monthly-type" value="day-of-month" checked> Day of month</label>
                 <label><input type="radio" name="monthly-type" value="day-of-week"> Day of week</label>
-                <input type="number" class="day-of-month" min="1" max="31" value="1">
-                <select class="week-of-month">
-                    <option value="1">First</option>
-                    <option value="2">Second</option>
-                    <option value="3">Third</option>
-                    <option value="4">Fourth</option>
-                    <option value="-1">Last</option>
-                </select>
+                <div class="day-of-month-options">
+                    <input type="number" class="day-of-month" min="1" max="31" value="1">
+                </div>
+                <div class="day-of-week-options" style="display: none;">
+                    <select class="week-of-month">
+                        <option value="1">First</option>
+                        <option value="2">Second</option>
+                        <option value="3">Third</option>
+                        <option value="4">Fourth</option>
+                        <option value="-1">Last</option>
+                    </select>
+                    <select class="day-of-week">
+                        <option value="MO">Monday</option>
+                        <option value="TU">Tuesday</option>
+                        <option value="WE">Wednesday</option>
+                        <option value="TH">Thursday</option>
+                        <option value="FR">Friday</option>
+                        <option value="SA">Saturday</option>
+                        <option value="SU">Sunday</option>
+                    </select>
+                </div>
             </div>
             <div class="yearly-options" style="display: none;">
                 <label>Month: <select class="month-select">
@@ -207,10 +220,11 @@ class RecurrenceRuleForm {
             checkbox.addEventListener('change', () => this.updateRule());
         });
         this.container.querySelectorAll('input[name="monthly-type"]').forEach(radio => {
-            radio.addEventListener('change', () => this.updateRule());
+            radio.addEventListener('change', () => this.updateVisibility());
         });
         this.container.querySelector('.day-of-month').addEventListener('change', () => this.updateRule());
         this.container.querySelector('.week-of-month').addEventListener('change', () => this.updateRule());
+        this.container.querySelector('.day-of-week').addEventListener('change', () => this.updateRule());
         this.container.querySelector('.month-select').addEventListener('change', () => this.updateRule());
         this.container.querySelector('.remove-rule').addEventListener('click', () => {
             this.container.remove();
@@ -226,6 +240,13 @@ class RecurrenceRuleForm {
         this.container.querySelector('.weekday-container').style.display = frequency === 'WEEKLY' ? 'block' : 'none';
         this.container.querySelector('.monthly-options').style.display = frequency === 'MONTHLY' ? 'block' : 'none';
         this.container.querySelector('.yearly-options').style.display = frequency === 'YEARLY' ? 'block' : 'none';
+
+        if (frequency === 'MONTHLY') {
+            const monthlyType = this.container.querySelector('input[name="monthly-type"]:checked').value;
+            this.container.querySelector('.day-of-month-options').style.display = monthlyType === 'day-of-month' ? 'block' : 'none';
+            this.container.querySelector('.day-of-week-options').style.display = monthlyType === 'day-of-week' ? 'block' : 'none';
+        }
+
         this.updateRule();
     }
 
@@ -259,7 +280,9 @@ class RecurrenceRuleForm {
             if (monthlyType === 'day-of-month') {
                 this.rule.bymonthday = parseInt(this.container.querySelector('.day-of-month').value, 10);
             } else {
-                this.rule.byday = parseInt(this.container.querySelector('.week-of-month').value, 10);
+                const weekOfMonth = this.container.querySelector('.week-of-month').value;
+                const dayOfWeek = this.container.querySelector('.day-of-week').value;
+                this.rule.byday = `${weekOfMonth}${dayOfWeek}`;
             }
         } else if (frequency === 'YEARLY') {
             this.rule.bymonth = parseInt(this.container.querySelector('.month-select').value, 10);
