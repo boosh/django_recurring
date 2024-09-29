@@ -181,7 +181,8 @@ class RecurrenceRuleForm {
                 <option value="DAILY">Daily</option>
             </select>
             <input type="number" class="interval-input" min="1" value="1">
-            <input type="checkbox" class="exclusion-checkbox">
+            <label for="exclusion-checkbox">Exclude:</label>
+            <input type="checkbox" id="exclusion-checkbox" class="exclusion-checkbox">
             <div class="byweekday-container"></div>
             <div class="bymonth-container"></div>
             <input type="text" class="bymonthday-input" placeholder="By month day (e.g., 1,15,-1)">
@@ -226,12 +227,21 @@ class RecurrenceRuleForm {
     }
 
     createWeekdayButtons() {
-        const weekdays = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+        const weekdays = [
+            { short: 'MO', display: 'Mon' },
+            { short: 'TU', display: 'Tue' },
+            { short: 'WE', display: 'Wed' },
+            { short: 'TH', display: 'Thu' },
+            { short: 'FR', display: 'Fri' },
+            { short: 'SA', display: 'Sat' },
+            { short: 'SU', display: 'Sun' }
+        ];
         const container = this.container.querySelector('.byweekday-container');
         weekdays.forEach(day => {
             const button = document.createElement('button');
-            button.textContent = day;
+            button.textContent = day.display;
             button.className = 'weekday-button';
+            button.dataset.day = day.short;
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 button.classList.toggle('selected');
@@ -298,6 +308,9 @@ class RecurrenceRuleForm {
                 }
                 this.onChange(this.rule);
             };
+            
+            // Immediately update the Recurrence Set text
+            this.onChange(this.rule);
         }
     }
 
