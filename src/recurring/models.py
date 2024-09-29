@@ -151,6 +151,7 @@ class RecurrenceRule(models.Model):
 
     def to_dict(self):
         return {
+            'id': self.id,
             'frequency': self.Frequency(self.frequency).name,
             'interval': self.interval,
             'wkst': self.wkst,
