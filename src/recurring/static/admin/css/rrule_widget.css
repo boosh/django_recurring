@@ -46,11 +46,14 @@ input[type="number"], input[type="date"], input[type="datetime-local"] {
     border: 1px solid #ccc;
     background-color: #f8f8f8;
     cursor: pointer;
+    text-align: center;
+    box-sizing: border-box;
 }
 
 .weekday-button.selected, .month-button.selected {
     background-color: #007bff;
     color: white;
+    font-weight: bold;
 }
 
 .month-grid {
