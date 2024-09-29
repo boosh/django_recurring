@@ -17,7 +17,11 @@ class RecurrenceRuleForm(forms.ModelForm):
 class RecurrenceSetRuleForm(forms.ModelForm):
     class Meta:
         model = RecurrenceSetRule
-        fields = ["recurrence_rule", "is_exclusion"]
+        fields = ["is_exclusion", 'recurrence_rule']
+        widgets = {
+            "is_exclusion": forms.HiddenInput(),
+            "recurrence_rule": forms.HiddenInput(),
+        }
 
 
 class RecurrenceDateForm(forms.ModelForm):
@@ -44,11 +48,12 @@ class RecurrenceSetForm(forms.ModelForm):
 
     class Meta:
         model = RecurrenceSet
-        fields = ["name", "description", "timezone", "recurrence_set"]
+        fields = ["name", "description", "timezone"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['recurrence_set'].widget = RecurrenceSetWidget(form=self)
+        self.fields['recurrence_set'].widget.attrs['style'] = 'display: none;'
         if self.instance.pk:
             self.rule_formset = RecurrenceSetRuleFormSet(
                 instance=self.instance,

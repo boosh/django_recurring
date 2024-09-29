@@ -10,8 +10,6 @@ from .models import (
     Timezone,
     RecurrenceRule,
     RecurrenceSet,
-    RecurrenceSetRule,
-    RecurrenceDate,
 )
 
 
@@ -77,5 +75,3 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
 admin.site.register(Timezone)
 admin.site.register(RecurrenceRule, RecurrenceRuleAdmin)
 admin.site.register(RecurrenceSet, RecurrenceSetAdmin)
-admin.site.register(RecurrenceSetRule)
-admin.site.register(RecurrenceDate)

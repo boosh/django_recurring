@@ -8,13 +8,6 @@
     {% endif %}
         <h3>Rules</h3>
         {{ rule_formset.management_form }}
-        <div id="rules-container">
-            {% for form in rule_formset %}
-            <div class="rule-form">
-                {{ form.as_p }}
-            </div>
-            {% endfor %}
-        </div>
         <button id="add-rule" type="button">Add Rule</button>
     </div>
     <div class="recurrence-set-text" id="recurrence-set-text-{{ widget.name }}"></div>
