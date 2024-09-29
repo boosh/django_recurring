@@ -296,6 +296,13 @@ class RecurrenceSet(models.Model):
         if recalculate:
             self.recalculate_occurrences()
 
+    def delete(self, *args, **kwargs):
+        # Delete related RecurrenceRules and RecurrenceRuleDateRanges
+        for rule in self.recurrencesetrules.all():
+            rule.recurrence_rule.date_ranges.all().delete()
+            rule.recurrence_rule.delete()
+        super().delete(*args, **kwargs)
+
 
 class RecurrenceSetRule(models.Model):
     recurrence_set = models.ForeignKey(
@@ -304,7 +311,7 @@ class RecurrenceSetRule(models.Model):
         related_name="recurrencesetrules",
         help_text=_("The recurrence set this rule belongs to"),
     )
-    recurrence_rule = models.ForeignKey(
+    recurrence_rule = models.OneToOneField(
         RecurrenceRule, on_delete=models.CASCADE, help_text=_("The recurrence rule")
     )
     is_exclusion = models.BooleanField(
@@ -321,6 +328,7 @@ class RecurrenceSetRule(models.Model):
 
     def delete(self, *args, **kwargs):
         recurrence_set = self.recurrence_set
+        self.recurrence_rule.delete()  # Delete the associated RecurrenceRule
         super().delete(*args, **kwargs)
         recurrence_set.save(recalculate=True)
 
