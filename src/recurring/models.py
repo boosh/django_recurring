@@ -1,5 +1,3 @@
-import json
-
 import pytz
 from dateutil.rrule import (
     YEARLY,
@@ -71,32 +69,32 @@ class RecurrenceRule(models.Model):
     until = models.DateTimeField(
         null=True, blank=True, help_text=_("A date to repeat until")
     )
-    bysetpos = models.CharField(
-        max_length=128, null=True, blank=True, help_text=_("By position (BYSETPOS)")
+    bysetpos = models.JSONField(
+        null=True, blank=True, help_text=_("By position (BYSETPOS)")
     )
-    bymonth = models.CharField(
-        max_length=64, null=True, blank=True, help_text=_("By month (BYMONTH)")
+    bymonth = models.JSONField(
+        null=True, blank=True, help_text=_("By month (BYMONTH)")
     )
-    bymonthday = models.CharField(
-        max_length=128, null=True, blank=True, help_text=_("By month day (BYMONTHDAY)")
+    bymonthday = models.JSONField(
+        null=True, blank=True, help_text=_("By month day (BYMONTHDAY)")
     )
-    byyearday = models.CharField(
-        max_length=128, null=True, blank=True, help_text=_("By year day (BYYEARDAY)")
+    byyearday = models.JSONField(
+        null=True, blank=True, help_text=_("By year day (BYYEARDAY)")
     )
-    byweekno = models.CharField(
-        max_length=128, null=True, blank=True, help_text=_("By week number (BYWEEKNO)")
+    byweekno = models.JSONField(
+        null=True, blank=True, help_text=_("By week number (BYWEEKNO)")
     )
-    byweekday = models.CharField(
-        max_length=64, null=True, blank=True, help_text=_("By weekday (BYDAY)")
+    byweekday = models.JSONField(
+        null=True, blank=True, help_text=_("By weekday (BYDAY)")
     )
-    byhour = models.CharField(
-        max_length=128, null=True, blank=True, help_text=_("By hour (BYHOUR)")
+    byhour = models.JSONField(
+        null=True, blank=True, help_text=_("By hour (BYHOUR)")
     )
-    byminute = models.CharField(
-        max_length=128, null=True, blank=True, help_text=_("By minute (BYMINUTE)")
+    byminute = models.JSONField(
+        null=True, blank=True, help_text=_("By minute (BYMINUTE)")
     )
-    bysecond = models.CharField(
-        max_length=128, null=True, blank=True, help_text=_("By second (BYSECOND)")
+    bysecond = models.JSONField(
+        null=True, blank=True, help_text=_("By second (BYSECOND)")
     )
     timezone = models.ForeignKey(
         Timezone,
@@ -107,11 +105,6 @@ class RecurrenceRule(models.Model):
 
     def __str__(self):
         return f"RecurrenceRule (Frequency: {self.get_frequency_display()}, Timezone: {self.timezone.name})"
-
-    def _parse_int_list(self, field):
-        if field:
-            return json.loads(field)
-        return None
 
     def get_frequency_display(self):
         return self.Frequency(self.frequency).name
@@ -137,44 +130,25 @@ class RecurrenceRule(models.Model):
                 else tz.localize(self.until)
             )
         if self.bysetpos:
-            kwargs["bysetpos"] = self._parse_int_list(self.bysetpos)
+            kwargs["bysetpos"] = self.bysetpos
         if self.bymonth:
-            kwargs["bymonth"] = self._parse_int_list(self.bymonth)
+            kwargs["bymonth"] = self.bymonth
         if self.bymonthday:
-            kwargs["bymonthday"] = self._parse_int_list(self.bymonthday)
+            kwargs["bymonthday"] = self.bymonthday
         if self.byyearday:
-            kwargs["byyearday"] = self._parse_int_list(self.byyearday)
+            kwargs["byyearday"] = self.byyearday
         if self.byweekno:
-            kwargs["byweekno"] = self._parse_int_list(self.byweekno)
+            kwargs["byweekno"] = self.byweekno
         if self.byweekday:
-            kwargs["byweekday"] = [
-                weekday_map[day] for day in self._parse_int_list(self.byweekday)
-            ]
+            kwargs["byweekday"] = [weekday_map[day] for day in self.byweekday]
         if self.byhour:
-            kwargs["byhour"] = self._parse_int_list(self.byhour)
+            kwargs["byhour"] = self.byhour
         if self.byminute:
-            kwargs["byminute"] = self._parse_int_list(self.byminute)
+            kwargs["byminute"] = self.byminute
         if self.bysecond:
-            kwargs["bysecond"] = self._parse_int_list(self.bysecond)
+            kwargs["bysecond"] = self.bysecond
 
         return rrule(**kwargs, tzinfo=tz)
-
-    def save(self, *args, **kwargs):
-        for field in [
-            "bysetpos",
-            "bymonth",
-            "bymonthday",
-            "byyearday",
-            "byweekno",
-            "byweekday",
-            "byhour",
-            "byminute",
-            "bysecond",
-        ]:
-            value = getattr(self, field)
-            if isinstance(value, list):
-                setattr(self, field, json.dumps(value))
-        super().save(*args, **kwargs)
 
     def to_dict(self):
         return {
@@ -183,15 +157,15 @@ class RecurrenceRule(models.Model):
             'wkst': self.wkst,
             'count': self.count,
             'until': self.until.isoformat() if self.until else None,
-            'bysetpos': self._parse_int_list(self.bysetpos),
-            'bymonth': self._parse_int_list(self.bymonth),
-            'bymonthday': self._parse_int_list(self.bymonthday),
-            'byyearday': self._parse_int_list(self.byyearday),
-            'byweekno': self._parse_int_list(self.byweekno),
-            'byweekday': self._parse_int_list(self.byweekday),
-            'byhour': self._parse_int_list(self.byhour),
-            'byminute': self._parse_int_list(self.byminute),
-            'bysecond': self._parse_int_list(self.bysecond),
+            'bysetpos': self.bysetpos,
+            'bymonth': self.bymonth,
+            'bymonthday': self.bymonthday,
+            'byyearday': self.byyearday,
+            'byweekno': self.byweekno,
+            'byweekday': self.byweekday,
+            'byhour': self.byhour,
+            'byminute': self.byminute,
+            'bysecond': self.bysecond,
             'timezone': self.timezone.name
         }
 
@@ -211,7 +185,7 @@ class RecurrenceRule(models.Model):
         ]:
             value = data.get(field)
             if value is not None:
-                setattr(rule, field, json.dumps(value))
+                setattr(rule, field, value)
 
         return rule
 

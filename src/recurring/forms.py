@@ -24,7 +24,9 @@ class RecurrenceSetForm(forms.ModelForm):
 
         # Populate the recurrence_set field with existing data
         if self.instance.pk:
-            self.initial['recurrence_set'] = json.dumps(self.instance.to_dict())
+            recurrence_set_data = self.instance.to_dict()
+            self.initial['recurrence_set'] = json.dumps(recurrence_set_data)
+            self.fields['recurrence_set'].widget.attrs['data-initial'] = json.dumps(recurrence_set_data)
 
     def save(self, commit: bool = True):
         logger.info("Starting save method")

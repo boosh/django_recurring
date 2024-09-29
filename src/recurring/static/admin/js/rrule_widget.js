@@ -81,15 +81,16 @@ function initRecurrenceSetWidget(name) {
         text.innerHTML = recurrenceSet.toText();
     };
 
-    if (input.value) {
+    const initialData = input.value;
+    if (initialData) {
         try {
-            const parsedSet = JSON.parse(input.value);
-            parsedSet.rules.forEach(rule => recurrenceSet.addRule(rule));
+            const parsedSet = JSON.parse(initialData);
+            parsedSet.rules.forEach(rule => recurrenceSet.addRule(rule.rule));
             parsedSet.dates.forEach(date => recurrenceSet.dates.push(date));
             recurrenceSetForm.setRecurrenceSet(recurrenceSet);
             recurrenceSet.updateTextDisplay();
         } catch (error) {
-            console.error('Error parsing input value:', error);
+            console.error('Error parsing initial data:', error);
             text.innerHTML = 'Error: Invalid recurrence set data';
         }
     }

@@ -14,15 +14,14 @@ class RecurrenceSetWidget(forms.Widget):
         self.form = form
 
     def render(self, name, value, attrs=None, renderer=None):
-        context = self.get_context(name, value, attrs)
+        if attrs is None:
+            attrs = {}
+        final_attrs = self.build_attrs(self.attrs, attrs)
+        context = self.get_context(name, value, final_attrs)
         if value is None:
             value = ""
         context["widget"]["value"] = value
-
-        # Add formsets to the context
-        if self.form and hasattr(self.form, "rule_formset") and hasattr(self.form, "date_formset"):
-            context["rule_formset"] = self.form.rule_formset
-            context["date_formset"] = self.form.date_formset
+        context["widget"]["attrs"]["data-initial"] = value
 
         return mark_safe(renderer.render(self.template_name, context))
 
