@@ -33,7 +33,7 @@ class RecurrenceSetForm(forms.ModelForm):
         instance = super().save(commit=False)
         if commit:
             logger.info("Commit is True, saving instance")
-            instance.save()
+            instance.save(recalculate=False)  # Save without recalculating
 
             logger.info("Processing recurrence_set data")
             recurrence_set_data = self.cleaned_data.get('recurrence_set')
@@ -65,6 +65,7 @@ class RecurrenceSetForm(forms.ModelForm):
 
             logger.info("Recalculating occurrences")
             instance.recalculate_occurrences()
+            instance.save()  # Save to ensure the recalculated occurrences are stored
 
         logger.info("Save method completed")
         return instance

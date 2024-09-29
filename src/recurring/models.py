@@ -110,7 +110,7 @@ class RecurrenceRule(models.Model):
         return self.Frequency(self.frequency).name
 
     def to_rrule(self):
-        weekday_map = {0: MO, 1: TU, 2: WE, 3: TH, 4: FR, 5: SA, 6: SU}
+        weekday_map = {'MO': MO, 'TU': TU, 'WE': WE, 'TH': TH, 'FR': FR, 'SA': SA, 'SU': SU}
 
         kwargs = {
             "freq": self.frequency,
@@ -148,7 +148,7 @@ class RecurrenceRule(models.Model):
         if self.bysecond:
             kwargs["bysecond"] = self.bysecond
 
-        return rrule(**kwargs, tzinfo=tz)
+        return rrule(dtstart=django_timezone.now().astimezone(tz), **kwargs)
 
     def to_dict(self):
         return {
@@ -293,26 +293,22 @@ class RecurrenceSet(models.Model):
             tz = pytz.timezone(self.timezone.name)
 
             # Calculate next occurrence
-            next_occurrences = list(rruleset.after(now, inc=False, count=1))
-            self.next_occurrence = (
-                next_occurrences[0].astimezone(tz) if next_occurrences else None
-            )
+            next_occurrence = rruleset.after(now, inc=False)
+            self.next_occurrence = next_occurrence.astimezone(tz) if next_occurrence else None
 
             # Calculate previous occurrence
-            prev_occurrences = list(rruleset.before(now, inc=False, count=1))
-            self.previous_occurrence = (
-                prev_occurrences[0].astimezone(tz) if prev_occurrences else None
-            )
-
-            self.save()
+            prev_occurrence = rruleset.before(now, inc=False)
+            self.previous_occurrence = prev_occurrence.astimezone(tz) if prev_occurrence else None
         except Exception as e:
             print(
                 f"Error recalculating occurrences for RecurrenceSet {self.id}: {str(e)}"
             )
 
     def save(self, *args, **kwargs):
+        recalculate = kwargs.pop('recalculate', True)
+        if recalculate:
+            self.recalculate_occurrences()
         super().save(*args, **kwargs)
-        self.recalculate_occurrences()
 
 
 class RecurrenceSetRule(models.Model):
@@ -335,12 +331,12 @@ class RecurrenceSetRule(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self.recurrence_set.recalculate_occurrences()
+        self.recurrence_set.save(recalculate=True)
 
     def delete(self, *args, **kwargs):
         recurrence_set = self.recurrence_set
         super().delete(*args, **kwargs)
-        recurrence_set.recalculate_occurrences()
+        recurrence_set.save(recalculate=True)
 
 
 class RecurrenceDate(models.Model):

@@ -359,7 +359,7 @@ class RecurrenceRuleForm {
         this.rule.frequency = frequencySelect.value;
         this.rule.interval = parseInt(intervalInput.value, 10);
         this.rule.isExclusion = exclusionCheckbox.checked;
-        this.rule.byweekday = Array.from(byweekdayButtons).map(button => button.textContent);
+        this.rule.byweekday = Array.from(byweekdayButtons).map(button => button.dataset.day);
         this.rule.bymonth = Array.from(bymonthButtons).map(button => parseInt(button.value, 10));
         this.rule.bymonthday = this.parseNumberList(bymonthdayInput.value);
         this.rule.bysetpos = Array.from(bysetposButtons).map(button => parseInt(button.value, 10));
