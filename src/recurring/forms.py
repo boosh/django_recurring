@@ -1,3 +1,5 @@
+import json
+
 from django import forms
 from django.forms import inlineformset_factory
 
@@ -87,7 +89,7 @@ class RecurrenceSetForm(forms.ModelForm):
 
         # Populate the recurrence_set field with existing data
         if self.instance.pk:
-            self.initial['recurrence_set'] = self.instance.to_ical()
+            self.initial['recurrence_set'] = json.dumps(self.instance.to_dict())
 
     def is_valid(self):
         return all(
@@ -102,17 +104,19 @@ class RecurrenceSetForm(forms.ModelForm):
         instance = super().save(commit=False)
         if commit:
             instance.save()
-            self.rule_formset.instance = instance
-            self.rule_formset.save()
             
-            # Save dates manually
-            RecurrenceDate.objects.filter(recurrence_set=instance).delete()
-            for date_data in self.cleaned_data.get('dates', []):
-                RecurrenceDate.objects.create(
-                    recurrence_set=instance,
-                    date=date_data['date'],
-                    is_exclusion=date_data['is_exclusion']
-                )
+            # Add rules and dates for new instances
+            if hasattr(self, 'rules_to_add'):
+                for rule in self.rules_to_add:
+                    rule.pk = None
+                    rule.recurrence_set = instance
+                    rule.save()
+            
+            if hasattr(self, 'dates_to_add'):
+                for date in self.dates_to_add:
+                    date.pk = None
+                    date.recurrence_set = instance
+                    date.save()
             
             instance.recalculate_occurrences()
         return instance
@@ -122,32 +126,41 @@ class RecurrenceSetForm(forms.ModelForm):
         if self.errors:
             return cleaned_data
 
-        # Validate rule formset
-        if self.rule_formset.is_valid():
-            for form in self.rule_formset.forms:
-                if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
-                    # Process valid rule form data
-                    pass
-        else:
-            self.add_error(None, f"Rule formset errors: {self.rule_formset.errors}")
+        recurrence_set_data = cleaned_data.get('recurrence_set')
+        if recurrence_set_data:
+            try:
+                # Process the recurrence_set data
+                recurrence_set_dict = json.loads(recurrence_set_data)
+                recurrence_set = RecurrenceSet.from_dict(recurrence_set_dict)
 
-        # Validate date formset
-        if self.date_formset.is_valid():
-            for form in self.date_formset.forms:
-                if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
-                    # Process valid date form data
-                    date = form.cleaned_data.get('date')
-                    is_exclusion = form.cleaned_data.get('is_exclusion', False)
-                    if date:
-                        # Add the date to the cleaned_data
-                        if 'dates' not in cleaned_data:
-                            cleaned_data['dates'] = []
-                        cleaned_data['dates'].append({'date': date, 'is_exclusion': is_exclusion})
-        else:
-            self.add_error(None, f"Date formset errors: {self.date_formset.errors}")
+                # Clear existing rules and dates only if the instance has been saved
+                if self.instance.pk:
+                    self.instance.recurrencesetrules.all().delete()
+                    self.instance.dates.all().delete()
 
-        # Check if at least one rule or date is added
-        if not self.rule_formset.forms and not self.date_formset.forms:
+                    # Add new rules
+                    for rule in recurrence_set.recurrencesetrules.all():
+                        rule.pk = None
+                        rule.recurrence_set = self.instance
+                        rule.save()
+
+                    # Add new dates
+                    for date in recurrence_set.dates.all():
+                        date.pk = None
+                        date.recurrence_set = self.instance
+                        date.save()
+                else:
+                    # Store the rules and dates to be added after the instance is saved
+                    self.rules_to_add = recurrence_set.recurrencesetrules.all()
+                    self.dates_to_add = recurrence_set.dates.all()
+
+            except json.JSONDecodeError:
+                self.add_error('recurrence_set', "Invalid JSON data for recurrence set.")
+            except Exception as e:
+                self.add_error('recurrence_set', f"Error processing recurrence set data: {str(e)}")
+
+        # Check if at least one rule or date is added only if the instance has been saved
+        if self.instance.pk and not self.instance.recurrencesetrules.exists() and not self.instance.dates.exists():
             self.add_error(None, "You must add at least one rule or date to the recurrence set.")
 
         return cleaned_data

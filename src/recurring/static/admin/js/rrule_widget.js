@@ -54,8 +54,11 @@ class RecurrenceSet {
         }
     }
 
-    toICal() {
-        return recurrenceSetToICal(this);
+    toJSON() {
+        return JSON.stringify({
+            rules: this.rules,
+            dates: this.dates
+        });
     }
 }
 
@@ -74,13 +77,13 @@ function initRecurrenceSetWidget(name) {
     const recurrenceSetForm = new RecurrenceSetForm(form, recurrenceSet);
 
     recurrenceSetForm.onChange = function () {
-        input.value = recurrenceSet.toICal();
+        input.value = recurrenceSet.toJSON();
         text.innerHTML = recurrenceSet.toText();
     };
 
     if (input.value) {
         try {
-            const parsedSet = parseICalString(input.value);
+            const parsedSet = JSON.parse(input.value);
             parsedSet.rules.forEach(rule => recurrenceSet.addRule(rule));
             parsedSet.dates.forEach(date => recurrenceSet.dates.push(date));
             recurrenceSetForm.setRecurrenceSet(recurrenceSet);
@@ -496,7 +499,12 @@ function recurrenceSetToICal(recurrenceSet) {
         const prefix = rule.isExclusion ? 'EXRULE:' : 'RRULE:';
         ical += `${prefix}FREQ=${rule.frequency};INTERVAL=${rule.interval}`;
         if (rule.byweekday && rule.byweekday.length > 0) {
-            ical += `;BYDAY=${rule.byweekday.join(',')}`;
+            const dayMap = {
+                'Mon': 'MO', 'Tue': 'TU', 'Wed': 'WE', 'Thu': 'TH',
+                'Fri': 'FR', 'Sat': 'SA', 'Sun': 'SU'
+            };
+            const mappedDays = rule.byweekday.map(day => dayMap[day] || day);
+            ical += `;BYDAY=${mappedDays.join(',')}`;
         }
         if (rule.bymonthday && rule.bymonthday.length > 0) {
             ical += `;BYMONTHDAY=${rule.bymonthday.join(',')}`;
@@ -537,7 +545,13 @@ function parseICalString(icalString) {
                 const [key, value] = part.split('=');
                 if (key === 'FREQ') rule.frequency = value;
                 if (key === 'INTERVAL') rule.interval = parseInt(value, 10);
-                if (key === 'BYDAY') rule.byweekday = value.split(',');
+                if (key === 'BYDAY') {
+                    const dayMap = {
+                        'MO': 'Mon', 'TU': 'Tue', 'WE': 'Wed', 'TH': 'Thu',
+                        'FR': 'Fri', 'SA': 'Sat', 'SU': 'Sun'
+                    };
+                    rule.byweekday = value.split(',').map(day => dayMap[day] || day);
+                }
                 if (key === 'BYMONTHDAY') rule.bymonthday = value.split(',').map(Number);
                 if (key === 'BYMONTH') rule.bymonth = value.split(',').map(Number);
                 if (key === 'BYSETPOS') rule.bysetpos = value.split(',').map(Number);
