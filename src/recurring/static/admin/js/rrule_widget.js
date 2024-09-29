@@ -280,8 +280,8 @@ class RecurrenceRuleForm {
 
 function recurrenceSetToText(recurrenceSet) {
     let text = 'Recurrence Set:\n';
-    recurrenceSet.rules.forEach((rule) => {
-        text += `Rule ${rule.id}: ${ruleToText(rule)}\n`;
+    recurrenceSet.rules.forEach((rule, index) => {
+        text += `Rule ${index + 1}: ${ruleToText(rule)}\n`;
     });
     recurrenceSet.dates.forEach((date, index) => {
         text += `Date ${index + 1}: ${date.date} (${date.isExclusion ? 'Exclusion' : 'Inclusion'})\n`;
@@ -291,6 +291,9 @@ function recurrenceSetToText(recurrenceSet) {
 
 function ruleToText(rule) {
     let text = '';
+
+    // Add rule type (Inclusion or Exclusion) at the beginning
+    text += `${rule.isExclusion ? 'Exclusion' : 'Inclusion'}: `;
 
     if (rule.startDate || rule.endDate) {
         text += 'From ';
@@ -302,7 +305,7 @@ function ruleToText(rule) {
 
     const frequency = rule.frequency.toLowerCase();
     const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `${frequency}`;
-    text += `${interval} (${rule.isExclusion ? 'Exclusion' : 'Inclusion'})`;
+    text += `${interval}`;
 
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     if (rule.byweekday && rule.byweekday.length > 0) {
