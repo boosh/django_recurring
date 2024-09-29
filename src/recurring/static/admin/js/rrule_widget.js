@@ -187,8 +187,14 @@ class RecurrenceRuleForm {
                 <input type="text" class="bymonthday-input">
             </div>
             <div class="bysetpos-container">
-                <label>Set positions (comma-separated, e.g., 1,2,-1 for first, second, and last):</label>
-                <input type="text" class="bysetpos-input">
+                <label>Position in the month:</label>
+                <div class="bysetpos-buttons">
+                    <button type="button" class="bysetpos-button" value="1">First</button>
+                    <button type="button" class="bysetpos-button" value="2">Second</button>
+                    <button type="button" class="bysetpos-button" value="3">Third</button>
+                    <button type="button" class="bysetpos-button" value="4">Fourth</button>
+                    <button type="button" class="bysetpos-button" value="-1">Last</button>
+                </div>
             </div>
             <button type="button" class="remove-rule">Remove Rule</button>
         `;
@@ -197,7 +203,7 @@ class RecurrenceRuleForm {
             element.addEventListener('change', () => this.updateRule());
         });
 
-        this.container.querySelectorAll('.weekday-button, .month-button').forEach(button => {
+        this.container.querySelectorAll('.weekday-button, .month-button, .bysetpos-button').forEach(button => {
             button.addEventListener('click', () => {
                 button.classList.toggle('selected');
                 this.updateRule();
@@ -222,7 +228,7 @@ class RecurrenceRuleForm {
         const byweekdayButtons = this.container.querySelectorAll('.weekday-button.selected');
         const bymonthButtons = this.container.querySelectorAll('.month-button.selected');
         const bymonthdayInput = this.container.querySelector('.bymonthday-input');
-        const bysetposInput = this.container.querySelector('.bysetpos-input');
+        const bysetposButtons = this.container.querySelectorAll('.bysetpos-button.selected');
 
         if (!frequencySelect || !intervalInput || !exclusionCheckbox) return;
 
@@ -233,7 +239,7 @@ class RecurrenceRuleForm {
             byweekday: Array.from(byweekdayButtons).map(button => button.value),
             bymonth: Array.from(bymonthButtons).map(button => parseInt(button.value, 10)),
             bymonthday: this.parseNumberList(bymonthdayInput.value),
-            bysetpos: this.parseNumberList(bysetposInput.value)
+            bysetpos: Array.from(bysetposButtons).map(button => parseInt(button.value, 10))
         };
 
         this.onChange(this.rule);
@@ -258,7 +264,7 @@ class RecurrenceRuleForm {
         const byweekdayButtons = this.container.querySelectorAll('.weekday-button');
         const bymonthButtons = this.container.querySelectorAll('.month-button');
         const bymonthdayInput = this.container.querySelector('.bymonthday-input');
-        const bysetposInput = this.container.querySelector('.bysetpos-input');
+        const bysetposButtons = this.container.querySelectorAll('.bysetpos-button');
 
         if (frequencySelect) frequencySelect.value = rule.frequency;
         if (intervalInput) intervalInput.value = rule.interval;
@@ -273,7 +279,10 @@ class RecurrenceRuleForm {
         });
 
         if (bymonthdayInput) bymonthdayInput.value = this.formatNumberList(rule.bymonthday);
-        if (bysetposInput) bysetposInput.value = this.formatNumberList(rule.bysetpos);
+        
+        bysetposButtons.forEach(button => {
+            button.classList.toggle('selected', rule.bysetpos.includes(parseInt(button.value, 10)));
+        });
 
         this.updateRule();
     }
