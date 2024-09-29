@@ -166,6 +166,14 @@ class RecurrenceRuleForm {
     createForm() {
         // Create the HTML structure for the form
         this.container.innerHTML = `
+            <div class="date-range-container">
+                <select class="date-type-select">
+                    <option value="single">Single Date</option>
+                    <option value="range">Date Range</option>
+                </select>
+                <input type="date" class="start-date">
+                <input type="date" class="end-date" style="display: none;">
+            </div>
             <select class="frequency-select">
                 <option value="YEARLY">Yearly</option>
                 <option value="MONTHLY">Monthly</option>
@@ -183,6 +191,13 @@ class RecurrenceRuleForm {
         `;
 
         // Add event listeners for form elements
+        this.container.querySelector('.date-type-select').addEventListener('change', (e) => {
+            const endDateInput = this.container.querySelector('.end-date');
+            endDateInput.style.display = e.target.value === 'range' ? 'inline-block' : 'none';
+            this.updateRule();
+        });
+        this.container.querySelector('.start-date').addEventListener('change', () => this.updateRule());
+        this.container.querySelector('.end-date').addEventListener('change', () => this.updateRule());
         this.container.querySelector('.frequency-select').addEventListener('change', () => this.updateRule());
         this.container.querySelector('.interval-input').addEventListener('change', () => this.updateRule());
         this.container.querySelector('.exclusion-checkbox').addEventListener('change', () => this.updateRule());
@@ -294,8 +309,11 @@ class RecurrenceRuleForm {
         const bymonthButtons = this.container.querySelectorAll('.month-button.selected');
         const bymonthdayInput = this.container.querySelector('.bymonthday-input');
         const bysetposButtons = this.container.querySelectorAll('.bysetpos-button.selected');
+        const dateTypeSelect = this.container.querySelector('.date-type-select');
+        const startDateInput = this.container.querySelector('.start-date');
+        const endDateInput = this.container.querySelector('.end-date');
 
-        if (!frequencySelect || !intervalInput || !exclusionCheckbox) return;
+        if (!frequencySelect || !intervalInput || !exclusionCheckbox || !dateTypeSelect || !startDateInput) return;
 
         this.rule.frequency = frequencySelect.value;
         this.rule.interval = parseInt(intervalInput.value, 10);
@@ -304,6 +322,10 @@ class RecurrenceRuleForm {
         this.rule.bymonth = Array.from(bymonthButtons).map(button => parseInt(button.value, 10));
         this.rule.bymonthday = this.parseNumberList(bymonthdayInput.value);
         this.rule.bysetpos = Array.from(bysetposButtons).map(button => parseInt(button.value, 10));
+
+        // Update date information
+        this.rule.startDate = startDateInput.value;
+        this.rule.endDate = dateTypeSelect.value === 'range' ? endDateInput.value : null;
 
         this.onChange(this.rule);
     }
@@ -321,6 +343,9 @@ class RecurrenceRuleForm {
 
     setRule(rule) {
         this.rule = rule;
+        const dateTypeSelect = this.container.querySelector('.date-type-select');
+        const startDateInput = this.container.querySelector('.start-date');
+        const endDateInput = this.container.querySelector('.end-date');
         const frequencySelect = this.container.querySelector('.frequency-select');
         const intervalInput = this.container.querySelector('.interval-input');
         const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
@@ -329,6 +354,12 @@ class RecurrenceRuleForm {
         const bymonthdayInput = this.container.querySelector('.bymonthday-input');
         const bysetposButtons = this.container.querySelectorAll('.bysetpos-button');
 
+        if (dateTypeSelect) dateTypeSelect.value = rule.endDate ? 'range' : 'single';
+        if (startDateInput) startDateInput.value = rule.startDate ? rule.startDate.slice(0, 10) : '';
+        if (endDateInput) {
+            endDateInput.value = rule.endDate ? rule.endDate.slice(0, 10) : '';
+            endDateInput.style.display = rule.endDate ? 'inline-block' : 'none';
+        }
         if (frequencySelect) frequencySelect.value = rule.frequency;
         if (intervalInput) intervalInput.value = rule.interval;
         if (exclusionCheckbox) exclusionCheckbox.checked = rule.isExclusion;
@@ -371,13 +402,12 @@ function ruleToText(rule) {
 
     text += `${rule.isExclusion ? 'Exclusion' : 'Inclusion'}: `;
 
-    if (rule.startDate || rule.endDate) {
-        text += 'From ';
-        text += rule.startDate ? rule.startDate : 'the beginning';
-        text += ' to ';
-        text += rule.endDate ? rule.endDate : 'the end';
-        text += ', ';
-    }
+    // Always include date range information
+    text += 'From ';
+    text += rule.startDate ? new Date(rule.startDate).toLocaleDateString() : 'the beginning';
+    text += ' to ';
+    text += rule.endDate ? new Date(rule.endDate).toLocaleDateString() : 'the end';
+    text += ', ';
 
     const frequency = rule.frequency.toLowerCase();
     const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `${frequency}`;
