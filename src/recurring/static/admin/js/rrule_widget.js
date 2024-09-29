@@ -247,8 +247,8 @@ class RecurrenceRuleForm {
         const dateRangeContainer = document.createElement('div');
         dateRangeContainer.className = 'date-range-container';
         dateRangeContainer.innerHTML = `
-            <input type="date" class="start-date">
-            <input type="date" class="end-date">
+            <input type="datetime-local" class="start-date">
+            <input type="datetime-local" class="end-date">
             <label>
                 <input type="checkbox" class="exclusion-checkbox">
                 Exclude
@@ -460,8 +460,8 @@ class RecurrenceRuleForm {
         const dateRangeContainer = document.createElement('div');
         dateRangeContainer.className = 'date-range-container';
         dateRangeContainer.innerHTML = `
-            <input type="date" class="start-date">
-            <input type="date" class="end-date">
+            <input type="datetime-local" class="start-date">
+            <input type="datetime-local" class="end-date">
             <label>
                 <input type="checkbox" class="exclusion-checkbox">
                 Exclude
@@ -496,7 +496,7 @@ class RecurrenceRuleForm {
     formatDateForInput(dateString) {
         if (!dateString) return '';
         const date = new Date(dateString);
-        return date.toISOString().split('T')[0];
+        return date.toISOString().slice(0, 16);
     }
 
     formatNumberList(numbers) {
@@ -522,14 +522,14 @@ function ruleToText(rule) {
 
     text += `${rule.isExclusion ? 'Exclusion' : 'Inclusion'}: `;
 
-    // Handle single date or date range
+    // Handle single datetime or datetime range
     if (rule.startDate && (!rule.endDate || rule.startDate === rule.endDate)) {
-        text += `On ${new Date(rule.startDate).toLocaleDateString()}`;
+        text += `On ${new Date(rule.startDate).toLocaleString()}`;
     } else {
         text += 'From ';
-        text += rule.startDate ? new Date(rule.startDate).toLocaleDateString() : 'the beginning';
+        text += rule.startDate ? new Date(rule.startDate).toLocaleString() : 'the beginning';
         text += ' to ';
-        text += rule.endDate ? new Date(rule.endDate).toLocaleDateString() : 'the end';
+        text += rule.endDate ? new Date(rule.endDate).toLocaleString() : 'the end';
     }
 
     // Add frequency information
