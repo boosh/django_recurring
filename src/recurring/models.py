@@ -265,46 +265,10 @@ class RecurrenceSet(models.Model):
                 {
                     'is_exclusion': rule.is_exclusion,
                     'rule': rule.recurrence_rule.to_dict(),
-                    'date_ranges': [
-                        {
-                            'start_date': date_range.start_date.isoformat(),
-                            'end_date': date_range.end_date.isoformat(),
-                            'is_exclusion': date_range.is_exclusion
-                        }
-                        for date_range in rule.recurrence_rule.date_ranges.all()
-                    ]
                 }
                 for rule in self.recurrencesetrules.all()
             ]
         }
-
-    @classmethod
-    def from_dict(cls, data):
-        timezone, _ = Timezone.objects.get_or_create(name=data.get('timezone', 'UTC'))
-        recurrence_set = cls(
-            name=data.get('name', ''),
-            description=data.get('description', ''),
-            timezone=timezone
-        )
-        recurrence_set.save()
-
-        for rule_data in data.get('rules', []):
-            rule = RecurrenceRule.from_dict(rule_data['rule'])
-            rule.save()
-            recurrence_set_rule = RecurrenceSetRule.objects.create(
-                recurrence_set=recurrence_set,
-                recurrence_rule=rule,
-                is_exclusion=rule_data['is_exclusion']
-            )
-            for date_range_data in rule_data.get('date_ranges', []):
-                RecurrenceRuleDateRange.objects.create(
-                    recurrence_rule=rule,
-                    start_date=django_timezone.parse(date_range_data['start_date']),
-                    end_date=django_timezone.parse(date_range_data['end_date']),
-                    is_exclusion=date_range_data.get('is_exclusion', False)
-                )
-
-        return recurrence_set
 
     def recalculate_occurrences(self):
         try:
@@ -326,9 +290,9 @@ class RecurrenceSet(models.Model):
 
     def save(self, *args, **kwargs):
         recalculate = kwargs.pop('recalculate', True)
+        super().save(*args, **kwargs)
         if recalculate:
             self.recalculate_occurrences()
-        super().save(*args, **kwargs)
 
 
 class RecurrenceSetRule(models.Model):
