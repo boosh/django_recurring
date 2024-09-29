@@ -15,6 +15,7 @@ from .models import (
     RecurrenceSetRule,
     RecurrenceRuleDateRange,
 )
+from .utils import recursive_camel_to_snake
 
 
 class RecurrenceSetAdmin(admin.ModelAdmin):
@@ -37,7 +38,9 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
                     obj.recurrencesetrules.all().delete()
 
                     # Create new RecurrenceSet from JSON data
-                    recurrence_set_dict = json.loads(recurrence_set_data)
+                    recurrence_set_dict_camel = json.loads(recurrence_set_data)
+                    # recursively convert all keys to snake case for consistency
+                    recurrence_set_dict = recursive_camel_to_snake(recurrence_set_dict_camel)
 
                     # Add rules
                     for rule_data in recurrence_set_dict.get('rules', []):
@@ -51,7 +54,7 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
 
                     # Add date ranges
                     for rule in obj.recurrencesetrules.all():
-                        for date_range_data in rule_data.get('date_ranges', []):
+                        for date_range_data in rule_data['date_ranges']:
                             RecurrenceRuleDateRange.objects.create(
                                 recurrence_rule=rule.recurrence_rule,
                                 start_date=parse_datetime(date_range_data['start_date']),

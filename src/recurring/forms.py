@@ -42,25 +42,25 @@ class RecurrenceSetForm(forms.ModelForm):
             recurrence_set_data = self.cleaned_data.get('recurrence_set')
             if recurrence_set_data:
                 logger.info(f"Recurrence set data: {recurrence_set_data}")
-                recurrence_set_dict = json.loads(recurrence_set_data)
+                recurrence_set_dict_camel = json.loads(recurrence_set_data)
 
-                import pdb
-                pdb.set_trace()
+                # recursively convert all keys to snake case for consistency
+                recurrence_set_dict = recursive_camel_to_snake(recurrence_set_dict_camel)
 
                 logger.info("Clearing existing rules")
                 instance.recurrencesetrules.all().delete()
 
                 logger.info("Adding new rules and date ranges")
-                for rule_data in recurrence_set_dict.get('rules', []):
-                    rule = RecurrenceRule.from_dict(rule_data)
+                for rule_data in recurrence_set_dict['rules']:
+                    rule = RecurrenceRule.from_dict(rule_data['rule'])
                     rule.save()
                     recurrence_set_rule = RecurrenceSetRule.objects.create(
                         recurrence_set=instance,
                         recurrence_rule=rule,
-                        is_exclusion=rule_data.get('is_exclusion', False)
+                        is_exclusion=rule_data['is_exclusion']
                     )
 
-                    for date_range_data in rule_data.get('date_ranges', []):
+                    for date_range_data in rule_data['date_ranges']:
                         RecurrenceRuleDateRange.objects.create(
                             recurrence_rule=rule,
                             start_date=parse_datetime(date_range_data['start_date']),
@@ -97,10 +97,10 @@ class RecurrenceSetForm(forms.ModelForm):
                 # recursively convert all keys to snake case for consistency
                 recurrence_set_dict = recursive_camel_to_snake(recurrence_set_dict_camel)
 
-                if 'rules' not in recurrence_set_dict or not isinstance(recurrence_set_dict['rules'], list):
+                if not isinstance(recurrence_set_dict['rules'], list):
                     raise ValueError("Recurrence set data must contain a 'rules' list")
 
-                if 'dates' not in recurrence_set_dict or not isinstance(recurrence_set_dict['dates'], list):
+                if not isinstance(recurrence_set_dict['dates'], list):
                     raise ValueError("Recurrence set data must contain a 'dates' list")
 
                 # Process rules
@@ -119,12 +119,12 @@ class RecurrenceSetForm(forms.ModelForm):
                             'bymonthday': rule_data['bymonthday'],
                             'bysetpos': rule_data['bysetpos'],
                         },
-                        'is_exclusion': rule_data.get('is_exclusion', False),
+                        'is_exclusion': rule_data['is_exclusion'],
                         'date_ranges': []
                     }
 
                     # Process date ranges
-                    if 'date_ranges' not in rule_data or not isinstance(rule_data['date_ranges'], list):
+                    if not isinstance(rule_data['date_ranges'], list):
                         raise ValueError("Each rule must contain a 'date_ranges' list")
                     for date_range_data in rule_data['date_ranges']:
                         if not isinstance(date_range_data, dict):
@@ -134,7 +134,7 @@ class RecurrenceSetForm(forms.ModelForm):
                         new_rule_data['date_ranges'].append({
                             'start_date': date_range_data['start_date'],
                             'end_date': date_range_data['end_date'],
-                            'is_exclusion': date_range_data.get('is_exclusion', False)
+                            'is_exclusion': date_range_data['is_exclusion']
                         })
 
                     rule = RecurrenceRule.from_dict(new_rule_data['rule'])
@@ -145,15 +145,15 @@ class RecurrenceSetForm(forms.ModelForm):
 
             except json.JSONDecodeError:
                 self.add_error('recurrence_set', "Invalid JSON data for recurrence set.")
+            except KeyError as e:
+                self.add_error('recurrence_set', f"Missing required key in recurrence set data: {str(e)}")
             except ValueError as e:
                 self.add_error('recurrence_set', f"Invalid recurrence set data: {str(e)}")
             except Exception as e:
                 self.add_error('recurrence_set', f"Error processing recurrence set data: {str(e)}")
 
-        import pdb
-        pdb.set_trace()
         # Check if at least one rule with a date range is added
-        if not getattr(self, 'rules_to_add', []) or not any(rule_data.get('date_ranges') for rule_data in recurrence_set_dict.get('rules', [])):
+        if not getattr(self, 'rules_to_add', []) or not any(rule_data['date_ranges'] for rule_data in recurrence_set_dict['rules']):
             self.add_error(None, "You must add at least one rule with a date range to the recurrence set.")
 
         logger.info(f"Cleaned data: {cleaned_data}")
