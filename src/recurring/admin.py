@@ -1,20 +1,17 @@
+import json
+
 from django import forms
 from django.contrib import admin
 from django.contrib import messages
 
 from .forms import (
-    RecurrenceRuleForm,
     RecurrenceSetForm,
 )
 from .models import (
     Timezone,
     RecurrenceRule,
-    RecurrenceSet,
+    RecurrenceSet, RecurrenceSetRule, RecurrenceDate,
 )
-
-
-class RecurrenceRuleAdmin(admin.ModelAdmin):
-    form = RecurrenceRuleForm
 
 
 class RecurrenceSetAdmin(admin.ModelAdmin):
@@ -31,27 +28,32 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
         try:
             super().save_model(request, obj, form, change)
             if 'recurrence_set' in form.cleaned_data:
-                ical_data = form.cleaned_data['recurrence_set']
-                if ical_data:
+                recurrence_set_data = form.cleaned_data['recurrence_set']
+                if recurrence_set_data:
                     # Clear existing rules and dates
                     obj.recurrencesetrules.all().delete()
                     obj.dates.all().delete()
 
-                    # Create new RecurrenceSet from iCal data
-                    new_set = RecurrenceSet.from_ical(ical_data)
+                    # Create new RecurrenceSet from JSON data
+                    recurrence_set_dict = json.loads(recurrence_set_data)
 
-                    # Copy rules and dates from new_set to obj
-                    for rule in new_set.recurrencesetrules.all():
-                        rule.pk = None
-                        rule.recurrence_set = obj
+                    # Add rules
+                    for rule_data in recurrence_set_dict.get('rules', []):
+                        rule = RecurrenceRule.from_dict(rule_data)
                         rule.save()
-                    for date in new_set.dates.all():
-                        date.pk = None
-                        date.recurrence_set = obj
-                        date.save()
+                        RecurrenceSetRule.objects.create(
+                            recurrence_set=obj,
+                            recurrence_rule=rule,
+                            is_exclusion=rule_data.get('is_exclusion', False)
+                        )
 
-                    # Delete the temporary RecurrenceSet
-                    new_set.delete()
+                    # Add dates
+                    for date_data in recurrence_set_dict.get('dates', []):
+                        RecurrenceDate.objects.create(
+                            recurrence_set=obj,
+                            date=date_data['date'],
+                            is_exclusion=date_data.get('is_exclusion', False)
+                        )
 
                     # Recalculate occurrences
                     obj.recalculate_occurrences()
@@ -73,5 +75,4 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Timezone)
-admin.site.register(RecurrenceRule, RecurrenceRuleAdmin)
 admin.site.register(RecurrenceSet, RecurrenceSetAdmin)

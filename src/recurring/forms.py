@@ -2,60 +2,11 @@ import json
 import logging
 
 from django import forms
-from django.forms import inlineformset_factory
 
 from .models import RecurrenceSet, RecurrenceRule, RecurrenceSetRule, RecurrenceDate
-from .widgets import RecurrenceSetWidget, RecurrenceRuleWidget
+from .widgets import RecurrenceSetWidget
 
 logger = logging.getLogger(__name__)
-
-
-class RecurrenceRuleForm(forms.ModelForm):
-    class Meta:
-        model = RecurrenceRule
-        fields = "__all__"
-        widgets = {
-            "recurrence_rule": RecurrenceRuleWidget(),
-        }
-
-
-class RecurrenceSetRuleForm(forms.ModelForm):
-    class Meta:
-        model = RecurrenceSetRule
-        fields = ["is_exclusion", 'recurrence_rule']
-        widgets = {
-            "is_exclusion": forms.HiddenInput(),
-            "recurrence_rule": forms.HiddenInput(),
-        }
-
-    def clean(self):
-        cleaned_data = super().clean()
-        return cleaned_data
-
-    def is_valid(self):
-        valid = super().is_valid()
-        if not hasattr(self, 'cleaned_data'):
-            self.cleaned_data = {}
-        return valid
-
-
-class RecurrenceDateForm(forms.ModelForm):
-    class Meta:
-        model = RecurrenceDate
-        fields = ["date", "is_exclusion"]
-
-
-RecurrenceSetRuleFormSet = inlineformset_factory(
-    RecurrenceSet,
-    RecurrenceSetRule,
-    form=RecurrenceSetRuleForm,
-    extra=1,
-    can_delete=True,
-)
-
-RecurrenceDateFormSet = inlineformset_factory(
-    RecurrenceSet, RecurrenceDate, form=RecurrenceDateForm, extra=1, can_delete=True
-)
 
 
 class RecurrenceSetForm(forms.ModelForm):
@@ -70,40 +21,10 @@ class RecurrenceSetForm(forms.ModelForm):
         logger.info("Form init method")
         self.fields['recurrence_set'].widget = RecurrenceSetWidget(form=self)
         self.fields['recurrence_set'].widget.attrs['style'] = 'display: none;'
-        if self.instance.pk:
-            self.rule_formset = RecurrenceSetRuleFormSet(
-                instance=self.instance,
-                data=self.data if self.is_bound else None,
-                prefix="rules"
-            )
-            self.date_formset = RecurrenceDateFormSet(
-                instance=self.instance,
-                data=self.data if self.is_bound else None,
-                prefix="dates"
-            )
-        else:
-            self.rule_formset = RecurrenceSetRuleFormSet(
-                data=self.data if self.is_bound else None,
-                prefix="rules"
-            )
-            self.date_formset = RecurrenceDateFormSet(
-                data=self.data if self.is_bound else None,
-                prefix="dates"
-            )
 
         # Populate the recurrence_set field with existing data
         if self.instance.pk:
             self.initial['recurrence_set'] = json.dumps(self.instance.to_dict())
-
-    def is_valid(self):
-        logger.info("Inside is_valid")
-        return all(
-            [
-                super().is_valid(),
-                self.rule_formset.is_valid(),
-                self.date_formset.is_valid(),
-            ]
-        )
 
     def save(self, commit: bool = True):
         logger.info("Starting save method")
@@ -111,14 +32,6 @@ class RecurrenceSetForm(forms.ModelForm):
         if commit:
             logger.info("Commit is True, saving instance")
             instance.save()
-
-            logger.info("Saving rule formset")
-            self.rule_formset.instance = instance
-            self.rule_formset.save()
-
-            logger.info("Saving date formset")
-            self.date_formset.instance = instance
-            self.date_formset.save()
 
             logger.info("Processing recurrence_set data")
             recurrence_set_data = self.cleaned_data.get('recurrence_set')
