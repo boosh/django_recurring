@@ -88,14 +88,19 @@ function initRecurrenceSetWidget(name) {
             parsedSet.rules.forEach(rule => recurrenceSet.addRule(rule.rule));
             parsedSet.dates.forEach(date => recurrenceSet.dates.push(date));
             recurrenceSetForm.setRecurrenceSet(recurrenceSet);
-            recurrenceSet.updateTextDisplay();
             
             // Ensure the input value is set even if there's no interaction
             input.value = recurrenceSet.toJSON();
+            
+            // Render the "Recurrence Set:" list immediately
+            text.innerHTML = recurrenceSet.toText();
         } catch (error) {
             console.error('Error parsing initial data:', error);
             text.innerHTML = 'Error: Invalid recurrence set data';
         }
+    } else {
+        // If there's no initial data, display "No rules defined yet."
+        text.innerHTML = '<ul style="margin-left: 0"><li><strong>Recurrence Set:</strong></li><li style="list-style-type: disc; margin-left: 10px">No rules defined yet.</li></ul>';
     }
 
     const addRuleButton = form.querySelector('#add-rule');
