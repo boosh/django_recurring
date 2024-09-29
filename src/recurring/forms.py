@@ -23,6 +23,16 @@ class RecurrenceSetRuleForm(forms.ModelForm):
             "recurrence_rule": forms.HiddenInput(),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        return cleaned_data
+
+    def is_valid(self):
+        valid = super().is_valid()
+        if not hasattr(self, 'cleaned_data'):
+            self.cleaned_data = {}
+        return valid
+
 
 class RecurrenceDateForm(forms.ModelForm):
     class Meta:
@@ -94,8 +104,17 @@ class RecurrenceSetForm(forms.ModelForm):
             instance.save()
             self.rule_formset.instance = instance
             self.rule_formset.save()
-            self.date_formset.instance = instance
-            self.date_formset.save()
+            
+            # Save dates manually
+            RecurrenceDate.objects.filter(recurrence_set=instance).delete()
+            for date_data in self.cleaned_data.get('dates', []):
+                RecurrenceDate.objects.create(
+                    recurrence_set=instance,
+                    date=date_data['date'],
+                    is_exclusion=date_data['is_exclusion']
+                )
+            
+            instance.recalculate_occurrences()
         return instance
 
     def clean(self):
@@ -103,34 +122,32 @@ class RecurrenceSetForm(forms.ModelForm):
         if self.errors:
             return cleaned_data
 
-        recurrence_set_data = cleaned_data.get('recurrence_set')
-        if recurrence_set_data:
-            try:
-                RecurrenceSet.from_ical(recurrence_set_data)
-            except ValueError as e:
-                raise forms.ValidationError(f"Invalid iCal data: {str(e)}")
+        # Validate rule formset
+        if self.rule_formset.is_valid():
+            for form in self.rule_formset.forms:
+                if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                    # Process valid rule form data
+                    pass
+        else:
+            self.add_error(None, f"Rule formset errors: {self.rule_formset.errors}")
 
-        formset_errors = []
-        if not self.rule_formset.is_valid():
-            formset_errors.append(f"Rule formset errors: {self.rule_formset.errors}")
-        if not self.date_formset.is_valid():
-            formset_errors.append(f"Date formset errors: {self.date_formset.errors}")
+        # Validate date formset
+        if self.date_formset.is_valid():
+            for form in self.date_formset.forms:
+                if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                    # Process valid date form data
+                    date = form.cleaned_data.get('date')
+                    is_exclusion = form.cleaned_data.get('is_exclusion', False)
+                    if date:
+                        # Add the date to the cleaned_data
+                        if 'dates' not in cleaned_data:
+                            cleaned_data['dates'] = []
+                        cleaned_data['dates'].append({'date': date, 'is_exclusion': is_exclusion})
+        else:
+            self.add_error(None, f"Date formset errors: {self.date_formset.errors}")
 
-        if formset_errors:
-            raise forms.ValidationError(
-                "Please correct the errors in the formsets:\n" + "\n".join(formset_errors)
-            )
-
-        # Add more detailed error checking
-        if not self.rule_formset.forms and not self.date_formset.forms and not recurrence_set_data:
-            raise forms.ValidationError("You must add at least one rule or date to the recurrence set.")
-
-        for form in self.rule_formset.forms:
-            if form.errors:
-                raise forms.ValidationError(f"Error in rule: {form.errors}")
-
-        for form in self.date_formset.forms:
-            if form.errors:
-                raise forms.ValidationError(f"Error in date: {form.errors}")
+        # Check if at least one rule or date is added
+        if not self.rule_formset.forms and not self.date_formset.forms:
+            self.add_error(None, "You must add at least one rule or date to the recurrence set.")
 
         return cleaned_data
