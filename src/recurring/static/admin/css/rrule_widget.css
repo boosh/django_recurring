@@ -36,3 +36,35 @@ input[type="number"], input[type="date"], input[type="datetime-local"] {
 
 /* This file was previously named recurrence_set_widget.css */
 /* Add your CSS styles for the RecurrenceSetWidget here */
+.byweekday-container, .bymonth-container {
+    margin: 10px 0;
+}
+
+.weekday-button, .month-button {
+    padding: 5px 10px;
+    margin: 2px;
+    border: 1px solid #ccc;
+    background-color: #f8f8f8;
+    cursor: pointer;
+}
+
+.weekday-button.selected, .month-button.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+}
+
+.bymonthday-container, .bysetpos-container {
+    margin-top: 10px;
+}
+
+.bymonthday-input, .bysetpos-input {
+    width: 100%;
+    padding: 5px;
+    margin-top: 5px;
+}

@@ -158,21 +158,33 @@ class RecurrenceRuleForm {
             <input type="number" class="interval-input" min="1" value="1">
             <label><input type="checkbox" class="exclusion-checkbox"> Exclusion</label>
             <div class="byweekday-container">
-                <label><input type="checkbox" class="weekday-checkbox" value="MO"> Monday</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="TU"> Tuesday</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="WE"> Wednesday</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="TH"> Thursday</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="FR"> Friday</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="SA"> Saturday</label>
-                <label><input type="checkbox" class="weekday-checkbox" value="SU"> Sunday</label>
+                <button type="button" class="weekday-button" value="MO">Mon</button>
+                <button type="button" class="weekday-button" value="TU">Tue</button>
+                <button type="button" class="weekday-button" value="WE">Wed</button>
+                <button type="button" class="weekday-button" value="TH">Thu</button>
+                <button type="button" class="weekday-button" value="FR">Fri</button>
+                <button type="button" class="weekday-button" value="SA">Sat</button>
+                <button type="button" class="weekday-button" value="SU">Sun</button>
+            </div>
+            <div class="bymonth-container">
+                <div class="month-grid">
+                    <button type="button" class="month-button" value="1">Jan</button>
+                    <button type="button" class="month-button" value="2">Feb</button>
+                    <button type="button" class="month-button" value="3">Mar</button>
+                    <button type="button" class="month-button" value="4">Apr</button>
+                    <button type="button" class="month-button" value="5">May</button>
+                    <button type="button" class="month-button" value="6">Jun</button>
+                    <button type="button" class="month-button" value="7">Jul</button>
+                    <button type="button" class="month-button" value="8">Aug</button>
+                    <button type="button" class="month-button" value="9">Sep</button>
+                    <button type="button" class="month-button" value="10">Oct</button>
+                    <button type="button" class="month-button" value="11">Nov</button>
+                    <button type="button" class="month-button" value="12">Dec</button>
+                </div>
             </div>
             <div class="bymonthday-container">
                 <label>Days of month (comma-separated, e.g., 1-10,15,20-25):</label>
                 <input type="text" class="bymonthday-input">
-            </div>
-            <div class="bymonth-container">
-                <label>Months (comma-separated, e.g., 1-3,6-8):</label>
-                <input type="text" class="bymonth-input">
             </div>
             <div class="bysetpos-container">
                 <label>Set positions (comma-separated, e.g., 1,2,-1 for first, second, and last):</label>
@@ -183,6 +195,13 @@ class RecurrenceRuleForm {
 
         this.container.querySelectorAll('select, input').forEach(element => {
             element.addEventListener('change', () => this.updateRule());
+        });
+
+        this.container.querySelectorAll('.weekday-button, .month-button').forEach(button => {
+            button.addEventListener('click', () => {
+                button.classList.toggle('selected');
+                this.updateRule();
+            });
         });
 
         const removeRuleButton = this.container.querySelector('.remove-rule');
@@ -200,9 +219,9 @@ class RecurrenceRuleForm {
         const frequencySelect = this.container.querySelector('.frequency-select');
         const intervalInput = this.container.querySelector('.interval-input');
         const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
-        const byweekdayInputs = this.container.querySelectorAll('.weekday-checkbox:checked');
+        const byweekdayButtons = this.container.querySelectorAll('.weekday-button.selected');
+        const bymonthButtons = this.container.querySelectorAll('.month-button.selected');
         const bymonthdayInput = this.container.querySelector('.bymonthday-input');
-        const bymonthInput = this.container.querySelector('.bymonth-input');
         const bysetposInput = this.container.querySelector('.bysetpos-input');
 
         if (!frequencySelect || !intervalInput || !exclusionCheckbox) return;
@@ -211,9 +230,9 @@ class RecurrenceRuleForm {
             frequency: frequencySelect.value,
             interval: parseInt(intervalInput.value, 10),
             isExclusion: exclusionCheckbox.checked,
-            byweekday: Array.from(byweekdayInputs).map(input => input.value),
+            byweekday: Array.from(byweekdayButtons).map(button => button.value),
+            bymonth: Array.from(bymonthButtons).map(button => parseInt(button.value, 10)),
             bymonthday: this.parseNumberList(bymonthdayInput.value),
-            bymonth: this.parseNumberList(bymonthInput.value),
             bysetpos: this.parseNumberList(bysetposInput.value)
         };
 
@@ -236,21 +255,24 @@ class RecurrenceRuleForm {
         const frequencySelect = this.container.querySelector('.frequency-select');
         const intervalInput = this.container.querySelector('.interval-input');
         const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
-        const byweekdayInputs = this.container.querySelectorAll('.weekday-checkbox');
+        const byweekdayButtons = this.container.querySelectorAll('.weekday-button');
+        const bymonthButtons = this.container.querySelectorAll('.month-button');
         const bymonthdayInput = this.container.querySelector('.bymonthday-input');
-        const bymonthInput = this.container.querySelector('.bymonth-input');
         const bysetposInput = this.container.querySelector('.bysetpos-input');
 
         if (frequencySelect) frequencySelect.value = rule.frequency;
         if (intervalInput) intervalInput.value = rule.interval;
         if (exclusionCheckbox) exclusionCheckbox.checked = rule.isExclusion;
 
-        byweekdayInputs.forEach(input => {
-            input.checked = rule.byweekday.includes(input.value);
+        byweekdayButtons.forEach(button => {
+            button.classList.toggle('selected', rule.byweekday.includes(button.value));
+        });
+
+        bymonthButtons.forEach(button => {
+            button.classList.toggle('selected', rule.bymonth.includes(parseInt(button.value, 10)));
         });
 
         if (bymonthdayInput) bymonthdayInput.value = this.formatNumberList(rule.bymonthday);
-        if (bymonthInput) bymonthInput.value = this.formatNumberList(rule.bymonth);
         if (bysetposInput) bysetposInput.value = this.formatNumberList(rule.bysetpos);
 
         this.updateRule();
