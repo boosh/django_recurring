@@ -288,27 +288,17 @@ class RecurrenceSet(models.Model):
         return rset
 
     def to_ical(self):
-        event = Event()
+        ical_string = ""
         for rule in self.recurrencesetrules.filter(is_exclusion=False):
-            event.add("rrule", rule.recurrence_rule.to_ical())
+            ical_string += f"RRULE:{rule.recurrence_rule.to_ical()}\n"
         for rule in self.recurrencesetrules.filter(is_exclusion=True):
-            event.add("exrule", rule.recurrence_rule.to_ical())
+            ical_string += f"EXRULE:{rule.recurrence_rule.to_ical()}\n"
         for date in self.dates.filter(is_exclusion=False):
-            event.add(
-                "rdate",
-                date.date.astimezone(pytz.UTC)
-                if date.date.tzinfo
-                else pytz.UTC.localize(date.date),
-            )
+            ical_string += f"RDATE:{date.date.strftime('%Y%m%dT%H%M%SZ')}\n"
         for date in self.dates.filter(is_exclusion=True):
-            event.add(
-                "exdate",
-                date.date.astimezone(pytz.UTC)
-                if date.date.tzinfo
-                else pytz.UTC.localize(date.date),
-            )
-        event.add("tzid", self.timezone.name)
-        return event.to_ical().decode("utf-8")
+            ical_string += f"EXDATE:{date.date.strftime('%Y%m%dT%H%M%SZ')}\n"
+        ical_string += f"TZID:{self.timezone.name}\n"
+        return ical_string.strip()
 
     @classmethod
     def from_ical(cls, ical_string):
