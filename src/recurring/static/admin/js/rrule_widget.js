@@ -84,16 +84,14 @@ function initRecurrenceSetWidget(name) {
     const initialData = input.value || input.getAttribute('data-initial');
     if (initialData) {
         try {
-            const parsedSet = JSON.parse(initialData);
-            parsedSet.rules.forEach(rule => recurrenceSet.addRule(rule.rule));
-            parsedSet.dates.forEach(date => recurrenceSet.dates.push(date));
-            recurrenceSetForm.setRecurrenceSet(recurrenceSet);
+            const parsedSet = parseICalString(initialData);
+            recurrenceSetForm.setRecurrenceSet(parsedSet);
 
             // Ensure the input value is set even if there's no interaction
-            input.value = recurrenceSet.toJSON();
+            input.value = parsedSet.toJSON();
 
             // Render the "Recurrence Set:" list immediately
-            text.innerHTML = recurrenceSet.toText();
+            text.innerHTML = parsedSet.toText();
         } catch (error) {
             console.error('Error parsing initial data:', error);
             text.innerHTML = 'Error: Invalid recurrence set data';
@@ -603,46 +601,21 @@ function recurrenceSetToICal(recurrenceSet) {
 }
 
 function parseICalString(icalString) {
-    const lines = icalString.split('\n');
+    const data = JSON.parse(icalString);
     const recurrenceSet = new RecurrenceSet();
 
-    lines.forEach(line => {
-        if (line.startsWith('RRULE:') || line.startsWith('EXRULE:')) {
-            const isExclusion = line.startsWith('EXRULE:');
-            const parts = line.substring(isExclusion ? 7 : 6).split(';');
-            const rule = {
-                frequency: '',
-                interval: 1,
-                isExclusion: isExclusion,
-                byweekday: [],
-                bymonth: [],
-                bymonthday: [],
-                bysetpos: []
-            };
-            parts.forEach(part => {
-                const [key, value] = part.split('=');
-                if (key === 'FREQ') rule.frequency = value;
-                if (key === 'INTERVAL') rule.interval = parseInt(value, 10);
-                if (key === 'BYDAY') {
-                    const dayMap = {
-                        'MO': 'Mon', 'TU': 'Tue', 'WE': 'Wed', 'TH': 'Thu',
-                        'FR': 'Fri', 'SA': 'Sat', 'SU': 'Sun'
-                    };
-                    rule.byweekday = value.split(',').map(day => dayMap[day] || day);
-                }
-                if (key === 'BYMONTHDAY') rule.bymonthday = value.split(',').map(Number);
-                if (key === 'BYMONTH') rule.bymonth = value.split(',').map(Number);
-                if (key === 'BYSETPOS') rule.bysetpos = value.split(',').map(Number);
-            });
-            recurrenceSet.addRule(rule);
-        } else if (line.startsWith('RDATE:') || line.startsWith('EXDATE:')) {
-            const isExclusion = line.startsWith('EXDATE:');
-            const date = line.substring(isExclusion ? 7 : 6);
-            recurrenceSet.dates.push({
-                date: `${date.substring(0, 4)}-${date.substring(4, 6)}-${date.substring(6, 8)}T${date.substring(9, 11)}:${date.substring(11, 13)}`,
-                isExclusion: isExclusion
-            });
-        }
+    data.rules.forEach(ruleData => {
+        const rule = {
+            frequency: ruleData.rule.frequency,
+            interval: ruleData.rule.interval,
+            isExclusion: ruleData.isExclusion,
+            byweekday: ruleData.rule.byweekday || [],
+            bymonth: ruleData.rule.bymonth || [],
+            bymonthday: ruleData.rule.bymonthday || [],
+            bysetpos: ruleData.rule.bysetpos || [],
+            dateRanges: ruleData.rule.dateRanges || []
+        };
+        recurrenceSet.addRule(rule);
     });
 
     return recurrenceSet;
