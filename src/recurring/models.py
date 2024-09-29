@@ -198,9 +198,23 @@ class RecurrenceRuleDateRange(models.Model):
     )
     start_date = models.DateTimeField(help_text=_("The start date of the date range"))
     end_date = models.DateTimeField(help_text=_("The end date of the date range"))
+    is_exclusion = models.BooleanField(
+        default=False, help_text=_("Whether this date range is an exclusion")
+    )
 
     def __str__(self):
-        return f"Date Range for {self.recurrence_rule}: {self.start_date} to {self.end_date}"
+        range_type = "Exclusion" if self.is_exclusion else "Inclusion"
+        return f"{range_type} Date Range for {self.recurrence_rule}: {self.start_date} to {self.end_date}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.recurrence_rule.recurrenceset_set.first().recalculate_occurrences()
+
+    def delete(self, *args, **kwargs):
+        recurrence_set = self.recurrence_rule.recurrenceset_set.first()
+        super().delete(*args, **kwargs)
+        if recurrence_set:
+            recurrence_set.recalculate_occurrences()
 
 
 class RecurrenceSet(models.Model):
@@ -232,23 +246,13 @@ class RecurrenceSet(models.Model):
         rset = rruleset()
         tz = pytz.timezone(self.timezone.name)
 
-        for rule in self.recurrencesetrules.filter(is_exclusion=False):
+        for rule in self.recurrencesetrules.all():
             for date_range in rule.recurrence_rule.date_ranges.all():
-                rset.rrule(rule.recurrence_rule.to_rrule(date_range.start_date, date_range.end_date))
-
-        for rule in self.recurrencesetrules.filter(is_exclusion=True):
-            for date_range in rule.recurrence_rule.date_ranges.all():
-                rset.exrule(rule.recurrence_rule.to_rrule(date_range.start_date, date_range.end_date))
-
-        for date in self.dates.filter(is_exclusion=False):
-            rset.rdate(
-                date.date.astimezone(tz) if date.date.tzinfo else tz.localize(date.date)
-            )
-
-        for date in self.dates.filter(is_exclusion=True):
-            rset.exdate(
-                date.date.astimezone(tz) if date.date.tzinfo else tz.localize(date.date)
-            )
+                rrule_obj = rule.recurrence_rule.to_rrule(date_range.start_date, date_range.end_date)
+                if date_range.is_exclusion:
+                    rset.exrule(rrule_obj)
+                else:
+                    rset.rrule(rrule_obj)
 
         return rset
 
@@ -264,19 +268,13 @@ class RecurrenceSet(models.Model):
                     'date_ranges': [
                         {
                             'start_date': date_range.start_date.isoformat(),
-                            'end_date': date_range.end_date.isoformat()
+                            'end_date': date_range.end_date.isoformat(),
+                            'is_exclusion': date_range.is_exclusion
                         }
                         for date_range in rule.recurrence_rule.date_ranges.all()
                     ]
                 }
                 for rule in self.recurrencesetrules.all()
-            ],
-            'dates': [
-                {
-                    'date': date.date.isoformat(),
-                    'is_exclusion': date.is_exclusion
-                }
-                for date in self.dates.all()
             ]
         }
 
@@ -302,15 +300,9 @@ class RecurrenceSet(models.Model):
                 RecurrenceRuleDateRange.objects.create(
                     recurrence_rule=rule,
                     start_date=django_timezone.parse(date_range_data['start_date']),
-                    end_date=django_timezone.parse(date_range_data['end_date'])
+                    end_date=django_timezone.parse(date_range_data['end_date']),
+                    is_exclusion=date_range_data.get('is_exclusion', False)
                 )
-
-        for date_data in data.get('dates', []):
-            RecurrenceDate.objects.create(
-                recurrence_set=recurrence_set,
-                date=django_timezone.parse(date_data['date']),
-                is_exclusion=date_data['is_exclusion']
-            )
 
         return recurrence_set
 
@@ -367,27 +359,3 @@ class RecurrenceSetRule(models.Model):
         recurrence_set.save(recalculate=True)
 
 
-class RecurrenceDate(models.Model):
-    recurrence_set = models.ForeignKey(
-        RecurrenceSet,
-        on_delete=models.CASCADE,
-        related_name="dates",
-        help_text=_("The recurrence set this date belongs to"),
-    )
-    date = models.DateTimeField(help_text=_("The date of recurrence or exclusion"))
-    is_exclusion = models.BooleanField(
-        default=False, help_text=_("Whether this date is an exclusion date")
-    )
-
-    def __str__(self):
-        date_type = "Exclusion" if self.is_exclusion else "Inclusion"
-        return f"{date_type} Date for {self.recurrence_set}: {self.date}"
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.recurrence_set.recalculate_occurrences()
-
-    def delete(self, *args, **kwargs):
-        recurrence_set = self.recurrence_set
-        super().delete(*args, **kwargs)
-        recurrence_set.recalculate_occurrences()

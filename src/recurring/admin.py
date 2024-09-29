@@ -3,6 +3,7 @@ import json
 from django import forms
 from django.contrib import admin
 from django.contrib import messages
+from django.utils.dateparse import parse_datetime
 
 from .forms import (
     RecurrenceSetForm,
@@ -10,7 +11,9 @@ from .forms import (
 from .models import (
     Timezone,
     RecurrenceRule,
-    RecurrenceSet, RecurrenceSetRule, RecurrenceDate,
+    RecurrenceSet,
+    RecurrenceSetRule,
+    RecurrenceRuleDateRange,
 )
 
 
@@ -47,13 +50,15 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
                             is_exclusion=rule_data.get('is_exclusion', False)
                         )
 
-                    # Add dates
-                    for date_data in recurrence_set_dict.get('dates', []):
-                        RecurrenceDate.objects.create(
-                            recurrence_set=obj,
-                            date=date_data['date'],
-                            is_exclusion=date_data.get('is_exclusion', False)
-                        )
+                    # Add date ranges
+                    for rule in obj.recurrencesetrules.all():
+                        for date_range_data in rule_data.get('date_ranges', []):
+                            RecurrenceRuleDateRange.objects.create(
+                                recurrence_rule=rule.recurrence_rule,
+                                start_date=parse_datetime(date_range_data['start_date']),
+                                end_date=parse_datetime(date_range_data['end_date']),
+                                is_exclusion=date_range_data.get('is_exclusion', False)
+                            )
 
                     # Recalculate occurrences
                     obj.recalculate_occurrences()
