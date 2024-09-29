@@ -208,13 +208,15 @@ class RecurrenceRuleDateRange(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self.recurrence_rule.recurrenceset_set.first().recalculate_occurrences()
+        recurrence_set_rule = RecurrenceSetRule.objects.filter(recurrence_rule=self.recurrence_rule).first()
+        if recurrence_set_rule:
+            recurrence_set_rule.recurrence_set.recalculate_occurrences()
 
     def delete(self, *args, **kwargs):
-        recurrence_set = self.recurrence_rule.recurrenceset_set.first()
+        recurrence_set_rule = RecurrenceSetRule.objects.filter(recurrence_rule=self.recurrence_rule).first()
         super().delete(*args, **kwargs)
-        if recurrence_set:
-            recurrence_set.recalculate_occurrences()
+        if recurrence_set_rule:
+            recurrence_set_rule.recurrence_set.recalculate_occurrences()
 
 
 class RecurrenceSet(models.Model):
