@@ -152,6 +152,10 @@ class RecurrenceRuleForm {
 
     createForm() {
         this.container.innerHTML = `
+            <div class="date-range-container">
+                <label>Start date: <input type="date" class="start-date-input"></label>
+                <label>End date: <input type="date" class="end-date-input"></label>
+            </div>
             <select class="frequency-select">
                 <option value="YEARLY">Yearly</option>
                 <option value="MONTHLY">Monthly</option>
@@ -225,6 +229,8 @@ class RecurrenceRuleForm {
     }
 
     updateRule() {
+        const startDateInput = this.container.querySelector('.start-date-input');
+        const endDateInput = this.container.querySelector('.end-date-input');
         const frequencySelect = this.container.querySelector('.frequency-select');
         const intervalInput = this.container.querySelector('.interval-input');
         const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
@@ -236,6 +242,8 @@ class RecurrenceRuleForm {
         if (!frequencySelect || !intervalInput || !exclusionCheckbox) return;
 
         const newRule = {
+            startDate: startDateInput.value,
+            endDate: endDateInput.value,
             frequency: frequencySelect.value,
             interval: parseInt(intervalInput.value, 10),
             isExclusion: exclusionCheckbox.checked,
@@ -324,22 +332,23 @@ function recurrenceSetToText(recurrenceSet) {
 }
 
 function ruleToText(rule) {
+    let text = '';
+
+    if (rule.startDate || rule.endDate) {
+        text += 'From ';
+        text += rule.startDate ? rule.startDate : 'the beginning';
+        text += ' to ';
+        text += rule.endDate ? rule.endDate : 'the end';
+        text += ', ';
+    }
+
     const frequency = rule.frequency.toLowerCase();
     const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `${frequency}`;
-    let text = `${interval} (${rule.isExclusion ? 'Exclusion' : 'Inclusion'})`;
+    text += `${interval} (${rule.isExclusion ? 'Exclusion' : 'Inclusion'})`;
 
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     if (rule.byweekday && rule.byweekday.length > 0) {
         text += ` on ${rule.byweekday.map(day => days[['MO','TU','WE','TH','FR','SA','SU'].indexOf(day)]).join(', ')}`;
-    }
-
-    if (rule.bymonthday && rule.bymonthday.length > 0) {
-        text += ` on day${rule.bymonthday.length > 1 ? 's' : ''} ${formatNumberList(rule.bymonthday)} of the month`;
-    }
-
-    if (rule.bymonth && rule.bymonth.length > 0) {
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        text += ` in ${rule.bymonth.map(m => months[m - 1]).join(', ')}`;
     }
 
     if (rule.bysetpos && rule.bysetpos.length > 0) {
@@ -352,6 +361,15 @@ function ruleToText(rule) {
             return `${Math.abs(pos)}th from last`;
         });
         text += ` (${positions.join(', ')})`;
+    }
+
+    if (rule.bymonthday && rule.bymonthday.length > 0) {
+        text += ` on day${rule.bymonthday.length > 1 ? 's' : ''} ${formatNumberList(rule.bymonthday)} of the month`;
+    }
+
+    if (rule.bymonth && rule.bymonth.length > 0) {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        text += ` in ${rule.bymonth.map(m => months[m - 1]).join(', ')}`;
     }
 
     return text;

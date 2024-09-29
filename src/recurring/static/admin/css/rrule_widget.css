@@ -12,6 +12,21 @@
     border-radius: 4px;
 }
 
+.date-range-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.date-range-container label {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.date-range-container input[type="date"] {
+    width: 100%;
+}
+
 .recurrence-set-text, .recurrence-rule-text {
     font-style: italic;
     color: #666;
