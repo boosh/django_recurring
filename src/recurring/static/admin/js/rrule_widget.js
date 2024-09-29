@@ -415,20 +415,26 @@ function ruleToText(rule) {
 
     text += `${rule.isExclusion ? 'Exclusion' : 'Inclusion'}: `;
 
-    // Always include date range information
-    text += 'From ';
-    text += rule.startDate ? new Date(rule.startDate).toLocaleDateString() : 'the beginning';
-    text += ' to ';
-    text += rule.endDate ? new Date(rule.endDate).toLocaleDateString() : 'the end';
-    text += ', ';
+    // Handle single date or date range
+    if (rule.startDate && (!rule.endDate || rule.startDate === rule.endDate)) {
+        text += `On ${new Date(rule.startDate).toLocaleDateString()}`;
+    } else {
+        text += 'From ';
+        text += rule.startDate ? new Date(rule.startDate).toLocaleDateString() : 'the beginning';
+        text += ' to ';
+        text += rule.endDate ? new Date(rule.endDate).toLocaleDateString() : 'the end';
+    }
 
-    const frequency = rule.frequency.toLowerCase();
-    const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `${frequency}`;
-    text += `${interval}`;
+    // Only add frequency information if it's not a single date
+    if (!rule.startDate || (rule.endDate && rule.startDate !== rule.endDate)) {
+        const frequency = rule.frequency.toLowerCase();
+        const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `${frequency}`;
+        text += `, ${interval}`;
 
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    if (rule.byweekday && rule.byweekday.length > 0) {
-        text += ` on ${rule.byweekday.map(day => days[['MO','TU','WE','TH','FR','SA','SU'].indexOf(day)]).join(', ')}`;
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        if (rule.byweekday && rule.byweekday.length > 0) {
+            text += ` on ${rule.byweekday.map(day => days[['MO','TU','WE','TH','FR','SA','SU'].indexOf(day)]).join(', ')}`;
+        }
     }
 
     if (rule.bymonth && rule.bymonth.length > 0) {
