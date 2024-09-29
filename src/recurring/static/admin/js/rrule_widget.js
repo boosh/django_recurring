@@ -81,7 +81,7 @@ function initRecurrenceSetWidget(name) {
         text.innerHTML = recurrenceSet.toText();
     };
 
-    const initialData = input.value;
+    const initialData = input.value || input.getAttribute('data-initial');
     if (initialData) {
         try {
             const parsedSet = JSON.parse(initialData);
@@ -89,6 +89,9 @@ function initRecurrenceSetWidget(name) {
             parsedSet.dates.forEach(date => recurrenceSet.dates.push(date));
             recurrenceSetForm.setRecurrenceSet(recurrenceSet);
             recurrenceSet.updateTextDisplay();
+            
+            // Ensure the input value is set even if there's no interaction
+            input.value = recurrenceSet.toJSON();
         } catch (error) {
             console.error('Error parsing initial data:', error);
             text.innerHTML = 'Error: Invalid recurrence set data';
