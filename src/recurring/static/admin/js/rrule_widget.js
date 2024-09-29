@@ -406,7 +406,7 @@ class RecurrenceRuleForm {
         if (exclusionCheckbox) exclusionCheckbox.checked = rule.isExclusion;
 
         byweekdayButtons.forEach(button => {
-            button.classList.toggle('selected', rule.byweekday.includes(button.textContent));
+            button.classList.toggle('selected', rule.byweekday.includes(button.dataset.day));
         });
 
         bymonthButtons.forEach(button => {
