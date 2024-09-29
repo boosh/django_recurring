@@ -69,14 +69,16 @@ class RecurrenceSetForm {
 
         ruleForm.onChange = (rule) => {
             if (rule) {
-                const existingIndex = this.recurrenceSet.rules.findIndex(r => r === ruleForm.rule);
+                const existingIndex = this.recurrenceSet.rules.findIndex(r => r.id === ruleForm.ruleId);
                 if (existingIndex === -1) {
+                    rule.id = Date.now(); // Assign a unique ID to the rule
                     this.recurrenceSet.rules.push(rule);
                 } else {
                     this.recurrenceSet.rules[existingIndex] = rule;
                 }
+                ruleForm.ruleId = rule.id;
             } else {
-                const index = this.recurrenceSet.rules.findIndex(r => r === ruleForm.rule);
+                const index = this.recurrenceSet.rules.findIndex(r => r.id === ruleForm.ruleId);
                 if (index !== -1) {
                     this.recurrenceSet.rules.splice(index, 1);
                 }
@@ -144,6 +146,7 @@ class RecurrenceRuleForm {
     constructor(container) {
         this.container = container;
         this.rule = null;
+        this.ruleId = null;
         this.createForm();
     }
 
@@ -232,7 +235,7 @@ class RecurrenceRuleForm {
 
         if (!frequencySelect || !intervalInput || !exclusionCheckbox) return;
 
-        this.rule = {
+        const newRule = {
             frequency: frequencySelect.value,
             interval: parseInt(intervalInput.value, 10),
             isExclusion: exclusionCheckbox.checked,
@@ -242,7 +245,10 @@ class RecurrenceRuleForm {
             bysetpos: Array.from(bysetposButtons).map(button => parseInt(button.value, 10))
         };
 
-        this.onChange(this.rule);
+        if (JSON.stringify(this.rule) !== JSON.stringify(newRule)) {
+            this.rule = newRule;
+            this.onChange(this.rule);
+        }
     }
 
     parseNumberList(input) {
@@ -258,6 +264,7 @@ class RecurrenceRuleForm {
 
     setRule(rule) {
         this.rule = rule;
+        this.ruleId = rule.id || Date.now(); // Set the ruleId
         const frequencySelect = this.container.querySelector('.frequency-select');
         const intervalInput = this.container.querySelector('.interval-input');
         const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
