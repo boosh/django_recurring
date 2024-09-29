@@ -32,14 +32,26 @@ class RecurrenceSet {
     }
 
     toText() {
-        let text = 'Recurrence Set:\n';
-        this.rules.forEach((rule, index) => {
-            text += `Rule ${index + 1}: ${ruleToText(rule)}\n`;
+        let html = '<ul style="margin-left: 0">';
+        html += '<li><strong>Recurrence Set:</strong></li>';
+
+        this.rules.forEach((rule) => {
+            html += `<li style="list-style-type: disc; margin-left: 10px">${ruleToText(rule)}</li>`;
         });
-        this.dates.forEach((date, index) => {
-            text += `Date ${index + 1}: ${date.date} (${date.isExclusion ? 'Exclusion' : 'Inclusion'})\n`;
+
+        this.dates.forEach((date) => {
+            html += `<li style="list-style-type: disc; margin-left: 10px">${date.isExclusion ? 'Exclusion' : 'Inclusion'} Date: ${date.date}</li>`;
         });
-        return text;
+
+        html += '</ul>';
+        return html;
+    }
+
+    updateTextDisplay() {
+        const textElement = document.getElementById(`recurrence-set-text-${this.name}`);
+        if (textElement) {
+            textElement.innerHTML = this.toText();
+        }
     }
 
     toICal() {
@@ -63,7 +75,7 @@ function initRecurrenceSetWidget(name) {
 
     recurrenceSetForm.onChange = function () {
         input.value = recurrenceSet.toICal();
-        text.textContent = recurrenceSet.toText();
+        text.innerHTML = recurrenceSet.toText();
     };
 
     if (input.value) {
@@ -72,10 +84,10 @@ function initRecurrenceSetWidget(name) {
             parsedSet.rules.forEach(rule => recurrenceSet.addRule(rule));
             parsedSet.dates.forEach(date => recurrenceSet.dates.push(date));
             recurrenceSetForm.setRecurrenceSet(recurrenceSet);
-            text.textContent = recurrenceSet.toText();
+            recurrenceSet.updateTextDisplay();
         } catch (error) {
             console.error('Error parsing input value:', error);
-            text.textContent = 'Error: Invalid recurrence set data';
+            text.innerHTML = 'Error: Invalid recurrence set data';
         }
     }
 
@@ -151,7 +163,8 @@ class RecurrenceSetForm {
     }
 
     onChange() {
-        // Callback to be overridden
+        this.updateTextDisplay();
+        // Additional callback logic can be added here if needed
     }
 }
 
@@ -181,11 +194,14 @@ class RecurrenceRuleForm {
                 <option value="DAILY">Daily</option>
             </select>
             <input type="number" class="interval-input" min="1" value="1">
-            <label for="exclusion-checkbox">Exclude:</label>
-            <input type="checkbox" id="exclusion-checkbox" class="exclusion-checkbox">
+            <label for="exclusion-checkbox">
+                <input type="checkbox" id="exclusion-checkbox" class="exclusion-checkbox">
+                Exclude
+            </label>
             <div class="byweekday-container"></div>
             <div class="bymonth-container"></div>
-            <input type="text" class="bymonthday-input" placeholder="By month day (e.g., 1,15,-1)">
+            <label for="bymonthday-input">By month day:</label>
+            <input type="text" id="bymonthday-input" class="bymonthday-input" placeholder="e.g., 1,15,-1">
             <div class="bysetpos-container"></div>
             <button class="remove-rule">Remove Rule</button>
             <button class="duplicate-rule">Duplicate Rule</button>
