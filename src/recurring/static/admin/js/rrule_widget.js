@@ -88,10 +88,10 @@ function initRecurrenceSetWidget(name) {
             parsedSet.rules.forEach(rule => recurrenceSet.addRule(rule.rule));
             parsedSet.dates.forEach(date => recurrenceSet.dates.push(date));
             recurrenceSetForm.setRecurrenceSet(recurrenceSet);
-            
+
             // Ensure the input value is set even if there's no interaction
             input.value = recurrenceSet.toJSON();
-            
+
             // Render the "Recurrence Set:" list immediately
             text.innerHTML = recurrenceSet.toText();
         } catch (error) {
@@ -185,20 +185,15 @@ class RecurrenceRuleForm {
         this.container = container;
         this.recurrenceSet = recurrenceSet;
         this.rule = null;
+        this.dateRanges = [];
         this.createForm();
     }
 
     createForm() {
         // Create the HTML structure for the form
         this.container.innerHTML = `
-            <div class="date-range-container">
-                <select class="date-type-select">
-                    <option value="single">Single Date</option>
-                    <option value="range">Date Range</option>
-                </select>
-                <input type="date" class="start-date">
-                <input type="date" class="end-date" style="display: none;">
-            </div>
+            <div class="date-ranges-container"></div>
+            <button class="add-date-range">Add Date Range</button>
             <select class="frequency-select">
                 <option value="YEARLY">Yearly</option>
                 <option value="MONTHLY">Monthly</option>
@@ -206,10 +201,6 @@ class RecurrenceRuleForm {
                 <option value="DAILY">Daily</option>
             </select>
             <input type="number" class="interval-input" min="1" value="1">
-            <label for="exclusion-checkbox">
-                <input type="checkbox" id="exclusion-checkbox" class="exclusion-checkbox">
-                Exclude
-            </label>
             <div class="byweekday-container"></div>
             <div class="bymonth-container"></div>
             <label for="bymonthday-input">By month day:</label>
@@ -220,16 +211,12 @@ class RecurrenceRuleForm {
         `;
 
         // Add event listeners for form elements
-        this.container.querySelector('.date-type-select').addEventListener('change', (e) => {
-            const endDateInput = this.container.querySelector('.end-date');
-            endDateInput.style.display = e.target.value === 'range' ? 'inline-block' : 'none';
-            this.updateRule();
+        this.container.querySelector('.add-date-range').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.addDateRange();
         });
-        this.container.querySelector('.start-date').addEventListener('change', () => this.updateRule());
-        this.container.querySelector('.end-date').addEventListener('change', () => this.updateRule());
         this.container.querySelector('.frequency-select').addEventListener('change', () => this.updateRule());
         this.container.querySelector('.interval-input').addEventListener('change', () => this.updateRule());
-        this.container.querySelector('.exclusion-checkbox').addEventListener('change', () => this.updateRule());
         this.container.querySelector('.bymonthday-input').addEventListener('change', () => this.updateRule());
 
         this.createWeekdayButtons();
@@ -252,6 +239,35 @@ class RecurrenceRuleForm {
                 this.duplicateRule();
             });
         }
+
+        // Add initial date range
+        this.addDateRange();
+    }
+
+    addDateRange() {
+        const dateRangeContainer = document.createElement('div');
+        dateRangeContainer.className = 'date-range-container';
+        dateRangeContainer.innerHTML = `
+            <input type="date" class="start-date">
+            <input type="date" class="end-date">
+            <label>
+                <input type="checkbox" class="exclusion-checkbox">
+                Exclude
+            </label>
+            <button class="remove-date-range">Remove</button>
+        `;
+
+        dateRangeContainer.querySelector('.start-date').addEventListener('change', () => this.updateRule());
+        dateRangeContainer.querySelector('.end-date').addEventListener('change', () => this.updateRule());
+        dateRangeContainer.querySelector('.exclusion-checkbox').addEventListener('change', () => this.updateRule());
+        dateRangeContainer.querySelector('.remove-date-range').addEventListener('click', (e) => {
+            e.preventDefault();
+            dateRangeContainer.remove();
+            this.updateRule();
+        });
+
+        this.container.querySelector('.date-ranges-container').appendChild(dateRangeContainer);
+        this.updateRule();
     }
 
     createWeekdayButtons() {
@@ -345,28 +361,40 @@ class RecurrenceRuleForm {
     updateRule() {
         const frequencySelect = this.container.querySelector('.frequency-select');
         const intervalInput = this.container.querySelector('.interval-input');
-        const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
         const byweekdayButtons = this.container.querySelectorAll('.weekday-button.selected');
         const bymonthButtons = this.container.querySelectorAll('.month-button.selected');
         const bymonthdayInput = this.container.querySelector('.bymonthday-input');
         const bysetposButtons = this.container.querySelectorAll('.bysetpos-button.selected');
-        const dateTypeSelect = this.container.querySelector('.date-type-select');
-        const startDateInput = this.container.querySelector('.start-date');
-        const endDateInput = this.container.querySelector('.end-date');
+        const dateRangeContainers = this.container.querySelectorAll('.date-range-container');
 
-        if (!frequencySelect || !intervalInput || !exclusionCheckbox || !dateTypeSelect || !startDateInput) return;
+        if (!frequencySelect || !intervalInput) return;
+
+        if (!this.rule) {
+            this.rule = {
+                frequency: 'YEARLY',
+                interval: 1,
+                byweekday: [],
+                bymonth: [],
+                bymonthday: [],
+                bysetpos: [],
+                dateRanges: []
+            };
+        }
 
         this.rule.frequency = frequencySelect.value;
         this.rule.interval = parseInt(intervalInput.value, 10);
-        this.rule.isExclusion = exclusionCheckbox.checked;
         this.rule.byweekday = Array.from(byweekdayButtons).map(button => button.dataset.day);
         this.rule.bymonth = Array.from(bymonthButtons).map(button => parseInt(button.value, 10));
         this.rule.bymonthday = this.parseNumberList(bymonthdayInput.value);
         this.rule.bysetpos = Array.from(bysetposButtons).map(button => parseInt(button.value, 10));
 
-        // Update date information
-        this.rule.startDate = startDateInput.value;
-        this.rule.endDate = dateTypeSelect.value === 'range' ? endDateInput.value : null;
+        // Update date ranges
+        this.rule.dateRanges = Array.from(dateRangeContainers).map(container => {
+            const startDate = container.querySelector('.start-date').value;
+            const endDate = container.querySelector('.end-date').value;
+            const isExclusion = container.querySelector('.exclusion-checkbox').checked;
+            return { startDate, endDate, isExclusion };
+        });
 
         this.onChange(this.rule);
     }
@@ -383,41 +411,82 @@ class RecurrenceRuleForm {
     }
 
     setRule(rule) {
-        this.rule = rule;
-        const dateTypeSelect = this.container.querySelector('.date-type-select');
-        const startDateInput = this.container.querySelector('.start-date');
-        const endDateInput = this.container.querySelector('.end-date');
+        this.rule = rule || {
+            frequency: 'YEARLY',
+            interval: 1,
+            byweekday: [],
+            bymonth: [],
+            bymonthday: [],
+            bysetpos: [],
+            dateRanges: []
+        };
         const frequencySelect = this.container.querySelector('.frequency-select');
         const intervalInput = this.container.querySelector('.interval-input');
-        const exclusionCheckbox = this.container.querySelector('.exclusion-checkbox');
         const byweekdayButtons = this.container.querySelectorAll('.weekday-button');
         const bymonthButtons = this.container.querySelectorAll('.month-button');
         const bymonthdayInput = this.container.querySelector('.bymonthday-input');
         const bysetposButtons = this.container.querySelectorAll('.bysetpos-button');
 
-        if (dateTypeSelect) dateTypeSelect.value = rule.endDate ? 'range' : 'single';
-        if (startDateInput) startDateInput.value = rule.startDate ? rule.startDate.slice(0, 10) : '';
-        if (endDateInput) {
-            endDateInput.value = rule.endDate ? rule.endDate.slice(0, 10) : '';
-            endDateInput.style.display = rule.endDate ? 'inline-block' : 'none';
-        }
-        if (frequencySelect) frequencySelect.value = rule.frequency;
-        if (intervalInput) intervalInput.value = rule.interval;
-        if (exclusionCheckbox) exclusionCheckbox.checked = rule.isExclusion;
+        if (frequencySelect) frequencySelect.value = this.rule.frequency;
+        if (intervalInput) intervalInput.value = this.rule.interval;
 
         byweekdayButtons.forEach(button => {
-            button.classList.toggle('selected', rule.byweekday.includes(button.dataset.day));
+            button.classList.toggle('selected', this.rule.byweekday.includes(button.dataset.day));
         });
 
         bymonthButtons.forEach(button => {
-            button.classList.toggle('selected', rule.bymonth.includes(parseInt(button.value, 10)));
+            button.classList.toggle('selected', this.rule.bymonth.includes(parseInt(button.value, 10)));
         });
 
-        if (bymonthdayInput) bymonthdayInput.value = this.formatNumberList(rule.bymonthday);
+        if (bymonthdayInput) bymonthdayInput.value = this.formatNumberList(this.rule.bymonthday);
 
         bysetposButtons.forEach(button => {
-            button.classList.toggle('selected', rule.bysetpos.includes(parseInt(button.value, 10)));
+            button.classList.toggle('selected', this.rule.bysetpos.includes(parseInt(button.value, 10)));
         });
+
+        // Clear existing date ranges
+        this.container.querySelector('.date-ranges-container').innerHTML = '';
+
+        // Add date ranges
+        if (this.rule.dateRanges && this.rule.dateRanges.length > 0) {
+            this.rule.dateRanges.forEach(dateRange => {
+                this.addDateRange(dateRange);
+            });
+        } else {
+            this.addDateRange();
+        }
+    }
+
+    addDateRange(dateRange = null) {
+        const dateRangeContainer = document.createElement('div');
+        dateRangeContainer.className = 'date-range-container';
+        dateRangeContainer.innerHTML = `
+            <input type="date" class="start-date">
+            <input type="date" class="end-date">
+            <label>
+                <input type="checkbox" class="exclusion-checkbox">
+                Exclude
+            </label>
+            <button class="remove-date-range">Remove</button>
+        `;
+
+        if (dateRange) {
+            dateRangeContainer.querySelector('.start-date').value = dateRange.startDate;
+            dateRangeContainer.querySelector('.end-date').value = dateRange.endDate;
+            dateRangeContainer.querySelector('.exclusion-checkbox').checked = dateRange.isExclusion;
+        }
+
+        dateRangeContainer.querySelector('.start-date').addEventListener('change', () => this.updateRule());
+        dateRangeContainer.querySelector('.end-date').addEventListener('change', () => this.updateRule());
+        dateRangeContainer.querySelector('.exclusion-checkbox').addEventListener('change', () => this.updateRule());
+        dateRangeContainer.querySelector('.remove-date-range').addEventListener('click', (e) => {
+            e.preventDefault();
+            dateRangeContainer.remove();
+            this.updateRule();
+        });
+
+        this.container.querySelector('.date-ranges-container').appendChild(dateRangeContainer);
+        this.updateRule();
     }
 
     formatNumberList(numbers) {
@@ -460,7 +529,7 @@ function ruleToText(rule) {
 
     // Add weekday information
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const dayShortCodes = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const dayShortCodes = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
     if (rule.byweekday && rule.byweekday.length > 0) {
         text += ` on ${rule.byweekday.map(day => days[dayShortCodes.indexOf(day)]).join(', ')}`;
     }
