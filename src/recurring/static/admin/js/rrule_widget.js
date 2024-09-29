@@ -60,18 +60,20 @@ class RecurrenceSetForm {
         const ruleForm = new RecurrenceRuleForm(ruleContainer);
         this.container.querySelector('#rules-container').appendChild(ruleContainer);
 
+        const newRuleId = Date.now(); // Generate a new unique ID
+        ruleForm.ruleId = newRuleId; // Set the ID for the new rule form
+
         ruleForm.onChange = (rule) => {
             if (rule) {
-                const existingIndex = this.recurrenceSet.rules.findIndex(r => r.id === ruleForm.ruleId);
+                rule.id = newRuleId; // Ensure the rule has the ID
+                const existingIndex = this.recurrenceSet.rules.findIndex(r => r.id === newRuleId);
                 if (existingIndex === -1) {
-                    rule.id = Date.now(); // Assign a unique ID to the rule
                     this.recurrenceSet.rules.push(rule);
                 } else {
                     this.recurrenceSet.rules[existingIndex] = rule;
                 }
-                ruleForm.ruleId = rule.id;
             } else {
-                const index = this.recurrenceSet.rules.findIndex(r => r.id === ruleForm.ruleId);
+                const index = this.recurrenceSet.rules.findIndex(r => r.id === newRuleId);
                 if (index !== -1) {
                     this.recurrenceSet.rules.splice(index, 1);
                 }
@@ -278,8 +280,8 @@ class RecurrenceRuleForm {
 
 function recurrenceSetToText(recurrenceSet) {
     let text = 'Recurrence Set:\n';
-    recurrenceSet.rules.forEach((rule, index) => {
-        text += `Rule ${index + 1}: ${ruleToText(rule)}\n`;
+    recurrenceSet.rules.forEach((rule) => {
+        text += `Rule ${rule.id}: ${ruleToText(rule)}\n`;
     });
     recurrenceSet.dates.forEach((date, index) => {
         text += `Date ${index + 1}: ${date.date} (${date.isExclusion ? 'Exclusion' : 'Inclusion'})\n`;
@@ -307,6 +309,15 @@ function ruleToText(rule) {
         text += ` on ${rule.byweekday.map(day => days[['MO','TU','WE','TH','FR','SA','SU'].indexOf(day)]).join(', ')}`;
     }
 
+    if (rule.bymonth && rule.bymonth.length > 0) {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        text += ` in ${rule.bymonth.map(m => months[m - 1]).join(', ')}`;
+    }
+
+    if (rule.bymonthday && rule.bymonthday.length > 0) {
+        text += ` on day${rule.bymonthday.length > 1 ? 's' : ''} ${formatNumberList(rule.bymonthday)} of the month`;
+    }
+
     if (rule.bysetpos && rule.bysetpos.length > 0) {
         const positions = rule.bysetpos.map(pos => {
             if (pos === 1) return '1st';
@@ -317,15 +328,6 @@ function ruleToText(rule) {
             return `${Math.abs(pos)}th from last`;
         });
         text += ` (${positions.join(', ')})`;
-    }
-
-    if (rule.bymonthday && rule.bymonthday.length > 0) {
-        text += ` on day${rule.bymonthday.length > 1 ? 's' : ''} ${formatNumberList(rule.bymonthday)} of the month`;
-    }
-
-    if (rule.bymonth && rule.bymonth.length > 0) {
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        text += ` in ${rule.bymonth.map(m => months[m - 1]).join(', ')}`;
     }
 
     return text;
