@@ -297,7 +297,7 @@ class RecurrenceRuleForm {
             const newRuleContainer = document.createElement('div');
             newRuleContainer.className = 'rule-container';
             this.container.parentNode.insertBefore(newRuleContainer, this.container.nextSibling);
-            
+
             const newRuleForm = new RecurrenceRuleForm(newRuleContainer, this.recurrenceSet);
             newRuleForm.setRule(newRule);
             newRuleForm.onChange = (updatedRule) => {
@@ -308,7 +308,7 @@ class RecurrenceRuleForm {
                 }
                 this.onChange(this.rule);
             };
-            
+
             // Immediately update the Recurrence Set text
             this.onChange(this.rule);
         }
@@ -386,7 +386,7 @@ class RecurrenceRuleForm {
         });
 
         if (bymonthdayInput) bymonthdayInput.value = this.formatNumberList(rule.bymonthday);
-        
+
         bysetposButtons.forEach(button => {
             button.classList.toggle('selected', rule.bysetpos.includes(parseInt(button.value, 10)));
         });
@@ -425,16 +425,16 @@ function ruleToText(rule) {
         text += rule.endDate ? new Date(rule.endDate).toLocaleDateString() : 'the end';
     }
 
-    // Only add frequency information if it's not a single date
-    if (!rule.startDate || (rule.endDate && rule.startDate !== rule.endDate)) {
-        const frequency = rule.frequency.toLowerCase();
-        const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `${frequency}`;
-        text += `, ${interval}`;
+    // Add frequency information
+    const frequency = rule.frequency.toLowerCase();
+    const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `${frequency}`;
+    text += `, ${interval}`;
 
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        if (rule.byweekday && rule.byweekday.length > 0) {
-            text += ` on ${rule.byweekday.map(day => days[['MO','TU','WE','TH','FR','SA','SU'].indexOf(day)]).join(', ')}`;
-        }
+    // Add weekday information
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const dayShortCodes = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    if (rule.byweekday && rule.byweekday.length > 0) {
+        text += ` on ${rule.byweekday.map(day => days[dayShortCodes.indexOf(day)]).join(', ')}`;
     }
 
     if (rule.bymonth && rule.bymonth.length > 0) {
