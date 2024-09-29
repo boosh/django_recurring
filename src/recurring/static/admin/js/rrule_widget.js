@@ -280,7 +280,7 @@ class RecurrenceRuleForm {
             if (monthlyType === 'day-of-month') {
                 this.rule.bymonthday = parseInt(this.container.querySelector('.day-of-month').value, 10);
             } else {
-                const weekOfMonth = this.container.querySelector('.week-of-month').value;
+                const weekOfMonth = parseInt(this.container.querySelector('.week-of-month').value, 10);
                 const dayOfWeek = this.container.querySelector('.day-of-week').value;
                 this.rule.byday = `${weekOfMonth}${dayOfWeek}`;
             }
@@ -343,8 +343,10 @@ function ruleToText(rule) {
             text += ` on day ${rule.bymonthday}`;
         } else if (rule.byday) {
             const weeks = ['first', 'second', 'third', 'fourth', 'last'];
-            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-            text += ` on the ${weeks[Math.abs(rule.byday) - 1]} ${days[rule.byday % 7]}`;
+            const days = {'MO': 'Monday', 'TU': 'Tuesday', 'WE': 'Wednesday', 'TH': 'Thursday', 'FR': 'Friday', 'SA': 'Saturday', 'SU': 'Sunday'};
+            const weekNum = parseInt(rule.byday.slice(0, -2), 10);
+            const dayCode = rule.byday.slice(-2);
+            text += ` on the ${weeks[Math.abs(weekNum) - 1]} ${days[dayCode]}`;
         }
     } else if (rule.frequency === 'YEARLY' && rule.bymonth) {
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
