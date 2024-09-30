@@ -145,14 +145,6 @@ function initRecurrenceSetWidget(name) {
         }
         return true;
     }
-
-    const addRuleButton = form.querySelector('#add-rule');
-    if (addRuleButton) {
-        addRuleButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            recurrenceSetForm.addRule();
-        });
-    }
 }
 
 class RecurrenceSetForm {
@@ -199,6 +191,7 @@ class RecurrenceSetForm {
     }
 
     createRuleForm(container, rule) {
+        console.log(`Adding form for rule ${JSON.stringify(rule)}`);
         container.innerHTML = `
             <div class="date-ranges-container"></div>
             <button class="add-date-range">Add Date Range</button>
