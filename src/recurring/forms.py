@@ -122,7 +122,7 @@ class RecurrenceSetForm(forms.ModelForm):
         if not hasattr(self, 'recurrence_set_data') or not any(rule_data['date_ranges'] for rule_data in self.recurrence_set_data.get('rules', [])):
             self.add_error(None, "You must add at least one rule with a date range to the recurrence set.")
 
-        cleaned_data['recurrence_set']= self.recurrence_set_data
+        cleaned_data['recurrence_set']= getattr(self, "recurrence_set_data", {})
         logger.info(f"Cleaned data: {cleaned_data}")
 
         return cleaned_data
