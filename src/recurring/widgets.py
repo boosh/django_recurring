@@ -44,7 +44,7 @@ class RecurrenceSetWidget(forms.Widget):
         if value is None:
             value = ""
         # ignore value because it doesn't include the date ranges
-        context["widget"]["value"] = self.initial
+        context["widget"]["value"] = self.initial if hasattr(self, 'initial') else value
 
         if hasattr(self, 'initial'):
             context["widget"]["attrs"]["data-initial"] = self.initial
