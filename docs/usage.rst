@@ -48,7 +48,7 @@ Quick Start
       # Recalculate occurrences
       recurrence_set.recalculate_occurrences()
 
-3. Query events within a date range:
+3. Query previous/next events within a date range:
 
    .. code-block:: python
 
@@ -98,7 +98,7 @@ You can create complex recurrence patterns by combining multiple rules:
 
    recurrence_set.recalculate_occurrences()
 
-Note: Always call `recalculate_occurrences()` after making changes to RecurrenceSets to keep the next and previous occurrence fields up-to-date.
+Note: Always call `recalculate_occurrences()` after making changes to RecurrenceSets to keep the `next` and `previous` occurrence fields up-to-date.
 
 Exporting to iCal Format
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -119,7 +119,7 @@ django-recurring supports exporting RecurrenceSets to iCal format:
 
 This will create an iCal file that can be imported into most calendar applications.
 
-Admin Interface
+Admin Widget
 ---------------
 
 django-recurring ships with a widget for the Django admin interface to create complex intervals easily:

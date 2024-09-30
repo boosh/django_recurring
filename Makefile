@@ -67,9 +67,9 @@ coverage: ## check code coverage quickly with the default Python
 	$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/django_recurring.rst
+	rm -f docs/recurring.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ django_recurring
+	sphinx-apidoc -o docs/ src/recurring src/recurring/tests src/recurring/migrations
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
