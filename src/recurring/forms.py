@@ -100,9 +100,6 @@ class RecurrenceSetForm(forms.ModelForm):
                 if not isinstance(recurrence_set_dict['rules'], list):
                     raise ValueError("Recurrence set data must contain a 'rules' list")
 
-                if not isinstance(recurrence_set_dict['dates'], list):
-                    raise ValueError("Recurrence set data must contain a 'dates' list")
-
                 # Process rules
                 rules_to_add = []
                 for rule_data in recurrence_set_dict['rules']:

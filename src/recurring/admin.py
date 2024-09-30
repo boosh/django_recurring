@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from django import forms
 from django.contrib import admin
@@ -55,10 +56,18 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
                     # Add date ranges
                     for rule in obj.recurrencesetrules.all():
                         for date_range_data in rule_data['date_ranges']:
+                            start_date_str = date_range_data['start_date']
+                            end_date_str = date_range_data['end_date']
+
+                            if not start_date_str:
+                                continue
+
+                            end_date = parse_datetime(end_date_str) if end_date_str else datetime.max
+
                             RecurrenceRuleDateRange.objects.create(
                                 recurrence_rule=rule.recurrence_rule,
-                                start_date=parse_datetime(date_range_data['start_date']),
-                                end_date=parse_datetime(date_range_data['end_date']),
+                                start_date=parse_datetime(start_date_str),
+                                end_date=end_date,
                                 is_exclusion=date_range_data.get('is_exclusion', False)
                             )
 
