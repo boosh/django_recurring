@@ -106,23 +106,19 @@ class RecurrenceSetForm(forms.ModelForm):
                     if not isinstance(rule_data, dict):
                         raise ValueError("Each rule must be a dictionary")
 
+                    if 'rule' not in rule_data:
+                        raise ValueError("Each rule must contain a 'rule' key")
+
                     # Create a new rule dictionary with the expected structure
                     new_rule_data = {
-                        'rule': {
-                            'frequency': rule_data['frequency'],
-                            'interval': rule_data['interval'],
-                            'byweekday': rule_data['byweekday'],
-                            'bymonth': rule_data['bymonth'],
-                            'bymonthday': rule_data['bymonthday'],
-                            'bysetpos': rule_data['bysetpos'],
-                        },
+                        'rule': rule_data['rule'],
                         'is_exclusion': rule_data['is_exclusion'],
                         'date_ranges': []
                     }
 
                     # Process date ranges
                     if not isinstance(rule_data['date_ranges'], list):
-                        raise ValueError("Each rule must contain a 'date_ranges' list")
+                        raise ValueError("Each rule must contain a 'dateRanges' list")
                     for date_range_data in rule_data['date_ranges']:
                         if not isinstance(date_range_data, dict):
                             raise ValueError("Each date range must be a dictionary")
