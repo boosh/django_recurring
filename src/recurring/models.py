@@ -19,7 +19,6 @@ from dateutil.rrule import (
 )
 from django.db import models
 from django.utils import timezone as django_timezone
-from django.utils.dateparse import parse_datetime
 from django.utils.translation import gettext_lazy as _
 
 # created in migrations
@@ -66,9 +65,6 @@ class RecurrenceRule(models.Model):
     )
     count = models.IntegerField(
         null=True, blank=True, help_text=_("How many occurrences will be generated")
-    )
-    until = models.DateTimeField(
-        null=True, blank=True, help_text=_("A date to repeat until")
     )
     bysetpos = models.JSONField(
         null=True, blank=True, help_text=_("By position (BYSETPOS)")
@@ -124,11 +120,6 @@ class RecurrenceRule(models.Model):
             kwargs["wkst"] = weekday_map[self.wkst]
         if self.count is not None:
             kwargs["count"] = self.count
-        if self.until is not None:
-            kwargs["until"] = min(
-                self.until.astimezone(tz) if self.until.tzinfo else tz.localize(self.until),
-                end_date
-            )
         if self.bysetpos:
             kwargs["bysetpos"] = self.bysetpos
         if self.bymonth:
@@ -157,7 +148,6 @@ class RecurrenceRule(models.Model):
             'interval': self.interval,
             'wkst': self.wkst,
             'count': self.count,
-            'until': self.until.isoformat() if self.until else None,
             'bysetpos': self.bysetpos,
             'bymonth': self.bymonth,
             'bymonthday': self.bymonthday,
@@ -271,7 +261,6 @@ class RecurrenceSet(models.Model):
             rule.interval = rule_dict.get('interval', 1)
             rule.wkst = rule_dict.get('wkst')
             rule.count = rule_dict.get('count')
-            rule.until = parse_datetime(rule_dict['until']) if rule_dict.get('until') else None
             rule.timezone = self.timezone
 
             for field in [
