@@ -1,6 +1,8 @@
 import json
 import logging
+from datetime import datetime
 
+import pytz
 from django import forms
 
 from .models import RecurrenceSet
@@ -100,6 +102,16 @@ class RecurrenceSetForm(forms.ModelForm):
                             raise ValueError("Each date range must be a dictionary")
                         if 'start_date' not in date_range_data or 'end_date' not in date_range_data:
                             raise ValueError("Each date range must have 'start_date' and 'end_date'")
+
+                        # Convert start_date and end_date to timezone-aware datetimes
+                        start_date = datetime.fromisoformat(date_range_data['start_date'])
+                        end_date = datetime.fromisoformat(date_range_data['end_date'])
+
+                        # Get the submitted timezone
+                        submitted_timezone = pytz.timezone(cleaned_data.get('timezone').name)
+
+                        date_range_data['start_date'] = submitted_timezone.localize(start_date)
+                        date_range_data['end_date'] = submitted_timezone.localize(end_date)
 
             except json.JSONDecodeError:
                 self.add_error('recurrence_set', "Invalid JSON data for recurrence set.")

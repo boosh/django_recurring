@@ -269,8 +269,8 @@ class RecurrenceSet(models.Model):
             description=data.get('description', ''),
             timezone=Timezone.objects.get_or_create(name=data.get('timezone', 'UTC'))[0]
         )
-        recurrence_set.save()
 
+        rules = []
         for rule_data in data.get('rules', []):
             rule = RecurrenceRule()
             rule_dict = rule_data['rule']
@@ -289,21 +289,36 @@ class RecurrenceSet(models.Model):
                 if value is not None:
                     setattr(rule, field, value)
 
-            rule.save()
-
-            recurrence_set_rule = RecurrenceSetRule.objects.create(
-                recurrence_set=recurrence_set,
-                recurrence_rule=rule,
-                is_exclusion=rule_data.get('is_exclusion', False)
-            )
-
+            date_ranges = []
             for date_range_data in rule_data.get('date_ranges', []):
-                RecurrenceRuleDateRange.objects.create(
-                    recurrence_rule=rule,
+                date_ranges.append(RecurrenceRuleDateRange(
                     start_date=parse_datetime(date_range_data['start_date']),
                     end_date=parse_datetime(date_range_data['end_date']),
                     is_exclusion=date_range_data.get('is_exclusion', False)
-                )
+                ))
+
+            rules.append({
+                'rule': rule,
+                'is_exclusion': rule_data.get('is_exclusion', False),
+                'date_ranges': date_ranges
+            })
+
+        recurrence_set.save()
+
+        for rule_data in rules:
+            rule = rule_data['rule']
+            rule.save()
+            recurrence_set_rule = RecurrenceSetRule.objects.create(
+                recurrence_set=recurrence_set,
+                recurrence_rule=rule,
+                is_exclusion=rule_data['is_exclusion']
+            )
+            for date_range in rule_data['date_ranges']:
+                date_range.recurrence_rule = rule
+                date_range.save()
+
+        recurrence_set.recalculate_occurrences()
+        recurrence_set.save()
 
         return recurrence_set
 
