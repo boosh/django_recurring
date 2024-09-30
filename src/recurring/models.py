@@ -1,3 +1,5 @@
+import uuid
+
 import pytz
 from dateutil.rrule import (
     YEARLY,
@@ -17,6 +19,7 @@ from dateutil.rrule import (
     rrule,
     rruleset,
 )
+from django.conf import settings
 from django.db import models
 from django.utils import timezone as django_timezone
 from django.utils.translation import gettext_lazy as _
@@ -330,14 +333,24 @@ class RecurrenceSet(models.Model):
             rule.recurrence_rule.delete()
         super().delete(*args, **kwargs)
 
-    def to_ical(self) -> str:
+    def to_ical(self, prod_id: str = None) -> str:
         """
         Convert the RecurrenceSet to an iCal string representation.
+
+        Args:
+            prod_id (str, optional): The PRODID to use in the iCal. Defaults to None.
 
         Returns:
             str: The iCal string representation of the recurrence set.
         """
         cal = Calendar()
+        cal.add('version', '2.0')
+
+        # Set PRODID
+        if prod_id is None:
+            prod_id = getattr(settings, 'ICAL_PROD_ID', '-//django-recurring//NONSGML v1.0//EN')
+        cal.add('prodid', prod_id)
+
         event = Event()
 
         if not self.recurrencesetrules.exists():
@@ -354,6 +367,8 @@ class RecurrenceSet(models.Model):
 
         event.add('dtstart', earliest_start)
         event.add('dtend', latest_end)
+        event.add('dtstamp', django_timezone.now())
+        event.add('uid', str(uuid.uuid4()))
 
         for recurrence_set_rule in self.recurrencesetrules.all():
             rule = recurrence_set_rule.recurrence_rule
@@ -361,7 +376,6 @@ class RecurrenceSet(models.Model):
                 rrule_dict = {
                     'freq': rule.get_frequency_display(),
                     'interval': rule.interval,
-                    'dtstart': date_range.start_date,
                     'until': date_range.end_date,
                 }
                 if rule.wkst is not None:
@@ -388,7 +402,7 @@ class RecurrenceSet(models.Model):
                     rrule_dict['bysecond'] = rule.bysecond
 
                 if recurrence_set_rule.is_exclusion or date_range.is_exclusion:
-                    event.add('exrule', rrule_dict)
+                    event.add('exdate', date_range.start_date)
                 else:
                     event.add('rrule', rrule_dict)
 

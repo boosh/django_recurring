@@ -226,11 +226,15 @@ class TestRecurrenceSet:
 
         # Check for specific components in the iCal string
         assert 'BEGIN:VCALENDAR' in ical_string
+        assert 'VERSION:2.0' in ical_string
+        assert 'PRODID:-//django-recurring//NONSGML v1.0//EN' in ical_string
         assert 'BEGIN:VEVENT' in ical_string
         assert 'DTSTART:20230101T000000Z' in ical_string
         assert 'DTEND:20230114T000000Z' in ical_string
-        assert 'RRULE:FREQ=DAILY;INTERVAL=1' in ical_string
-        assert 'EXRULE:FREQ=DAILY;INTERVAL=1' in ical_string
+        assert 'DTSTAMP:' in ical_string
+        assert 'UID:' in ical_string
+        assert 'RRULE:FREQ=DAILY;UNTIL=20230114T000000Z;INTERVAL=1' in ical_string
+        assert 'EXDATE:20230107T000000Z' in ical_string
         assert 'END:VEVENT' in ical_string
         assert 'END:VCALENDAR' in ical_string
 
@@ -248,10 +252,9 @@ class TestRecurrenceSet:
         assert rrule['FREQ'][0] == 'DAILY'
         assert rrule['INTERVAL'][0] == 1
 
-        # Check EXRULE
-        exrule = event['EXRULE']
-        assert exrule['FREQ'][0] == 'DAILY'
-        assert exrule['INTERVAL'][0] == 1
+        # Check EXDATE
+        exdate = event['EXDATE']
+        assert exclusion_start == exdate.dts[0].dt
 
         # Generate a list of dates from the RRULE
         from dateutil.rrule import rrulestr
@@ -270,6 +273,28 @@ class TestRecurrenceSet:
         assert django_timezone.datetime(2023, 1, 8, tzinfo=utc) not in dates
         assert django_timezone.datetime(2023, 1, 9, tzinfo=utc) not in dates
         assert django_timezone.datetime(2023, 1, 10, tzinfo=utc) not in dates
+
+    def test_to_ical_with_custom_prodid(self, recurrence_set, recurrence_rule):
+        utc = pytz.utc
+        start_date = django_timezone.datetime(2023, 1, 1, tzinfo=utc)
+        end_date = django_timezone.datetime(2023, 1, 14, tzinfo=utc)
+
+        RecurrenceSetRule.objects.create(
+            recurrence_set=recurrence_set,
+            recurrence_rule=recurrence_rule,
+            is_exclusion=False
+        )
+        RecurrenceRuleDateRange.objects.create(
+            recurrence_rule=recurrence_rule,
+            start_date=start_date,
+            end_date=end_date,
+            is_exclusion=False
+        )
+
+        custom_prodid = "-//Custom PRODID//EN"
+        ical_string = recurrence_set.to_ical(prod_id=custom_prodid)
+
+        assert f'PRODID:{custom_prodid}' in ical_string
 
 @pytest.mark.django_db
 class TestRecurrenceSetRule:
