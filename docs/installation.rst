@@ -39,7 +39,7 @@ After installing django-recurring, you need to add it to your Django project's s
 
    .. code-block:: python
 
-       ICAL_PROD_ID="-//my-company//My product v1.0//EN"
+       ICAL_PROD_ID="-//My Company//My Product//EN"
 
 3. Run migrations to create the necessary database tables:
 

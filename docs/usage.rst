@@ -98,7 +98,19 @@ You can create complex recurrence patterns by combining multiple rules:
 
    recurrence_set.recalculate_occurrences()
 
-Note: Always call `recalculate_occurrences()` after making changes to RecurrenceSets to keep the `next` and `previous` occurrence fields up-to-date. You can also call `recurrence_set.save(recalculate=True)`
+Recalculating occurrences
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to query by the `next` and `previous` occurrence fields you may need to manually call `recalculate_occurrences()`. It is called when creating/deleting rules but it may be missing in some places.
+
+You can call recalculate them in several ways:
+
+.. code-block:: python
+
+    recurrence_set.recalculate_occurrences()
+    recurrence_set.save(recalculate=True)
+
+Or you can recalculate them in bulk via the :doc:`management command <management_commands>`.
 
 Exporting to iCal Format
 ~~~~~~~~~~~~~~~~~~~~~~~~

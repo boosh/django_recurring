@@ -157,4 +157,6 @@ django-recurring supports exporting RecurrenceSets to iCal format:
 
 The resulting iCal file will contain all the recurrence rules and can be imported into most calendar applications.
 
-Note: Always call `recalculate_occurrences()` after making changes to RecurrenceSets or related objects to keep the `next` and `previous` occurrence fields up-to-date. You can also call `recurrence_set.save(recalculate=True)`
+.. important::
+
+    See notes on :doc:`recalculating occurrences <usage>`
