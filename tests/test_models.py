@@ -158,6 +158,7 @@ class TestRecurrenceSet:
         assert recurrence_set.next_occurrence is not None
         assert recurrence_set.previous_occurrence is not None
 
+
     def test_to_ical(self, recurrence_set, recurrence_rule):
         utc = pytz.utc
         start_date = django_timezone.datetime(2023, 1, 1, tzinfo=utc)
@@ -179,6 +180,55 @@ class TestRecurrenceSet:
         assert 'RRULE:FREQ=DAILY;INTERVAL=1' in ical_string
         assert f'DTSTART:{start_date.strftime("%Y%m%dT%H%M%SZ")}' in ical_string
         assert f'DTEND:{end_date.strftime("%Y%m%dT%H%M%SZ")}' in ical_string
+        assert 'END:VEVENT' in ical_string
+        assert 'END:VCALENDAR' in ical_string
+
+    def test_to_ical_with_exclusions(self, recurrence_set, recurrence_rule, timezone_obj):
+        utc = pytz.utc
+        start_date = django_timezone.datetime(2023, 1, 1, tzinfo=utc)
+        end_date = django_timezone.datetime(2023, 12, 31, tzinfo=utc)
+
+        # Create inclusion rule
+        RecurrenceSetRule.objects.create(
+            recurrence_set=recurrence_set,
+            recurrence_rule=recurrence_rule,
+            is_exclusion=False
+        )
+        RecurrenceRuleDateRange.objects.create(
+            recurrence_rule=recurrence_rule,
+            start_date=start_date,
+            end_date=end_date,
+            is_exclusion=False
+        )
+
+        # Create exclusion rule
+        exclusion_rule = RecurrenceRule.objects.create(
+            frequency=DAILY,
+            interval=1,
+            timezone=timezone_obj
+        )
+        RecurrenceSetRule.objects.create(
+            recurrence_set=recurrence_set,
+            recurrence_rule=exclusion_rule,
+            is_exclusion=True
+        )
+        exclusion_start = django_timezone.datetime(2023, 6, 1, tzinfo=utc)
+        exclusion_end = django_timezone.datetime(2023, 6, 30, tzinfo=utc)
+        RecurrenceRuleDateRange.objects.create(
+            recurrence_rule=exclusion_rule,
+            start_date=exclusion_start,
+            end_date=exclusion_end,
+            is_exclusion=True
+        )
+
+        ical_string = recurrence_set.to_ical()
+
+        assert 'BEGIN:VCALENDAR' in ical_string
+        assert 'BEGIN:VEVENT' in ical_string
+        assert 'RRULE:FREQ=DAILY;INTERVAL=1' in ical_string
+        assert f'DTSTART:{start_date.strftime("%Y%m%dT%H%M%SZ")}' in ical_string
+        assert f'DTEND:{end_date.strftime("%Y%m%dT%H%M%SZ")}' in ical_string
+        assert 'EXRULE:FREQ=DAILY;INTERVAL=1' in ical_string
         assert 'END:VEVENT' in ical_string
         assert 'END:VCALENDAR' in ical_string
 
