@@ -63,7 +63,19 @@ class RecurrenceSet {
 
     toJSON() {
         return JSON.stringify({
-            rules: this.rules,
+            rules: this.rules.map(rule => ({
+                rule: {
+                    id: rule.id,
+                    frequency: rule.frequency,
+                    interval: rule.interval,
+                    byweekday: rule.byweekday,
+                    bymonth: rule.bymonth,
+                    bymonthday: rule.bymonthday,
+                    bysetpos: rule.bysetpos
+                },
+                isExclusion: rule.isExclusion,
+                dateRanges: rule.dateRanges
+            }))
         });
     }
 }
@@ -84,9 +96,10 @@ function initRecurrenceSetWidget(name) {
     const recurrenceSetForm = new RecurrenceSetForm(form, recurrenceSet);
 
     function updateInputAndText() {
-        input.value = recurrenceSet.toJSON();
+        const jsonValue = recurrenceSetForm.toJSON();
+        input.value = jsonValue;
         text.innerHTML = recurrenceSet.toText();
-        console.log('Updated input value:', input.value);
+        console.log('Updated input value:', jsonValue);
     }
 
     recurrenceSetForm.onChange = updateInputAndText;
@@ -126,7 +139,7 @@ function initRecurrenceSetWidget(name) {
             const startDate = dateRanges[i].querySelector('.start-date').value;
             const endDate = dateRanges[i].querySelector('.end-date').value;
             if (!startDate || !endDate) {
-                alert('Please set both start and end dates for all date ranges.');
+                alert('Please set both start and end dates (including times) for all date ranges.');
                 return false;
             }
         }
@@ -146,20 +159,28 @@ class RecurrenceSetForm {
     constructor(container, recurrenceSet) {
         this.container = container;
         this.recurrenceSet = recurrenceSet;
+        this.rules = [];
         this.createForm();
     }
 
     createForm() {
-        // Implementation remains the same
+        this.container.innerHTML = `
+            <div id="rules-container"></div>
+            <button id="add-rule">Add Rule</button>
+        `;
+
+        this.container.querySelector('#add-rule').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.addRule();
+        });
     }
 
-    addRule() {
+    addRule(rule = null) {
         const ruleContainer = document.createElement('div');
         ruleContainer.className = 'rule-container';
-        const ruleForm = new RecurrenceRuleForm(ruleContainer, this.recurrenceSet);
         this.container.querySelector('#rules-container').appendChild(ruleContainer);
 
-        const newRule = {
+        const newRule = rule || {
             id: Date.now() + Math.random(),
             frequency: 'YEARLY',
             interval: 1,
@@ -167,57 +188,18 @@ class RecurrenceSetForm {
             byweekday: [],
             bymonth: [],
             bymonthday: [],
-            bysetpos: []
+            bysetpos: [],
+            dateRanges: []
         };
+
+        this.createRuleForm(ruleContainer, newRule);
+        this.rules.push(newRule);
         this.recurrenceSet.addRule(newRule);
-        ruleForm.setRule(newRule);
-
-        ruleForm.onChange = (updatedRule) => {
-            if (updatedRule) {
-                this.recurrenceSet.updateRule(updatedRule);
-            } else {
-                this.recurrenceSet.removeRule(newRule.id);
-            }
-            this.onChange();
-        };
+        this.onChange();
     }
 
-    setRecurrenceSet(recurrenceSet) {
-        this.recurrenceSet = recurrenceSet;
-        this.container.querySelector('#rules-container').innerHTML = '';
-
-        recurrenceSet.rules.forEach(rule => {
-            const ruleContainer = document.createElement('div');
-            ruleContainer.className = 'rule-container';
-            const ruleForm = new RecurrenceRuleForm(ruleContainer, this.recurrenceSet);
-            this.container.querySelector('#rules-container').appendChild(ruleContainer);
-            ruleForm.setRule(rule);
-
-            ruleForm.onChange = (updatedRule) => {
-                if (updatedRule) {
-                    this.recurrenceSet.updateRule(updatedRule);
-                } else {
-                    this.recurrenceSet.removeRule(rule.id);
-                }
-                this.onChange();
-            };
-        });
-    }
-
-}
-
-class RecurrenceRuleForm {
-    constructor(container, recurrenceSet) {
-        this.container = container;
-        this.recurrenceSet = recurrenceSet;
-        this.rule = null;
-        this.dateRanges = [];
-        this.createForm();
-    }
-
-    createForm() {
-        // Create the HTML structure for the form
-        this.container.innerHTML = `
+    createRuleForm(container, rule) {
+        container.innerHTML = `
             <div class="date-ranges-container"></div>
             <button class="add-date-range">Add Date Range</button>
             <select class="frequency-select">
@@ -230,47 +212,40 @@ class RecurrenceRuleForm {
             <div class="byweekday-container"></div>
             <div class="bymonth-container"></div>
             <label for="bymonthday-input">By month day:</label>
-            <input type="text" id="bymonthday-input" class="bymonthday-input" placeholder="e.g., 1,15,-1">
+            <input type="text" class="bymonthday-input" placeholder="e.g., 1,15,-1">
             <div class="bysetpos-container"></div>
             <button class="remove-rule">Remove Rule</button>
             <button class="duplicate-rule">Duplicate Rule</button>
         `;
 
-        // Add event listeners for form elements
-        this.container.querySelector('.add-date-range').addEventListener('click', (e) => {
+        this.createWeekdayButtons(container);
+        this.createMonthButtons(container);
+        this.createBySetPosButtons(container);
+
+        container.querySelector('.add-date-range').addEventListener('click', (e) => {
             e.preventDefault();
-            this.addDateRange();
+            this.addDateRange(container, rule);
         });
-        this.container.querySelector('.frequency-select').addEventListener('change', () => this.updateRule());
-        this.container.querySelector('.interval-input').addEventListener('change', () => this.updateRule());
-        this.container.querySelector('.bymonthday-input').addEventListener('change', () => this.updateRule());
 
-        this.createWeekdayButtons();
-        this.createMonthButtons();
-        this.createBySetPosButtons();
+        container.querySelector('.frequency-select').addEventListener('change', () => this.updateRule(container, rule));
+        container.querySelector('.interval-input').addEventListener('change', () => this.updateRule(container, rule));
+        container.querySelector('.bymonthday-input').addEventListener('change', () => this.updateRule(container, rule));
 
-        const removeRuleButton = this.container.querySelector('.remove-rule');
-        if (removeRuleButton) {
-            removeRuleButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.container.remove();
-                this.onChange(null);
-            });
-        }
+        container.querySelector('.remove-rule').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.removeRule(rule.id);
+        });
 
-        const duplicateRuleButton = this.container.querySelector('.duplicate-rule');
-        if (duplicateRuleButton) {
-            duplicateRuleButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.duplicateRule();
-            });
-        }
+        container.querySelector('.duplicate-rule').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.duplicateRule(rule);
+        });
 
-        // Add initial date range
-        this.addDateRange();
+        this.setRuleFormValues(container, rule);
+        this.addDateRange(container, rule);
     }
 
-    createWeekdayButtons() {
+    createWeekdayButtons(container) {
         const weekdays = [
             { short: 'MO', display: 'Mon' },
             { short: 'TU', display: 'Tue' },
@@ -280,7 +255,7 @@ class RecurrenceRuleForm {
             { short: 'SA', display: 'Sat' },
             { short: 'SU', display: 'Sun' }
         ];
-        const container = this.container.querySelector('.byweekday-container');
+        const weekdayContainer = container.querySelector('.byweekday-container');
         weekdays.forEach(day => {
             const button = document.createElement('button');
             button.textContent = day.display;
@@ -289,15 +264,15 @@ class RecurrenceRuleForm {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 button.classList.toggle('selected');
-                this.updateRule();
+                this.updateRule(container);
             });
-            container.appendChild(button);
+            weekdayContainer.appendChild(button);
         });
     }
 
-    createMonthButtons() {
+    createMonthButtons(container) {
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const container = this.container.querySelector('.bymonth-container');
+        const monthContainer = container.querySelector('.bymonth-container');
         months.forEach((month, index) => {
             const button = document.createElement('button');
             button.textContent = month;
@@ -306,15 +281,15 @@ class RecurrenceRuleForm {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 button.classList.toggle('selected');
-                this.updateRule();
+                this.updateRule(container);
             });
-            container.appendChild(button);
+            monthContainer.appendChild(button);
         });
     }
 
-    createBySetPosButtons() {
+    createBySetPosButtons(container) {
         const positions = [1, 2, 3, 4, -1];
-        const container = this.container.querySelector('.bysetpos-container');
+        const bysetposContainer = container.querySelector('.bysetpos-container');
         positions.forEach(pos => {
             const button = document.createElement('button');
             button.textContent = pos === -1 ? 'Last' : `${pos}${this.getOrdinalSuffix(pos)}`;
@@ -323,9 +298,9 @@ class RecurrenceRuleForm {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 button.classList.toggle('selected');
-                this.updateRule();
+                this.updateRule(container);
             });
-            container.appendChild(button);
+            bysetposContainer.appendChild(button);
         });
     }
 
@@ -335,140 +310,40 @@ class RecurrenceRuleForm {
         return s[(v - 20) % 10] || s[v] || s[0];
     }
 
-    duplicateRule() {
-        const newRule = this.recurrenceSet.duplicateRule(this.rule.id);
-        if (newRule) {
-            const newRuleContainer = document.createElement('div');
-            newRuleContainer.className = 'rule-container';
-            this.container.parentNode.insertBefore(newRuleContainer, this.container.nextSibling);
+    setRuleFormValues(container, rule) {
+        const frequencySelect = container.querySelector('.frequency-select');
+        const intervalInput = container.querySelector('.interval-input');
+        const byweekdayButtons = container.querySelectorAll('.weekday-button');
+        const bymonthButtons = container.querySelectorAll('.month-button');
+        const bymonthdayInput = container.querySelector('.bymonthday-input');
+        const bysetposButtons = container.querySelectorAll('.bysetpos-button');
 
-            const newRuleForm = new RecurrenceRuleForm(newRuleContainer, this.recurrenceSet);
-            newRuleForm.setRule(newRule);
-            newRuleForm.onChange = (updatedRule) => {
-                if (updatedRule) {
-                    this.recurrenceSet.updateRule(updatedRule);
-                } else {
-                    this.recurrenceSet.removeRule(newRule.id);
-                }
-                this.onChange(this.rule);
-            };
-
-            // Immediately update the Recurrence Set text
-            this.onChange(this.rule);
-        }
-    }
-
-    updateRule() {
-        console.log('Updating rule');
-        const frequencySelect = this.container.querySelector('.frequency-select');
-        const intervalInput = this.container.querySelector('.interval-input');
-        const byweekdayButtons = this.container.querySelectorAll('.weekday-button.selected');
-        const bymonthButtons = this.container.querySelectorAll('.month-button.selected');
-        const bymonthdayInput = this.container.querySelector('.bymonthday-input');
-        const bysetposButtons = this.container.querySelectorAll('.bysetpos-button.selected');
-        const dateRangeContainers = this.container.querySelectorAll('.date-range-container');
-
-        if (!frequencySelect || !intervalInput) {
-            console.log('Missing frequency select or interval input');
-            return;
-        }
-
-        if (!this.rule) {
-            console.log('Initializing new rule');
-            this.rule = {
-                frequency: 'YEARLY',
-                interval: 1,
-                byweekday: [],
-                bymonth: [],
-                bymonthday: [],
-                bysetpos: [],
-                dateRanges: []
-            };
-        }
-
-        this.rule.frequency = frequencySelect.value;
-        this.rule.interval = parseInt(intervalInput.value, 10);
-        this.rule.byweekday = Array.from(byweekdayButtons).map(button => button.dataset.day);
-        this.rule.bymonth = Array.from(bymonthButtons).map(button => parseInt(button.value, 10));
-        this.rule.bymonthday = this.parseNumberList(bymonthdayInput.value);
-        this.rule.bysetpos = Array.from(bysetposButtons).map(button => parseInt(button.value, 10));
-
-        // Update date ranges
-        this.rule.dateRanges = Array.from(dateRangeContainers).map(container => {
-            const startDate = container.querySelector('.start-date').value;
-            const endDate = container.querySelector('.end-date').value;
-            const isExclusion = container.querySelector('.exclusion-checkbox').checked;
-            console.log(`Date range: start=${startDate}, end=${endDate}, exclusion=${isExclusion}`);
-            return {
-                startDate: startDate || null,
-                endDate: endDate || null,
-                isExclusion
-            };
-        });
-
-        console.log('Updated rule:', JSON.stringify(this.rule, null, 2));
-        this.onChange(this.rule);
-    }
-
-    parseNumberList(input) {
-        if (!input) return [];
-        return input.split(',').flatMap(item => {
-            if (item.includes('-')) {
-                const [start, end] = item.split('-').map(Number);
-                return Array.from({length: end - start + 1}, (_, i) => start + i);
-            }
-            return Number(item);
-        });
-    }
-
-    setRule(rule) {
-        this.rule = rule || {
-            frequency: 'YEARLY',
-            interval: 1,
-            byweekday: [],
-            bymonth: [],
-            bymonthday: [],
-            bysetpos: [],
-            dateRanges: []
-        };
-        const frequencySelect = this.container.querySelector('.frequency-select');
-        const intervalInput = this.container.querySelector('.interval-input');
-        const byweekdayButtons = this.container.querySelectorAll('.weekday-button');
-        const bymonthButtons = this.container.querySelectorAll('.month-button');
-        const bymonthdayInput = this.container.querySelector('.bymonthday-input');
-        const bysetposButtons = this.container.querySelectorAll('.bysetpos-button');
-
-        if (frequencySelect) frequencySelect.value = this.rule.frequency;
-        if (intervalInput) intervalInput.value = this.rule.interval;
+        if (frequencySelect) frequencySelect.value = rule.frequency;
+        if (intervalInput) intervalInput.value = rule.interval;
 
         byweekdayButtons.forEach(button => {
-            button.classList.toggle('selected', this.rule.byweekday.includes(button.dataset.day));
+            button.classList.toggle('selected', rule.byweekday.includes(button.dataset.day));
         });
 
         bymonthButtons.forEach(button => {
-            button.classList.toggle('selected', this.rule.bymonth.includes(parseInt(button.value, 10)));
+            button.classList.toggle('selected', rule.bymonth.includes(parseInt(button.value, 10)));
         });
 
-        if (bymonthdayInput) bymonthdayInput.value = this.formatNumberList(this.rule.bymonthday);
+        if (bymonthdayInput) bymonthdayInput.value = this.formatNumberList(rule.bymonthday);
 
         bysetposButtons.forEach(button => {
-            button.classList.toggle('selected', this.rule.bysetpos.includes(parseInt(button.value, 10)));
+            button.classList.toggle('selected', rule.bysetpos.includes(parseInt(button.value, 10)));
         });
 
-        // Clear existing date ranges
-        this.container.querySelector('.date-ranges-container').innerHTML = '';
-
         // Add date ranges
-        if (Array.isArray(this.rule.dateRanges) && this.rule.dateRanges.length > 0) {
-            this.rule.dateRanges.forEach(dateRange => {
-                this.addDateRange(dateRange);
+        if (Array.isArray(rule.dateRanges) && rule.dateRanges.length > 0) {
+            rule.dateRanges.forEach(dateRange => {
+                this.addDateRange(container, rule, dateRange);
             });
-        } else {
-            this.addDateRange();
         }
     }
 
-    addDateRange(dateRange = null) {
+    addDateRange(container, rule, dateRange = null) {
         const dateRangeContainer = document.createElement('div');
         dateRangeContainer.className = 'date-range-container';
         dateRangeContainer.innerHTML = `
@@ -487,37 +362,93 @@ class RecurrenceRuleForm {
         const exclusionCheckbox = dateRangeContainer.querySelector('.exclusion-checkbox');
         const setFarFutureLink = dateRangeContainer.querySelector('.set-far-future');
 
-        console.log("Setting initial date values");
         if (dateRange) {
             startDateInput.value = this.formatDateForInput(dateRange.startDate);
             endDateInput.value = this.formatDateForInput(dateRange.endDate);
             exclusionCheckbox.checked = dateRange.isExclusion || false;
         }
 
-        const updateRuleHandler = () => {
-            console.log('Date input changed');
-            this.updateRule();
-        };
+        const updateRuleHandler = () => this.updateRule(container, rule);
 
         startDateInput.addEventListener('input', updateRuleHandler);
         startDateInput.addEventListener('change', updateRuleHandler);
         endDateInput.addEventListener('input', updateRuleHandler);
         endDateInput.addEventListener('change', updateRuleHandler);
         exclusionCheckbox.addEventListener('change', updateRuleHandler);
+
         dateRangeContainer.querySelector('.remove-date-range').addEventListener('click', (e) => {
             e.preventDefault();
             dateRangeContainer.remove();
-            this.updateRule();
+            this.updateRule(container, rule);
         });
 
         setFarFutureLink.addEventListener('click', (e) => {
             e.preventDefault();
             endDateInput.value = '9999-01-01T00:00';
-            this.updateRule();
+            this.updateRule(container, rule);
         });
 
-        this.container.querySelector('.date-ranges-container').appendChild(dateRangeContainer);
-        this.updateRule();
+        container.querySelector('.date-ranges-container').appendChild(dateRangeContainer);
+        this.updateRule(container, rule);
+    }
+
+    updateRule(container, rule) {
+        const frequencySelect = container.querySelector('.frequency-select');
+        const intervalInput = container.querySelector('.interval-input');
+        const byweekdayButtons = container.querySelectorAll('.weekday-button.selected');
+        const bymonthButtons = container.querySelectorAll('.month-button.selected');
+        const bymonthdayInput = container.querySelector('.bymonthday-input');
+        const bysetposButtons = container.querySelectorAll('.bysetpos-button.selected');
+        const dateRangeContainers = container.querySelectorAll('.date-range-container');
+
+        rule.frequency = frequencySelect.value;
+        rule.interval = parseInt(intervalInput.value, 10);
+        rule.byweekday = Array.from(byweekdayButtons).map(button => button.dataset.day);
+        rule.bymonth = Array.from(bymonthButtons).map(button => parseInt(button.value, 10));
+        rule.bymonthday = this.parseNumberList(bymonthdayInput.value);
+        rule.bysetpos = Array.from(bysetposButtons).map(button => parseInt(button.value, 10));
+
+        rule.dateRanges = Array.from(dateRangeContainers).map(container => {
+            const startDate = container.querySelector('.start-date').value;
+            const endDate = container.querySelector('.end-date').value;
+            const isExclusion = container.querySelector('.exclusion-checkbox').checked;
+            return {
+                startDate: startDate || null,
+                endDate: endDate || null,
+                isExclusion
+            };
+        });
+
+        this.recurrenceSet.updateRule(rule);
+        this.onChange();
+    }
+
+    removeRule(ruleId) {
+        const ruleIndex = this.rules.findIndex(r => r.id === ruleId);
+        if (ruleIndex !== -1) {
+            this.rules.splice(ruleIndex, 1);
+            this.recurrenceSet.removeRule(ruleId);
+            this.container.querySelector(`#rules-container > div:nth-child(${ruleIndex + 1})`).remove();
+            this.onChange();
+        }
+    }
+
+    duplicateRule(rule) {
+        const newRule = this.recurrenceSet.duplicateRule(rule.id);
+        if (newRule) {
+            this.addRule(newRule);
+        }
+    }
+
+    parseNumberList(input) {
+        if (!input) return [];
+        return input.split(',').flatMap(item => {
+            if (item.includes('-')) {
+                const [start, end] = item.split('-').map(Number);
+                return Array.from({length: end - start + 1}, (_, i) => start + i);
+            }
+            return Number(item);
+        });
     }
 
     formatDateForInput(dateString) {
@@ -539,8 +470,33 @@ class RecurrenceRuleForm {
         }, '');
     }
 
-    onChange(rule) {
-        // Callback to be overridden
+    setRecurrenceSet(recurrenceSet) {
+        this.recurrenceSet = recurrenceSet;
+        this.rules = [...recurrenceSet.rules];
+        this.container.querySelector('#rules-container').innerHTML = '';
+        this.rules.forEach(rule => this.addRule(rule));
+    }
+
+    toJSON() {
+        return JSON.stringify({
+            rules: this.rules.map(rule => ({
+                rule: {
+                    id: rule.id,
+                    frequency: rule.frequency,
+                    interval: rule.interval,
+                    byweekday: rule.byweekday,
+                    bymonth: rule.bymonth,
+                    bymonthday: rule.bymonthday,
+                    bysetpos: rule.bysetpos
+                },
+                isExclusion: rule.isExclusion,
+                dateRanges: rule.dateRanges
+            }))
+        });
+    }
+
+    onChange() {
+        // This method will be overridden to handle changes
     }
 }
 
