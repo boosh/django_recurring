@@ -1,73 +1,3 @@
-class RecurrenceSet {
-    constructor() {
-        this.rules = [];
-        this.onChange = null;
-    }
-
-    addRule(rule) {
-        rule.id = Date.now() + Math.random();
-        this.rules.push(rule);
-        this.triggerOnChange();
-    }
-
-    updateRule(updatedRule) {
-        const index = this.rules.findIndex(rule => rule.id === updatedRule.id);
-        if (index !== -1) {
-            this.rules[index] = updatedRule;
-            this.triggerOnChange();
-        }
-    }
-
-    removeRule(ruleId) {
-        this.rules = this.rules.filter(rule => rule.id !== ruleId);
-        this.triggerOnChange();
-    }
-
-    duplicateRule(ruleId) {
-        const originalRule = this.rules.find(rule => rule.id === ruleId);
-        if (originalRule) {
-            const newRule = JSON.parse(JSON.stringify(originalRule));
-            newRule.id = Date.now() + Math.random();
-            this.rules.push(newRule);
-            this.triggerOnChange();
-            return newRule;
-        }
-        return null;
-    }
-
-    updateTextDisplay() {
-        const textElement = document.getElementById(`recurrence-set-text-${this.name}`);
-        if (textElement) {
-            textElement.innerHTML = this.toText();
-        }
-    }
-
-    triggerOnChange() {
-        if (typeof this.onChange === 'function') {
-            this.onChange();
-        }
-        this.updateTextDisplay();
-    }
-
-    toJSON() {
-        return JSON.stringify({
-            rules: this.rules.map(rule => ({
-                rule: {
-                    id: rule.id,
-                    frequency: rule.frequency,
-                    interval: rule.interval,
-                    byweekday: rule.byweekday,
-                    bymonth: rule.bymonth,
-                    bymonthday: rule.bymonthday,
-                    bysetpos: rule.bysetpos
-                },
-                isExclusion: rule.isExclusion,
-                dateRanges: rule.dateRanges
-            }))
-        });
-    }
-}
-
 function initRecurrenceSetWidget(name) {
     const widget = document.getElementById(`recurrence-set-widget-${name}`);
     const input = document.getElementById(`id_${name}`);
@@ -79,9 +9,7 @@ function initRecurrenceSetWidget(name) {
         return;
     }
 
-    const recurrenceSet = new RecurrenceSet();
-    recurrenceSet.name = name;
-    const recurrenceSetForm = new RecurrenceSetForm(form, recurrenceSet);
+    const recurrenceSetForm = new RecurrenceSetForm(form, name);
 
     function updateInputAndText() {
         const jsonValue = recurrenceSetForm.toJSON();
@@ -91,14 +19,13 @@ function initRecurrenceSetWidget(name) {
     }
 
     recurrenceSetForm.onChange = updateInputAndText;
-    recurrenceSet.onChange = updateInputAndText;
 
     const initialData = input.value || input.getAttribute('data-initial');
     console.log(`parsing initial data ${initialData}`);
     if (initialData) {
         try {
-            const parsedSet = parseInitialData(initialData);
-            recurrenceSetForm.setRecurrenceSet(parsedSet);
+            const parsedRules = parseInitialData(initialData);
+            recurrenceSetForm.setRules(parsedRules);
         } catch (error) {
             console.error('Error parsing initial data:', error);
             text.innerHTML = 'Error: Invalid recurrence set data';
@@ -136,10 +63,11 @@ function initRecurrenceSetWidget(name) {
 }
 
 class RecurrenceSetForm {
-    constructor(container, recurrenceSet) {
+    constructor(container, name) {
         this.container = container;
-        this.recurrenceSet = recurrenceSet;
+        this.name = name;
         this.rules = [];
+        this.onChange = null;
         this.createForm();
     }
 
@@ -174,8 +102,7 @@ class RecurrenceSetForm {
 
         this.createRuleForm(ruleContainer, newRule);
         this.rules.push(newRule);
-            this.recurrenceSet.addRule(newRule);
-        this.onChange();
+        this.updateTextDisplay();
     }
 
     createRuleForm(container, rule) {
@@ -404,24 +331,31 @@ class RecurrenceSetForm {
             };
         });
 
-        this.recurrenceSet.updateRule(rule);
-        this.onChange();
+        this.updateTextDisplay();
+        if (this.onChange) {
+            this.onChange();
+        }
     }
 
     removeRule(ruleId) {
         const ruleIndex = this.rules.findIndex(r => r.id === ruleId);
         if (ruleIndex !== -1) {
             this.rules.splice(ruleIndex, 1);
-            this.recurrenceSet.removeRule(ruleId);
             this.container.querySelector(`#rules-container > div:nth-child(${ruleIndex + 1})`).remove();
-            this.onChange();
+            this.updateTextDisplay();
+            if (this.onChange) {
+                this.onChange();
+            }
         }
     }
 
     duplicateRule(rule) {
-        const newRule = this.recurrenceSet.duplicateRule(rule.id);
-        if (newRule) {
-            this.addRule(newRule);
+        const newRule = JSON.parse(JSON.stringify(rule));
+        newRule.id = Date.now() + Math.random();
+        this.addRule(newRule);
+        this.updateTextDisplay();
+        if (this.onChange) {
+            this.onChange();
         }
     }
 
@@ -455,11 +389,9 @@ class RecurrenceSetForm {
         }, '');
     }
 
-    setRecurrenceSet(recurrenceSet) {
-        this.recurrenceSet = recurrenceSet;
-        this.rules = [...recurrenceSet.rules];
+    setRules(rules) {
         this.container.querySelector('#rules-container').innerHTML = '';
-        this.rules.forEach(rule => this.addRule(rule));
+        rules.forEach(rule => this.addRule(rule));
     }
 
     toJSON() {
@@ -485,105 +417,86 @@ class RecurrenceSetForm {
         html += '<li><strong>Recurrence Set:</strong></li>';
 
         this.rules.forEach((rule) => {
-            html += `<li style="list-style-type: disc; margin-left: 10px">${ruleToText(rule)}</li>`;
+            html += `<li style="list-style-type: disc; margin-left: 10px">${this.ruleToText(rule)}</li>`;
         });
 
         html += '</ul>';
         return html;
     }
 
-    onChange() {
-        // This method will be overridden to handle changes
-    }
-}
+    ruleToText(rule) {
+        let text = '';
 
-function ruleToText(rule) {
-    let text = '';
+        text += `${rule.isExclusion ? 'Exclusion' : 'Inclusion'}: `;
 
-    text += `${rule.isExclusion ? 'Exclusion' : 'Inclusion'}: `;
-
-    // Handle single datetime or datetime range
-    if (rule.startDate && (!rule.endDate || rule.startDate === rule.endDate)) {
-        text += `On ${new Date(rule.startDate).toLocaleString()}`;
-    } else {
-        text += 'From ';
-        text += rule.startDate ? new Date(rule.startDate).toLocaleString() : 'the beginning';
-        text += ' to ';
-        text += rule.endDate ? new Date(rule.endDate).toLocaleString() : 'the end';
-    }
-
-    // Add frequency information
-    const frequency = rule.frequency.toLowerCase();
-    const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `${frequency}`;
-    text += `, ${interval}`;
-
-    // Add weekday information
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const dayShortCodes = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
-    if (rule.byweekday && rule.byweekday.length > 0) {
-        text += ` on ${rule.byweekday.map(day => days[dayShortCodes.indexOf(day)]).join(', ')}`;
-    }
-
-    if (rule.bymonth && rule.bymonth.length > 0) {
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        text += ` in ${rule.bymonth.map(m => months[m - 1]).join(', ')}`;
-    }
-
-    if (rule.bymonthday && rule.bymonthday.length > 0) {
-        text += ` on day${rule.bymonthday.length > 1 ? 's' : ''} ${formatNumberList(rule.bymonthday)} of the month`;
-    }
-
-    if (rule.bysetpos && rule.bysetpos.length > 0) {
-        const positions = rule.bysetpos.map(pos => {
-            if (pos === 1) return '1st';
-            if (pos === 2) return '2nd';
-            if (pos === 3) return '3rd';
-            if (pos > 0) return `${pos}th`;
-            if (pos === -1) return 'last';
-            return `${Math.abs(pos)}th from last`;
-        });
-        text += ` (${positions.join(', ')})`;
-    }
-
-    return text;
-}
-
-function formatNumberList(numbers) {
-    if (!numbers || numbers.length === 0) return '';
-    return numbers.sort((a, b) => a - b).reduce((acc, num, index, arr) => {
-        if (index === 0 || num !== arr[index - 1] + 1) {
-            if (index > 0) acc += ', ';
-            acc += num;
-        } else if (index === arr.length - 1 || num !== arr[index + 1] - 1) {
-            acc += '-' + num;
+        // Handle single datetime or datetime range
+        if (rule.startDate && (!rule.endDate || rule.startDate === rule.endDate)) {
+            text += `On ${new Date(rule.startDate).toLocaleString()}`;
+        } else {
+            text += 'From ';
+            text += rule.startDate ? new Date(rule.startDate).toLocaleString() : 'the beginning';
+            text += ' to ';
+            text += rule.endDate ? new Date(rule.endDate).toLocaleString() : 'the end';
         }
-        return acc;
-    }, '');
+
+        // Add frequency information
+        const frequency = rule.frequency.toLowerCase();
+        const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `${frequency}`;
+        text += `, ${interval}`;
+
+        // Add weekday information
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const dayShortCodes = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+        if (rule.byweekday && rule.byweekday.length > 0) {
+            text += ` on ${rule.byweekday.map(day => days[dayShortCodes.indexOf(day)]).join(', ')}`;
+        }
+
+        if (rule.bymonth && rule.bymonth.length > 0) {
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            text += ` in ${rule.bymonth.map(m => months[m - 1]).join(', ')}`;
+        }
+
+        if (rule.bymonthday && rule.bymonthday.length > 0) {
+            text += ` on day${rule.bymonthday.length > 1 ? 's' : ''} ${this.formatNumberList(rule.bymonthday)} of the month`;
+        }
+
+        if (rule.bysetpos && rule.bysetpos.length > 0) {
+            const positions = rule.bysetpos.map(pos => {
+                if (pos === 1) return '1st';
+                if (pos === 2) return '2nd';
+                if (pos === 3) return '3rd';
+                if (pos > 0) return `${pos}th`;
+                if (pos === -1) return 'last';
+                return `${Math.abs(pos)}th from last`;
+            });
+            text += ` (${positions.join(', ')})`;
+        }
+
+        return text;
+    }
+
+    updateTextDisplay() {
+        const textElement = document.getElementById(`recurrence-set-text-${this.name}`);
+        if (textElement) {
+            textElement.innerHTML = this.toText();
+        }
+    }
 }
 
 function parseInitialData(jsonString) {
     console.log('Parsing initial data string:', jsonString);
     const data = JSON.parse(jsonString);
     console.log('Parsed JSON data:', data);
-    const recurrenceSet = new RecurrenceSet();
 
-    data.rules.forEach(ruleData => {
-        console.log("Parsing rule data:", ruleData);
-        const rule = {
-            id: ruleData.rule.id,
-            frequency: ruleData.rule.frequency,
-            interval: ruleData.rule.interval,
-            isExclusion: ruleData.isExclusion,
-            byweekday: ruleData.rule.byweekday || [],
-            bymonth: ruleData.rule.bymonth || [],
-            bymonthday: ruleData.rule.bymonthday || [],
-            bysetpos: ruleData.rule.bysetpos || [],
-            dateRanges: Array.isArray(ruleData.dateRanges) ? ruleData.dateRanges : []
-        };
-        console.log('Created rule object:', rule);
-        recurrenceSet.addRule(rule);
-    });
-
-    console.log('Returning recurrence set:', recurrenceSet);
-    return recurrenceSet;
+    return data.rules.map(ruleData => ({
+        id: ruleData.rule.id,
+        frequency: ruleData.rule.frequency,
+        interval: ruleData.rule.interval,
+        isExclusion: ruleData.isExclusion,
+        byweekday: ruleData.rule.byweekday || [],
+        bymonth: ruleData.rule.bymonth || [],
+        bymonthday: ruleData.rule.bymonthday || [],
+        bysetpos: ruleData.rule.bysetpos || [],
+        dateRanges: Array.isArray(ruleData.dateRanges) ? ruleData.dateRanges : []
+    }));
 }
