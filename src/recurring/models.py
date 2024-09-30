@@ -17,9 +17,11 @@ from dateutil.rrule import (
     rrule,
     rruleset,
 )
+from dateutil.rrule import rrulestr
 from django.db import models
 from django.utils import timezone as django_timezone
 from django.utils.translation import gettext_lazy as _
+from icalendar import Calendar, Event
 
 # created in migrations
 UTC_ID = 1
@@ -159,6 +161,72 @@ class RecurrenceRule(models.Model):
             'bysecond': self.bysecond,
             'timezone': self.timezone.name
         }
+
+    def to_ical(self) -> str:
+        """
+        Convert the RecurrenceRule to an iCal string representation.
+
+        Returns:
+            str: The iCal string representation of the recurrence rule.
+        """
+        cal = Calendar()
+        event = Event()
+
+        # Get all date ranges for this rule
+        date_ranges = self.date_ranges.all()
+
+        if not date_ranges:
+            return ""  # Return empty string if no date ranges
+
+        # Find the earliest start date and latest end date
+        earliest_start = min(dr.start_date for dr in date_ranges)
+        latest_end = max(dr.end_date for dr in date_ranges)
+
+        # Set DTSTART and UNTIL
+        event.add('dtstart', earliest_start)
+
+        rrule_kwargs = {
+            'freq': self.frequency,
+            'interval': self.interval,
+            'until': latest_end,
+        }
+
+        if self.wkst is not None:
+            rrule_kwargs['wkst'] = self.wkst
+        if self.count is not None:
+            rrule_kwargs['count'] = self.count
+        if self.bysetpos:
+            rrule_kwargs['bysetpos'] = self.bysetpos
+        if self.bymonth:
+            rrule_kwargs['bymonth'] = self.bymonth
+        if self.bymonthday:
+            rrule_kwargs['bymonthday'] = self.bymonthday
+        if self.byyearday:
+            rrule_kwargs['byyearday'] = self.byyearday
+        if self.byweekno:
+            rrule_kwargs['byweekno'] = self.byweekno
+        if self.byweekday:
+            rrule_kwargs['byweekday'] = [getattr(rrule, day) for day in self.byweekday]
+        if self.byhour:
+            rrule_kwargs['byhour'] = self.byhour
+        if self.byminute:
+            rrule_kwargs['byminute'] = self.byminute
+        if self.bysecond:
+            rrule_kwargs['bysecond'] = self.bysecond
+
+        rruleset_obj = rruleset()
+
+        for date_range in date_ranges:
+            rule = rrule(dtstart=date_range.start_date, **rrule_kwargs)
+            if date_range.is_exclusion:
+                rruleset_obj.exrule(rule)
+            else:
+                rruleset_obj.rrule(rule)
+
+        event.add('rrule', rrulestr(str(rruleset_obj)))
+        cal.add_component(event)
+
+        return cal.to_ical().decode('utf-8')
 
 
 class RecurrenceRuleDateRange(models.Model):

@@ -1,35 +1,35 @@
 import pytest
 from dateutil.rrule import rrule, DAILY
-from django.utils import timezone
+from django.utils import timezone as django_timezone
 
 from recurring.models import Timezone, RecurrenceRule, RecurrenceRuleDateRange, RecurrenceSet, RecurrenceSetRule
 
 
 @pytest.fixture
-def timezone():
-    return Timezone.objects.create(name="UTC")
+def timezone_obj():
+    return Timezone.objects.get_or_create(name="UTC")[0]
 
 @pytest.fixture
-def recurrence_rule(timezone):
+def recurrence_rule(timezone_obj):
     return RecurrenceRule.objects.create(
         frequency=DAILY,
         interval=1,
-        timezone=timezone
+        timezone=timezone_obj
     )
 
 @pytest.fixture
-def recurrence_set(timezone):
+def recurrence_set(timezone_obj):
     return RecurrenceSet.objects.create(
         name="Test Recurrence Set",
         description="A test recurrence set",
-        timezone=timezone
+        timezone=timezone_obj
     )
 
 @pytest.mark.django_db
 class TestTimezone:
-    def test_timezone_creation(self, timezone):
-        assert timezone.name == "UTC"
-        assert str(timezone) == "UTC"
+    def test_timezone_creation(self, timezone_obj):
+        assert timezone_obj.name == "UTC"
+        assert str(timezone_obj) == "UTC"
 
 @pytest.mark.django_db
 class TestRecurrenceRule:
@@ -42,8 +42,8 @@ class TestRecurrenceRule:
         assert recurrence_rule.get_frequency_display() == "DAILY"
 
     def test_to_rrule(self, recurrence_rule):
-        start_date = timezone.now()
-        end_date = start_date + timezone.timedelta(days=7)
+        start_date = django_timezone.now()
+        end_date = start_date + django_timezone.timedelta(days=7)
         rrule_obj = recurrence_rule.to_rrule(start_date, end_date)
         assert isinstance(rrule_obj, rrule)
         assert rrule_obj.freq == DAILY
@@ -57,8 +57,8 @@ class TestRecurrenceRule:
 @pytest.mark.django_db
 class TestRecurrenceRuleDateRange:
     def test_date_range_creation(self, recurrence_rule):
-        start_date = timezone.now()
-        end_date = start_date + timezone.timedelta(days=7)
+        start_date = django_timezone.now()
+        end_date = start_date + django_timezone.timedelta(days=7)
         date_range = RecurrenceRuleDateRange.objects.create(
             recurrence_rule=recurrence_rule,
             start_date=start_date,
@@ -135,8 +135,8 @@ class TestRecurrenceSet:
         )
         RecurrenceRuleDateRange.objects.create(
             recurrence_rule=recurrence_rule,
-            start_date=timezone.now(),
-            end_date=timezone.now() + timezone.timedelta(days=30),
+            start_date=django_timezone.now(),
+            end_date=django_timezone.now() + django_timezone.timedelta(days=30),
             is_exclusion=False
         )
         recurrence_set.recalculate_occurrences()
