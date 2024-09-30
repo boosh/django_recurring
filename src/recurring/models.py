@@ -292,8 +292,8 @@ class RecurrenceSet(models.Model):
             date_ranges = []
             for date_range_data in rule_data.get('date_ranges', []):
                 date_ranges.append(RecurrenceRuleDateRange(
-                    start_date=parse_datetime(date_range_data['start_date']),
-                    end_date=parse_datetime(date_range_data['end_date']),
+                    start_date=date_range_data['start_date'],
+                    end_date=date_range_data['end_date'],
                     is_exclusion=date_range_data.get('is_exclusion', False)
                 ))
 

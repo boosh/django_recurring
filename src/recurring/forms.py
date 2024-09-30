@@ -42,15 +42,11 @@ class RecurrenceSetForm(forms.ModelForm):
             logger.info("Processing recurrence_set data")
             recurrence_set_data = self.cleaned_data.get('recurrence_set')
             if recurrence_set_data:
-                recurrence_set_dict = json.loads(recurrence_set_data)
-                recurrence_set_dict = recursive_camel_to_snake(recurrence_set_dict)
-                logger.info(f"Recurrence set data: {recurrence_set_dict}")
-
                 logger.info("Clearing existing rules")
                 instance.recurrencesetrules.all().delete()
 
                 logger.info("Adding new rules and date ranges")
-                RecurrenceSet.from_dict(recurrence_set_dict)
+                RecurrenceSet.from_dict(recurrence_set_data)
 
             logger.info("Recalculating occurrences")
             instance.recalculate_occurrences()
@@ -126,6 +122,7 @@ class RecurrenceSetForm(forms.ModelForm):
         if not hasattr(self, 'recurrence_set_data') or not any(rule_data['date_ranges'] for rule_data in self.recurrence_set_data.get('rules', [])):
             self.add_error(None, "You must add at least one rule with a date range to the recurrence set.")
 
+        cleaned_data['recurrence_set']= self.recurrence_set_data
         logger.info(f"Cleaned data: {cleaned_data}")
 
         return cleaned_data
