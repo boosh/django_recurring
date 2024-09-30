@@ -84,6 +84,12 @@ class TestRecurrenceSet:
             recurrence_rule=recurrence_rule,
             is_exclusion=False
         )
+        RecurrenceRuleDateRange.objects.create(
+            recurrence_rule=recurrence_rule,
+            start_date=django_timezone.now(),
+            end_date=django_timezone.now() + django_timezone.timedelta(days=30),
+            is_exclusion=False
+        )
         rruleset = recurrence_set.to_rruleset()
         assert len(rruleset._rrule) == 1
         assert len(rruleset._exrule) == 0
@@ -94,11 +100,18 @@ class TestRecurrenceSet:
             recurrence_rule=recurrence_rule,
             is_exclusion=False
         )
+        RecurrenceRuleDateRange.objects.create(
+            recurrence_rule=recurrence_rule,
+            start_date=django_timezone.now(),
+            end_date=django_timezone.now() + django_timezone.timedelta(days=30),
+            is_exclusion=False
+        )
         recurrence_set_dict = recurrence_set.to_dict()
         assert recurrence_set_dict['name'] == "Test Recurrence Set"
         assert recurrence_set_dict['description'] == "A test recurrence set"
         assert recurrence_set_dict['timezone'] == "UTC"
         assert len(recurrence_set_dict['rules']) == 1
+        assert len(recurrence_set_dict['rules'][0]['date_ranges']) == 1
 
     def test_from_dict(self, recurrence_set):
         data = {
