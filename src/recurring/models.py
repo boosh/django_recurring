@@ -19,6 +19,7 @@ from dateutil.rrule import (
 )
 from django.db import models
 from django.utils import timezone as django_timezone
+from django.utils.dateparse import parse_datetime
 from django.utils.translation import gettext_lazy as _
 
 # created in migrations
@@ -169,26 +170,6 @@ class RecurrenceRule(models.Model):
             'timezone': self.timezone.name
         }
 
-    @classmethod
-    def from_dict(cls, data):
-        rule = cls()
-        rule.frequency = cls.Frequency[data['frequency']].value
-        rule.interval = data.get('interval', 1)
-        rule.wkst = data.get('wkst')
-        rule.count = data.get('count')
-        rule.until = django_timezone.parse(data['until']) if data.get('until') else None
-        rule.timezone, _ = Timezone.objects.get_or_create(name=data.get('timezone', 'UTC'))
-
-        for field in [
-            'bysetpos', 'bymonth', 'bymonthday', 'byyearday', 'byweekno',
-            'byweekday', 'byhour', 'byminute', 'bysecond'
-        ]:
-            value = data.get(field)
-            if value is not None:
-                setattr(rule, field, value)
-
-        return rule
-
 
 class RecurrenceRuleDateRange(models.Model):
     recurrence_rule = models.ForeignKey(
@@ -268,10 +249,63 @@ class RecurrenceSet(models.Model):
                 {
                     'is_exclusion': rule.is_exclusion,
                     'rule': rule.recurrence_rule.to_dict(),
+                    'date_ranges': [
+                        {
+                            'start_date': date_range.start_date.isoformat(),
+                            'end_date': date_range.end_date.isoformat(),
+                            'is_exclusion': date_range.is_exclusion
+                        }
+                        for date_range in rule.recurrence_rule.date_ranges.all()
+                    ]
                 }
                 for rule in self.recurrencesetrules.all()
             ]
         }
+
+    @classmethod
+    def from_dict(cls, data):
+        recurrence_set = cls(
+            name=data.get('name', ''),
+            description=data.get('description', ''),
+            timezone=Timezone.objects.get_or_create(name=data.get('timezone', 'UTC'))[0]
+        )
+        recurrence_set.save()
+
+        for rule_data in data.get('rules', []):
+            rule = RecurrenceRule()
+            rule_dict = rule_data['rule']
+            rule.frequency = RecurrenceRule.Frequency[rule_dict['frequency']].value
+            rule.interval = rule_dict.get('interval', 1)
+            rule.wkst = rule_dict.get('wkst')
+            rule.count = rule_dict.get('count')
+            rule.until = parse_datetime(rule_dict['until']) if rule_dict.get('until') else None
+            rule.timezone = recurrence_set.timezone
+
+            for field in [
+                'bysetpos', 'bymonth', 'bymonthday', 'byyearday', 'byweekno',
+                'byweekday', 'byhour', 'byminute', 'bysecond'
+            ]:
+                value = rule_dict.get(field)
+                if value is not None:
+                    setattr(rule, field, value)
+
+            rule.save()
+
+            recurrence_set_rule = RecurrenceSetRule.objects.create(
+                recurrence_set=recurrence_set,
+                recurrence_rule=rule,
+                is_exclusion=rule_data.get('is_exclusion', False)
+            )
+
+            for date_range_data in rule_data.get('date_ranges', []):
+                RecurrenceRuleDateRange.objects.create(
+                    recurrence_rule=rule,
+                    start_date=parse_datetime(date_range_data['start_date']),
+                    end_date=parse_datetime(date_range_data['end_date']),
+                    is_exclusion=date_range_data.get('is_exclusion', False)
+                )
+
+        return recurrence_set
 
     def recalculate_occurrences(self):
         try:
