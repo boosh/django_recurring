@@ -222,6 +222,7 @@ class TestRecurrenceSet:
         )
 
         ical_string = recurrence_set.to_ical()
+        print(ical_string)
 
         # Check for specific components in the iCal string
         assert 'BEGIN:VCALENDAR' in ical_string
