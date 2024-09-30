@@ -262,14 +262,7 @@ class RecurrenceSet(models.Model):
             ]
         }
 
-    @classmethod
-    def from_dict(cls, data):
-        recurrence_set = cls(
-            name=data.get('name', ''),
-            description=data.get('description', ''),
-            timezone=Timezone.objects.get_or_create(name=data.get('timezone', 'UTC'))[0]
-        )
-
+    def from_dict(self, data):
         rules = []
         for rule_data in data.get('rules', []):
             rule = RecurrenceRule()
@@ -279,7 +272,7 @@ class RecurrenceSet(models.Model):
             rule.wkst = rule_dict.get('wkst')
             rule.count = rule_dict.get('count')
             rule.until = parse_datetime(rule_dict['until']) if rule_dict.get('until') else None
-            rule.timezone = recurrence_set.timezone
+            rule.timezone = self.timezone
 
             for field in [
                 'bysetpos', 'bymonth', 'bymonthday', 'byyearday', 'byweekno',
@@ -303,24 +296,17 @@ class RecurrenceSet(models.Model):
                 'date_ranges': date_ranges
             })
 
-        recurrence_set.save()
-
         for rule_data in rules:
             rule = rule_data['rule']
             rule.save()
             recurrence_set_rule = RecurrenceSetRule.objects.create(
-                recurrence_set=recurrence_set,
+                recurrence_set=self,
                 recurrence_rule=rule,
                 is_exclusion=rule_data['is_exclusion']
             )
             for date_range in rule_data['date_ranges']:
                 date_range.recurrence_rule = rule
                 date_range.save()
-
-        recurrence_set.recalculate_occurrences()
-        recurrence_set.save()
-
-        return recurrence_set
 
     def recalculate_occurrences(self):
         try:

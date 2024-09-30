@@ -46,7 +46,7 @@ class RecurrenceSetForm(forms.ModelForm):
                 instance.recurrencesetrules.all().delete()
 
                 logger.info("Adding new rules and date ranges")
-                RecurrenceSet.from_dict(recurrence_set_data)
+                instance.from_dict(recurrence_set_data)
 
             logger.info("Recalculating occurrences")
             instance.recalculate_occurrences()
