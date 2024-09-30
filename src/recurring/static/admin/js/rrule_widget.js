@@ -109,7 +109,7 @@ function initRecurrenceSetWidget(name) {
     console.log(`parsing initial data ${initialData}`);
     if (initialData) {
         try {
-            const parsedSet = parseICalString(initialData);
+            const parsedSet = parseInitialData(initialData);
             recurrenceSetForm.setRecurrenceSet(parsedSet);
         } catch (error) {
             console.error('Error parsing initial data:', error);
@@ -218,9 +218,9 @@ class RecurrenceSetForm {
             <button class="duplicate-rule">Duplicate Rule</button>
         `;
 
-        this.createWeekdayButtons(container);
-        this.createMonthButtons(container);
-        this.createBySetPosButtons(container);
+        this.createWeekdayButtons(container, rule);
+        this.createMonthButtons(container, rule);
+        this.createBySetPosButtons(container, rule);
 
         container.querySelector('.add-date-range').addEventListener('click', (e) => {
             e.preventDefault();
@@ -245,7 +245,7 @@ class RecurrenceSetForm {
         this.addDateRange(container, rule);
     }
 
-    createWeekdayButtons(container) {
+    createWeekdayButtons(container, rule) {
         const weekdays = [
             { short: 'MO', display: 'Mon' },
             { short: 'TU', display: 'Tue' },
@@ -264,13 +264,13 @@ class RecurrenceSetForm {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 button.classList.toggle('selected');
-                this.updateRule(container);
+                this.updateRule(container, rule);
             });
             weekdayContainer.appendChild(button);
         });
     }
 
-    createMonthButtons(container) {
+    createMonthButtons(container, rule) {
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const monthContainer = container.querySelector('.bymonth-container');
         months.forEach((month, index) => {
@@ -281,13 +281,13 @@ class RecurrenceSetForm {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 button.classList.toggle('selected');
-                this.updateRule(container);
+                this.updateRule(container, rule);
             });
             monthContainer.appendChild(button);
         });
     }
 
-    createBySetPosButtons(container) {
+    createBySetPosButtons(container, rule) {
         const positions = [1, 2, 3, 4, -1];
         const bysetposContainer = container.querySelector('.bysetpos-container');
         positions.forEach(pos => {
@@ -298,7 +298,7 @@ class RecurrenceSetForm {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 button.classList.toggle('selected');
-                this.updateRule(container);
+                this.updateRule(container, rule);
             });
             bysetposContainer.appendChild(button);
         });
@@ -564,9 +564,9 @@ function formatNumberList(numbers) {
     }, '');
 }
 
-function parseICalString(icalString) {
-    console.log('Parsing iCal string:', icalString);
-    const data = JSON.parse(icalString);
+function parseInitialData(jsonString) {
+    console.log('Parsing initial data string:', jsonString);
+    const data = JSON.parse(jsonString);
     console.log('Parsed JSON data:', data);
     const recurrenceSet = new RecurrenceSet();
 
