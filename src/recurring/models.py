@@ -404,10 +404,12 @@ class RecurrenceSet(models.Model):
 
                 if recurrence_set_rule.is_exclusion or date_range.is_exclusion:
                     current_date = date_range.start_date
+                    exdates = []
 
                     while current_date <= date_range.end_date:
-                        event.add('exdate', current_date)
+                        exdates.append(current_date)
                         current_date += timedelta(days=1)
+                    event.add('exdate', exdates)
                 else:
                     event.add('rrule', rrule_dict)
 

@@ -1,3 +1,5 @@
+import zoneinfo
+
 import pytest
 import pytz
 from dateutil.rrule import rrule, DAILY
@@ -236,10 +238,7 @@ class TestRecurrenceSet:
         assert 'DTSTAMP:' in ical_string
         assert 'UID:' in ical_string
         assert 'RRULE:FREQ=DAILY;UNTIL=20230114T000000Z;INTERVAL=1' in ical_string
-        assert 'EXDATE:20230107T000000Z' in ical_string
-        assert 'EXDATE:20230108T000000Z' in ical_string
-        assert 'EXDATE:20230109T000000Z' in ical_string
-        assert 'EXDATE:20230110T000000Z' in ical_string
+        assert 'EXDATE:20230107T000000Z,20230108T000000Z,20230109T000000Z,20230110T000000Z' in ical_string
         assert 'END:VEVENT' in ical_string
         assert 'END:VCALENDAR' in ical_string
 
@@ -258,16 +257,12 @@ class TestRecurrenceSet:
         assert rrule['INTERVAL'][0] == 1
 
         # Check EXDATE
-        exdates = event.get('EXDATE', [])
-        excluded_dates = set()
-        for exdate in exdates:
-            if isinstance(exdate, list):
-                excluded_dates.update(dt.dt for dt in exdate)
-            else:
-                excluded_dates.update(dt.dt for dt in exdate.dts)
+        exdate = event.get('EXDATE')
+        assert exdate is not None, "EXDATE property is missing"
+        excluded_dates = set(dt.dt for dt in exdate.dts)
 
-        assert exclusion_start in excluded_dates
-        assert exclusion_end in excluded_dates
+        assert exclusion_start.replace(tzinfo=zoneinfo.ZoneInfo(key='UTC')) in excluded_dates
+        assert exclusion_end.replace(tzinfo=zoneinfo.ZoneInfo(key='UTC')) in excluded_dates
 
         # Generate a list of dates from the RRULE
         from dateutil.rrule import rrulestr
