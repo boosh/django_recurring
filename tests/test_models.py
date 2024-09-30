@@ -175,9 +175,11 @@ class TestRecurrenceSet:
             is_exclusion=False
         )
         ical_string = recurrence_set.to_ical()
+        print(ical_string)
+
         assert 'BEGIN:VCALENDAR' in ical_string
         assert 'BEGIN:VEVENT' in ical_string
-        assert 'RRULE:FREQ=DAILY;INTERVAL=1' in ical_string
+        assert 'RRULE:FREQ=DAILY;UNTIL=20231231T000000Z;INTERVAL=1' in ical_string
         assert f'DTSTART:{start_date.strftime("%Y%m%dT%H%M%SZ")}' in ical_string
         assert f'DTEND:{end_date.strftime("%Y%m%dT%H%M%SZ")}' in ical_string
         assert 'END:VEVENT' in ical_string
@@ -235,6 +237,9 @@ class TestRecurrenceSet:
         assert 'UID:' in ical_string
         assert 'RRULE:FREQ=DAILY;UNTIL=20230114T000000Z;INTERVAL=1' in ical_string
         assert 'EXDATE:20230107T000000Z' in ical_string
+        assert 'EXDATE:20230108T000000Z' in ical_string
+        assert 'EXDATE:20230109T000000Z' in ical_string
+        assert 'EXDATE:20230110T000000Z' in ical_string
         assert 'END:VEVENT' in ical_string
         assert 'END:VCALENDAR' in ical_string
 
@@ -253,13 +258,24 @@ class TestRecurrenceSet:
         assert rrule['INTERVAL'][0] == 1
 
         # Check EXDATE
-        exdate = event['EXDATE']
-        assert exclusion_start == exdate.dts[0].dt
+        exdates = event.get('EXDATE', [])
+        excluded_dates = set()
+        for exdate in exdates:
+            if isinstance(exdate, list):
+                excluded_dates.update(dt.dt for dt in exdate)
+            else:
+                excluded_dates.update(dt.dt for dt in exdate.dts)
+
+        assert exclusion_start in excluded_dates
+        assert exclusion_end in excluded_dates
 
         # Generate a list of dates from the RRULE
         from dateutil.rrule import rrulestr
         rule = rrulestr(f"RRULE:{event['RRULE'].to_ical().decode('utf-8')}", dtstart=start_date)
         dates = list(rule.between(start_date, end_date))
+
+        # Remove excluded dates
+        dates = [date for date in dates if date not in excluded_dates]
 
         print(f"dates={dates}")
 

@@ -1,4 +1,5 @@
 import uuid
+from datetime import timedelta
 
 import pytz
 from dateutil.rrule import (
@@ -402,7 +403,11 @@ class RecurrenceSet(models.Model):
                     rrule_dict['bysecond'] = rule.bysecond
 
                 if recurrence_set_rule.is_exclusion or date_range.is_exclusion:
-                    event.add('exdate', date_range.start_date)
+                    current_date = date_range.start_date
+
+                    while current_date <= date_range.end_date:
+                        event.add('exdate', current_date)
+                        current_date += timedelta(days=1)
                 else:
                     event.add('rrule', rrule_dict)
 
