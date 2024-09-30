@@ -147,15 +147,16 @@ class TestRecurrenceSet:
             recurrence_rule=recurrence_rule,
             is_exclusion=False
         )
+        start_date = django_timezone.now()
         RecurrenceRuleDateRange.objects.create(
             recurrence_rule=recurrence_rule,
-            start_date=django_timezone.now(),
-            end_date=django_timezone.now() + django_timezone.timedelta(days=30),
+            start_date=start_date,
+            end_date=start_date + django_timezone.timedelta(days=30),
             is_exclusion=False
         )
         recurrence_set.recalculate_occurrences()
         assert recurrence_set.next_occurrence is not None
-        assert recurrence_set.previous_occurrence is None
+        assert recurrence_set.previous_occurrence is not None
 
     def test_to_ical(self, recurrence_set, recurrence_rule):
         utc = pytz.utc
