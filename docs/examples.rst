@@ -4,141 +4,157 @@ Examples
 
 This page provides various examples of how to use django-recurring in your Django projects.
 
-Creating a Simple Weekly Recurrence
+Basic Weekly Recurrence
+-----------------------
+
+.. code-block:: python
+
+   from django.utils import timezone
+   from recurring.models import RecurrenceSet, RecurrenceRule, RecurrenceSetRule
+
+   # Create a RecurrenceSet for weekly team meetings
+   recurrence_set = RecurrenceSet.objects.create(name="Weekly Team Meeting")
+
+   # Add a rule for every Monday
+   rule = RecurrenceRule.objects.create(
+       frequency=RecurrenceRule.Frequency.WEEKLY,
+       interval=1,
+       byweekday=[0]  # Monday
+   )
+
+   # Set the date range for the entire year
+   rule.date_ranges.create(
+       start_date=timezone.now(),
+       end_date=timezone.now() + timezone.timedelta(days=365)
+   )
+
+   # Link the rule to the RecurrenceSet
+   RecurrenceSetRule.objects.create(
+       recurrence_set=recurrence_set,
+       recurrence_rule=rule
+   )
+
+   # Recalculate occurrences
+   recurrence_set.recalculate_occurrences()
+
+Monthly Recurrence on Specific Days
 -----------------------------------
 
-Here's an example of creating a simple weekly recurrence for a team meeting:
+.. code-block:: python
+
+   # Create a RecurrenceSet for monthly finance meetings
+   recurrence_set = RecurrenceSet.objects.create(name="Monthly Finance Meeting")
+
+   # Add a rule for the 15th of every month
+   rule = RecurrenceRule.objects.create(
+       frequency=RecurrenceRule.Frequency.MONTHLY,
+       interval=1,
+       bymonthday=[15]
+   )
+
+   # Set the date range for two years
+   rule.date_ranges.create(
+       start_date=timezone.now(),
+       end_date=timezone.now() + timezone.timedelta(days=730)
+   )
+
+   RecurrenceSetRule.objects.create(
+       recurrence_set=recurrence_set,
+       recurrence_rule=rule
+   )
+
+   recurrence_set.recalculate_occurrences()
+
+Complex Recurrence Pattern
+--------------------------
 
 .. code-block:: python
 
-    from recurring.models import RecurrenceSet, RecurrenceRule, RecurrenceSetRule, Timezone
-    from dateutil.rrule import WEEKLY, MO
+   # Create a RecurrenceSet for a complex schedule
+   recurrence_set = RecurrenceSet.objects.create(name="Complex Schedule")
 
-    # Create or get the timezone
-    timezone, _ = Timezone.objects.get_or_create(name="UTC")
+   # Rule 1: Every Monday and Wednesday
+   rule1 = RecurrenceRule.objects.create(
+       frequency=RecurrenceRule.Frequency.WEEKLY,
+       interval=1,
+       byweekday=[0, 2]  # Monday and Wednesday
+   )
 
-    # Create the RecurrenceSet
-    recurrence_set = RecurrenceSet.objects.create(
-        name="Weekly Team Meeting",
-        description="Our team's weekly sync-up",
-        timezone=timezone
-    )
+   # Rule 2: First Friday of every month
+   rule2 = RecurrenceRule.objects.create(
+       frequency=RecurrenceRule.Frequency.MONTHLY,
+       interval=1,
+       byweekday=[4],  # Friday
+       bysetpos=[1]  # First occurrence
+   )
 
-    # Create the RecurrenceRule
-    rule = RecurrenceRule.objects.create(
-        frequency=WEEKLY,
-        interval=1,
-        byweekday="[0]",  # Monday
-        timezone=timezone
-    )
+   # Set date ranges for both rules
+   for rule in [rule1, rule2]:
+       rule.date_ranges.create(
+           start_date=timezone.now(),
+           end_date=timezone.now() + timezone.timedelta(days=365)
+       )
+       RecurrenceSetRule.objects.create(
+           recurrence_set=recurrence_set,
+           recurrence_rule=rule
+       )
 
-    # Associate the rule with the RecurrenceSet
-    RecurrenceSetRule.objects.create(
-        recurrence_set=recurrence_set,
-        recurrence_rule=rule,
-        is_exclusion=False
-    )
+   recurrence_set.recalculate_occurrences()
 
-Creating a Monthly Recurrence with Exceptions
----------------------------------------------
-
-Here's an example of creating a monthly recurrence for a board meeting, with some exceptions:
-
-.. code-block:: python
-
-    from recurring.models import RecurrenceSet, RecurrenceRule, RecurrenceSetRule, RecurrenceDate, Timezone
-    from dateutil.rrule import MONTHLY
-    from django.utils import timezone
-
-    # Create or get the timezone
-    timezone_obj, _ = Timezone.objects.get_or_create(name="UTC")
-
-    # Create the RecurrenceSet
-    recurrence_set = RecurrenceSet.objects.create(
-        name="Monthly Board Meeting",
-        description="Board meeting on the first Monday of each month",
-        timezone=timezone_obj
-    )
-
-    # Create the RecurrenceRule
-    rule = RecurrenceRule.objects.create(
-        frequency=MONTHLY,
-        interval=1,
-        byweekday="[0]",  # Monday
-        bysetpos="[1]",   # First occurrence
-        timezone=timezone_obj
-    )
-
-    # Associate the rule with the RecurrenceSet
-    RecurrenceSetRule.objects.create(
-        recurrence_set=recurrence_set,
-        recurrence_rule=rule,
-        is_exclusion=False
-    )
-
-    # Add an exception date (e.g., skip the meeting in July)
-    exception_date = timezone.now().replace(year=2023, month=7, day=3, hour=9, minute=0, second=0, microsecond=0)
-    RecurrenceDate.objects.create(
-        recurrence_set=recurrence_set,
-        date=exception_date,
-        is_exclusion=True
-    )
-
-Using the RecurrenceSetWidget in a Custom Form
-----------------------------------------------
-
-Here's an example of how to use the RecurrenceSetWidget in a custom form:
+Using RecurrenceSet in a Model
+------------------------------
 
 .. code-block:: python
 
-    from django import forms
-    from recurring.widgets import RecurrenceSetWidget
-    from recurring.models import RecurrenceSet
+   from django.db import models
+   from recurring.models import RecurrenceSet
 
-    class CustomRecurrenceSetForm(forms.ModelForm):
-        class Meta:
-            model = RecurrenceSet
-            fields = ['name', 'description', 'timezone']
-            widgets = {
-                'recurrence_set': RecurrenceSetWidget(),
-            }
+   class Event(models.Model):
+       name = models.CharField(max_length=200)
+       recurrence = models.ForeignKey(RecurrenceSet, on_delete=models.CASCADE)
 
-    # In your view
-    from django.shortcuts import render, redirect
+   # Create an event with a recurrence pattern
+   recurrence_set = RecurrenceSet.objects.create(name="Weekly Event")
+   rule = RecurrenceRule.objects.create(
+       frequency=RecurrenceRule.Frequency.WEEKLY,
+       interval=1,
+       byweekday=[0]  # Monday
+   )
+   rule.date_ranges.create(
+       start_date=timezone.now(),
+       end_date=timezone.now() + timezone.timedelta(days=365)
+   )
+   RecurrenceSetRule.objects.create(
+       recurrence_set=recurrence_set,
+       recurrence_rule=rule
+   )
+   recurrence_set.recalculate_occurrences()
 
-    def create_recurrence_set(request):
-        if request.method == 'POST':
-            form = CustomRecurrenceSetForm(request.POST)
-            if form.is_valid():
-                form.save()
-                return redirect('recurrence_set_list')
-        else:
-            form = CustomRecurrenceSetForm()
-        return render(request, 'create_recurrence_set.html', {'form': form})
+   event = Event.objects.create(name="Team Sync", recurrence=recurrence_set)
 
-Querying for Upcoming Occurrences
----------------------------------
+   # Query events within a date range
+   events = Event.objects.filter(
+       recurrence__next_occurrence__gte=timezone.now(),
+       recurrence__previous_occurrence__lte=timezone.now() + timezone.timedelta(days=30)
+   )
 
-Here's an example of how to query for upcoming occurrences of a RecurrenceSet:
+Exporting to iCal Format
+------------------------
+
+django-recurring supports exporting RecurrenceSets to iCal format:
 
 .. code-block:: python
 
-    from recurring.models import RecurrenceSet
-    from django.utils import timezone
-    import pytz
+   recurrence_set = RecurrenceSet.objects.get(name="Weekly Team Meeting")
+   ical_string = recurrence_set.to_ical()
 
-    def get_upcoming_occurrences(recurrence_set, limit=5):
-        rruleset = recurrence_set.to_rruleset()
-        now = timezone.now()
-        tz = pytz.timezone(recurrence_set.timezone.name)
+   # Optionally, you can specify a custom PRODID
+   custom_ical_string = recurrence_set.to_ical(prod_id="-//My Company//My Product//EN")
 
-        occurrences = list(rruleset.after(now, inc=False, count=limit))
-        return [occurrence.astimezone(tz) for occurrence in occurrences]
+   # You can then save this to a file or send it as a response
+   with open('team_meeting.ics', 'w') as f:
+       f.write(ical_string)
 
-    # Usage
-    recurrence_set = RecurrenceSet.objects.get(name="Weekly Team Meeting")
-    upcoming = get_upcoming_occurrences(recurrence_set)
-    for occurrence in upcoming:
-        print(occurrence)
+The resulting iCal file will contain all the recurrence rules and can be imported into most calendar applications.
 
-These examples should give you a good starting point for working with django-recurring. Remember to adjust the timezone, dates, and other parameters according to your specific use case.
+Note: Always call `recalculate_occurrences()` after making changes to RecurrenceSets or related objects to keep the next and previous occurrence fields up-to-date.

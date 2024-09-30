@@ -1,4 +1,4 @@
-.. highlight:: shell
+Installation
 
 ============
 Installation
@@ -60,3 +60,11 @@ Once you have a copy of the source, you can install it with:
     $ pip install -e .
 
 .. _Github repo: https://github.com/boosh/django_recurring
+
+Compatibility
+-------------
+
+django-recurring is tested with:
+
+- Python 3.12.6+
+- Django 5.1+

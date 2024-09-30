@@ -168,6 +168,7 @@ class RecurrenceRule(models.Model):
             'timezone': self.timezone.name
         }
 
+
 class RecurrenceRuleDateRange(models.Model):
     recurrence_rule = models.ForeignKey(
         RecurrenceRule,
@@ -199,9 +200,9 @@ class RecurrenceRuleDateRange(models.Model):
 
 
 class RecurrenceSet(models.Model):
-    name = models.CharField(
-        max_length=255, help_text=_("The name of the recurrence set")
-    )
+    name = models.CharField(null=True, blank=True,
+                            max_length=255, help_text=_("The name of the recurrence set")
+                            )
     description = models.TextField(
         blank=True, help_text=_("A description of the recurrence set")
     )
@@ -445,5 +446,3 @@ class RecurrenceSetRule(models.Model):
         self.recurrence_rule.delete()  # Delete the associated RecurrenceRule
         super().delete(*args, **kwargs)
         recurrence_set.save(recalculate=True)
-
-
