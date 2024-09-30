@@ -429,14 +429,17 @@ class RecurrenceSetForm {
 
         text += `${rule.isExclusion ? 'Exclusion' : 'Inclusion'}: `;
 
-        // Handle single datetime or datetime range
-        if (rule.startDate && (!rule.endDate || rule.startDate === rule.endDate)) {
-            text += `On ${new Date(rule.startDate).toLocaleString()}`;
+        // Handle date ranges
+        if (rule.dateRanges && rule.dateRanges.length > 0) {
+            rule.dateRanges.forEach((dateRange, index) => {
+                if (index > 0) text += ', ';
+                text += 'From ';
+                text += dateRange.startDate ? new Date(dateRange.startDate).toLocaleString() : 'the beginning';
+                text += ' to ';
+                text += dateRange.endDate ? new Date(dateRange.endDate).toLocaleString() : 'the end';
+            });
         } else {
-            text += 'From ';
-            text += rule.startDate ? new Date(rule.startDate).toLocaleString() : 'the beginning';
-            text += ' to ';
-            text += rule.endDate ? new Date(rule.endDate).toLocaleString() : 'the end';
+            text += 'No date range specified';
         }
 
         // Add frequency information
