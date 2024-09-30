@@ -110,6 +110,8 @@ class RecurrenceSetForm {
         container.innerHTML = `
             <div class="date-ranges-container"></div>
             <button class="add-date-range">Add Date Range</button>
+            <p class="freqHeader">Every</p>
+            <input type="number" class="interval-input" min="1" value="1">
             <select class="frequency-select">
                 <option value="YEARLY">Years</option>
                 <option value="MONTHLY">Months</option>
@@ -118,7 +120,6 @@ class RecurrenceSetForm {
                 <option value="HOURLY">Hours</option>
                 <option value="MINUTELY">Minutes</option>
             </select>
-            <input type="number" class="interval-input" min="1" value="1">
             <div class="byweekday-container"></div>
             <div class="bymonth-container"></div>
             <label for="bymonthday-input">By month day:</label>

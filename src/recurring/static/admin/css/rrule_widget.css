@@ -10,6 +10,10 @@
     margin: 10px 0;
 }
 
+.freqHeader {
+    display: inline-block;
+}
+
 .rule-container, .date-container {
     margin-bottom: 10px;
     padding: 10px;
@@ -42,8 +46,12 @@ button {
     margin-top: 5px;
 }
 
-input[type="number"], input[type="date"], input[type="datetime-local"] {
+input[type="date"], input[type="datetime-local"] {
     width: 180px;
+}
+
+.interval-input {
+    width: 60px;
 }
 
 #byweekday {
