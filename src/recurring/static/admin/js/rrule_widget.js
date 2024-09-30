@@ -54,16 +54,17 @@ class RecurrenceSet {
         }
     }
 
-    toJSON() {
-        return JSON.stringify({
-            rules: this.rules,
-        });
-    }
-
     triggerOnChange() {
         if (typeof this.onChange === 'function') {
             this.onChange();
         }
+        this.updateTextDisplay();
+    }
+
+    toJSON() {
+        return JSON.stringify({
+            rules: this.rules,
+        });
     }
 }
 
@@ -188,10 +189,6 @@ class RecurrenceSetForm {
         });
     }
 
-    onChange() {
-        this.updateTextDisplay();
-        // Additional callback logic can be added here if needed
-    }
 }
 
 class RecurrenceRuleForm {
@@ -256,38 +253,6 @@ class RecurrenceRuleForm {
 
         // Add initial date range
         this.addDateRange();
-    }
-
-    addDateRange() {
-        const dateRangeContainer = document.createElement('div');
-        dateRangeContainer.className = 'date-range-container';
-        dateRangeContainer.innerHTML = `
-            <input type="datetime-local" class="start-date">
-            <input type="datetime-local" class="end-date">
-            <label>
-                <input type="checkbox" class="exclusion-checkbox">
-                Exclude
-            </label>
-            <button class="remove-date-range">Remove</button>
-        `;
-
-        const startDateInput = dateRangeContainer.querySelector('.start-date');
-        const endDateInput = dateRangeContainer.querySelector('.end-date');
-        const exclusionCheckbox = dateRangeContainer.querySelector('.exclusion-checkbox');
-
-        startDateInput.addEventListener('input', () => this.updateRule());
-        startDateInput.addEventListener('change', () => this.updateRule());
-        endDateInput.addEventListener('input', () => this.updateRule());
-        endDateInput.addEventListener('change', () => this.updateRule());
-        exclusionCheckbox.addEventListener('change', () => this.updateRule());
-        dateRangeContainer.querySelector('.remove-date-range').addEventListener('click', (e) => {
-            e.preventDefault();
-            dateRangeContainer.remove();
-            this.updateRule();
-        });
-
-        this.container.querySelector('.date-ranges-container').appendChild(dateRangeContainer);
-        this.updateRule();
     }
 
     createWeekdayButtons() {
@@ -379,6 +344,7 @@ class RecurrenceRuleForm {
     }
 
     updateRule() {
+        console.log('Updating rule');
         const frequencySelect = this.container.querySelector('.frequency-select');
         const intervalInput = this.container.querySelector('.interval-input');
         const byweekdayButtons = this.container.querySelectorAll('.weekday-button.selected');
@@ -387,9 +353,13 @@ class RecurrenceRuleForm {
         const bysetposButtons = this.container.querySelectorAll('.bysetpos-button.selected');
         const dateRangeContainers = this.container.querySelectorAll('.date-range-container');
 
-        if (!frequencySelect || !intervalInput) return;
+        if (!frequencySelect || !intervalInput) {
+            console.log('Missing frequency select or interval input');
+            return;
+        }
 
         if (!this.rule) {
+            console.log('Initializing new rule');
             this.rule = {
                 frequency: 'YEARLY',
                 interval: 1,
@@ -413,9 +383,15 @@ class RecurrenceRuleForm {
             const startDate = container.querySelector('.start-date').value;
             const endDate = container.querySelector('.end-date').value;
             const isExclusion = container.querySelector('.exclusion-checkbox').checked;
-            return { startDate, endDate, isExclusion };
-        });
+            console.log(`Date range: start=${startDate}, end=${endDate}, exclusion=${isExclusion}`);
+            return {
+                startDate: startDate || null,
+                endDate: endDate || null,
+                isExclusion
+            };
+        }).filter(range => range.startDate !== null || range.endDate !== null);
 
+        console.log('Updated rule:', JSON.stringify(this.rule, null, 2));
         this.onChange(this.rule);
     }
 
@@ -501,11 +477,16 @@ class RecurrenceRuleForm {
             exclusionCheckbox.checked = dateRange.isExclusion || false;
         }
 
-        startDateInput.addEventListener('input', () => this.updateRule());
-        startDateInput.addEventListener('change', () => this.updateRule());
-        endDateInput.addEventListener('input', () => this.updateRule());
-        endDateInput.addEventListener('change', () => this.updateRule());
-        exclusionCheckbox.addEventListener('change', () => this.updateRule());
+        const updateRuleHandler = () => {
+            console.log('Date input changed');
+            this.updateRule();
+        };
+
+        startDateInput.addEventListener('input', updateRuleHandler);
+        startDateInput.addEventListener('change', updateRuleHandler);
+        endDateInput.addEventListener('input', updateRuleHandler);
+        endDateInput.addEventListener('change', updateRuleHandler);
+        exclusionCheckbox.addEventListener('change', updateRuleHandler);
         dateRangeContainer.querySelector('.remove-date-range').addEventListener('click', (e) => {
             e.preventDefault();
             dateRangeContainer.remove();
@@ -604,39 +585,14 @@ function formatNumberList(numbers) {
     }, '');
 }
 
-function recurrenceSetToICal(recurrenceSet) {
-    let ical = '';
-    recurrenceSet.rules.forEach(rule => {
-        const prefix = rule.isExclusion ? 'EXRULE:' : 'RRULE:';
-        ical += `${prefix}FREQ=${rule.frequency};INTERVAL=${rule.interval}`;
-        if (rule.byweekday && rule.byweekday.length > 0) {
-            const dayMap = {
-                'Mon': 'MO', 'Tue': 'TU', 'Wed': 'WE', 'Thu': 'TH',
-                'Fri': 'FR', 'Sat': 'SA', 'Sun': 'SU'
-            };
-            const mappedDays = rule.byweekday.map(day => dayMap[day] || day);
-            ical += `;BYDAY=${mappedDays.join(',')}`;
-        }
-        if (rule.bymonthday && rule.bymonthday.length > 0) {
-            ical += `;BYMONTHDAY=${rule.bymonthday.join(',')}`;
-        }
-        if (rule.bymonth && rule.bymonth.length > 0) {
-            ical += `;BYMONTH=${rule.bymonth.join(',')}`;
-        }
-        if (rule.bysetpos && rule.bysetpos.length > 0) {
-            ical += `;BYSETPOS=${rule.bysetpos.join(',')}`;
-        }
-        ical += '\n';
-    });
-    return ical.trim();
-}
-
 function parseICalString(icalString) {
+    console.log('Parsing iCal string:', icalString);
     const data = JSON.parse(icalString);
+    console.log('Parsed JSON data:', data);
     const recurrenceSet = new RecurrenceSet();
 
     data.rules.forEach(ruleData => {
-        console.log("Parsing data");
+        console.log("Parsing rule data:", ruleData);
         const rule = {
             id: ruleData.rule.id,
             frequency: ruleData.rule.frequency,
@@ -648,8 +604,10 @@ function parseICalString(icalString) {
             bysetpos: ruleData.rule.bysetpos || [],
             dateRanges: Array.isArray(ruleData.dateRanges) ? ruleData.dateRanges : []
         };
+        console.log('Created rule object:', rule);
         recurrenceSet.addRule(rule);
     });
 
+    console.log('Returning recurrence set:', recurrenceSet);
     return recurrenceSet;
 }
