@@ -17,7 +17,6 @@ from dateutil.rrule import (
     rrule,
     rruleset,
 )
-from dateutil.rrule import rrulestr
 from django.db import models
 from django.utils import timezone as django_timezone
 from django.utils.translation import gettext_lazy as _
@@ -341,9 +340,7 @@ class RecurrenceSet(models.Model):
         cal = Calendar()
         event = Event()
 
-        rruleset_obj = self.to_rruleset()
-
-        if not rruleset_obj._rrule:
+        if not self.recurrencesetrules.exists():
             return ""  # Return empty string if no rules
 
         # Find the earliest start date and latest end date
@@ -358,7 +355,40 @@ class RecurrenceSet(models.Model):
         event.add('dtstart', earliest_start)
         event.add('dtend', latest_end)
 
-        event.add('rrule', rrulestr(str(rruleset_obj)))
+        for recurrence_set_rule in self.recurrencesetrules.all():
+            rule = recurrence_set_rule.recurrence_rule
+            rrule_dict = {
+                'freq': rule.get_frequency_display(),
+                'interval': rule.interval,
+            }
+            if rule.wkst is not None:
+                rrule_dict['wkst'] = rule.wkst
+            if rule.count is not None:
+                rrule_dict['count'] = rule.count
+            if rule.bysetpos:
+                rrule_dict['bysetpos'] = rule.bysetpos
+            if rule.bymonth:
+                rrule_dict['bymonth'] = rule.bymonth
+            if rule.bymonthday:
+                rrule_dict['bymonthday'] = rule.bymonthday
+            if rule.byyearday:
+                rrule_dict['byyearday'] = rule.byyearday
+            if rule.byweekno:
+                rrule_dict['byweekno'] = rule.byweekno
+            if rule.byweekday:
+                rrule_dict['byday'] = rule.byweekday
+            if rule.byhour:
+                rrule_dict['byhour'] = rule.byhour
+            if rule.byminute:
+                rrule_dict['byminute'] = rule.byminute
+            if rule.bysecond:
+                rrule_dict['bysecond'] = rule.bysecond
+
+            if recurrence_set_rule.is_exclusion:
+                event.add('exrule', rrule_dict)
+            else:
+                event.add('rrule', rrule_dict)
+
         cal.add_component(event)
 
         return cal.to_ical().decode('utf-8')
