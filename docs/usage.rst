@@ -119,11 +119,3 @@ django-recurring supports exporting RecurrenceSets to iCal format:
 
 This will create an iCal file that can be imported into most calendar applications.
 
-Admin Widget
----------------
-
-django-recurring ships with a widget for the Django admin interface to create complex intervals easily:
-
-.. image:: widget.png
-   :alt: Widget image
-   :align: center

@@ -10,6 +10,7 @@ django-recurring is a powerful Django app that allows you to create and manage r
    readme
    installation
    usage
+   admin
    examples
    models
    management_commands

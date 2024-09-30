@@ -35,7 +35,13 @@ After installing django-recurring, you need to add it to your Django project's s
            ...
        ]
 
-2. Run migrations to create the necessary database tables:
+2. If you want to export to ical, you can optionally configure the `PRODID <https://icalendar.org/iCalendar-RFC-5545/3-7-3-product-identifier.html>`_ value via the following setting:
+
+   .. code-block:: python
+
+       ICAL_PROD_ID="-//my-company//My product v1.0//EN"
+
+3. Run migrations to create the necessary database tables:
 
    .. code-block:: console
 
