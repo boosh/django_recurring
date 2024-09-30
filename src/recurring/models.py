@@ -108,15 +108,15 @@ class RecurrenceRule(models.Model):
     def get_frequency_display(self):
         return self.Frequency(self.frequency).name
 
-    def to_rrule(self, start_date, end_date):
+    def _get_rrule_kwargs(self, start_date, end_date):
         weekday_map = {'MO': MO, 'TU': TU, 'WE': WE, 'TH': TH, 'FR': FR, 'SA': SA, 'SU': SU}
 
         kwargs = {
             "freq": self.frequency,
             "interval": self.interval,
+            "dtstart": start_date.astimezone(pytz.timezone(self.timezone.name)),
+            "until": end_date,
         }
-
-        tz = pytz.timezone(self.timezone.name)
 
         if self.wkst is not None:
             kwargs["wkst"] = weekday_map[self.wkst]
@@ -141,7 +141,10 @@ class RecurrenceRule(models.Model):
         if self.bysecond:
             kwargs["bysecond"] = self.bysecond
 
-        return rrule(dtstart=start_date.astimezone(tz), **kwargs)
+        return kwargs
+
+    def to_rrule(self, start_date, end_date):
+        return rrule(**self._get_rrule_kwargs(start_date, end_date))
 
     def to_dict(self):
         return {
@@ -161,73 +164,6 @@ class RecurrenceRule(models.Model):
             'bysecond': self.bysecond,
             'timezone': self.timezone.name
         }
-
-    def to_ical(self) -> str:
-        """
-        Convert the RecurrenceRule to an iCal string representation.
-
-        Returns:
-            str: The iCal string representation of the recurrence rule.
-        """
-        cal = Calendar()
-        event = Event()
-
-        # Get all date ranges for this rule
-        date_ranges = self.date_ranges.all()
-
-        if not date_ranges:
-            return ""  # Return empty string if no date ranges
-
-        # Find the earliest start date and latest end date
-        earliest_start = min(dr.start_date for dr in date_ranges)
-        latest_end = max(dr.end_date for dr in date_ranges)
-
-        # Set DTSTART and UNTIL
-        event.add('dtstart', earliest_start)
-
-        rrule_kwargs = {
-            'freq': self.frequency,
-            'interval': self.interval,
-            'until': latest_end,
-        }
-
-        if self.wkst is not None:
-            rrule_kwargs['wkst'] = self.wkst
-        if self.count is not None:
-            rrule_kwargs['count'] = self.count
-        if self.bysetpos:
-            rrule_kwargs['bysetpos'] = self.bysetpos
-        if self.bymonth:
-            rrule_kwargs['bymonth'] = self.bymonth
-        if self.bymonthday:
-            rrule_kwargs['bymonthday'] = self.bymonthday
-        if self.byyearday:
-            rrule_kwargs['byyearday'] = self.byyearday
-        if self.byweekno:
-            rrule_kwargs['byweekno'] = self.byweekno
-        if self.byweekday:
-            rrule_kwargs['byweekday'] = [getattr(rrule, day) for day in self.byweekday]
-        if self.byhour:
-            rrule_kwargs['byhour'] = self.byhour
-        if self.byminute:
-            rrule_kwargs['byminute'] = self.byminute
-        if self.bysecond:
-            rrule_kwargs['bysecond'] = self.bysecond
-
-        rruleset_obj = rruleset()
-
-        for date_range in date_ranges:
-            rule = rrule(dtstart=date_range.start_date, **rrule_kwargs)
-            if date_range.is_exclusion:
-                rruleset_obj.exrule(rule)
-            else:
-                rruleset_obj.rrule(rule)
-
-        event.add('rrule', rrulestr(str(rruleset_obj)))
-        cal.add_component(event)
-
-        return cal.to_ical().decode('utf-8')
-
 
 class RecurrenceRuleDateRange(models.Model):
     recurrence_rule = models.ForeignKey(
@@ -286,7 +222,6 @@ class RecurrenceSet(models.Model):
 
     def to_rruleset(self):
         rset = rruleset()
-        tz = pytz.timezone(self.timezone.name)
 
         for rule in self.recurrencesetrules.all():
             for date_range in rule.recurrence_rule.date_ranges.all():
@@ -395,6 +330,39 @@ class RecurrenceSet(models.Model):
             rule.recurrence_rule.date_ranges.all().delete()
             rule.recurrence_rule.delete()
         super().delete(*args, **kwargs)
+
+    def to_ical(self) -> str:
+        """
+        Convert the RecurrenceSet to an iCal string representation.
+
+        Returns:
+            str: The iCal string representation of the recurrence set.
+        """
+        cal = Calendar()
+        event = Event()
+
+        rruleset_obj = self.to_rruleset()
+
+        if not rruleset_obj._rrule:
+            return ""  # Return empty string if no rules
+
+        # Find the earliest start date and latest end date
+        all_date_ranges = [
+            date_range
+            for rule in self.recurrencesetrules.all()
+            for date_range in rule.recurrence_rule.date_ranges.all()
+        ]
+        earliest_start = min(dr.start_date for dr in all_date_ranges)
+        latest_end = max(dr.end_date for dr in all_date_ranges)
+
+        # Set DTSTART and UNTIL
+        event.add('dtstart', earliest_start)
+        event.add('dtend', latest_end)
+
+        event.add('rrule', rrulestr(str(rruleset_obj)))
+        cal.add_component(event)
+
+        return cal.to_ical().decode('utf-8')
 
 
 class RecurrenceSetRule(models.Model):
