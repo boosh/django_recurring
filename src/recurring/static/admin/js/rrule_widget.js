@@ -35,18 +35,6 @@ class RecurrenceSet {
         return null;
     }
 
-    toText() {
-        let html = '<ul style="margin-left: 0">';
-        html += '<li><strong>Recurrence Set:</strong></li>';
-
-        this.rules.forEach((rule) => {
-            html += `<li style="list-style-type: disc; margin-left: 10px">${ruleToText(rule)}</li>`;
-        });
-
-        html += '</ul>';
-        return html;
-    }
-
     updateTextDisplay() {
         const textElement = document.getElementById(`recurrence-set-text-${this.name}`);
         if (textElement) {
@@ -98,7 +86,7 @@ function initRecurrenceSetWidget(name) {
     function updateInputAndText() {
         const jsonValue = recurrenceSetForm.toJSON();
         input.value = jsonValue;
-        text.innerHTML = recurrenceSet.toText();
+        text.innerHTML = recurrenceSetForm.toText();
         console.log('Updated input value:', jsonValue);
     }
 
@@ -490,6 +478,18 @@ class RecurrenceSetForm {
                 dateRanges: rule.dateRanges
             }))
         });
+    }
+
+    toText() {
+        let html = '<ul style="margin-left: 0">';
+        html += '<li><strong>Recurrence Set:</strong></li>';
+
+        this.rules.forEach((rule) => {
+            html += `<li style="list-style-type: disc; margin-left: 10px">${ruleToText(rule)}</li>`;
+        });
+
+        html += '</ul>';
+        return html;
     }
 
     onChange() {
