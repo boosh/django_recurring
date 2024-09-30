@@ -186,7 +186,7 @@ class TestRecurrenceSet:
     def test_to_ical_with_exclusions(self, recurrence_set, recurrence_rule, timezone_obj):
         utc = pytz.utc
         start_date = django_timezone.datetime(2023, 1, 1, tzinfo=utc)
-        end_date = django_timezone.datetime(2023, 12, 31, tzinfo=utc)
+        end_date = django_timezone.datetime(2023, 1, 14, tzinfo=utc)
 
         # Create inclusion rule
         RecurrenceSetRule.objects.create(
@@ -212,8 +212,8 @@ class TestRecurrenceSet:
             recurrence_rule=exclusion_rule,
             is_exclusion=True
         )
-        exclusion_start = django_timezone.datetime(2023, 6, 1, tzinfo=utc)
-        exclusion_end = django_timezone.datetime(2023, 6, 30, tzinfo=utc)
+        exclusion_start = django_timezone.datetime(2023, 1, 7, tzinfo=utc)
+        exclusion_end = django_timezone.datetime(2023, 1, 10, tzinfo=utc)
         RecurrenceRuleDateRange.objects.create(
             recurrence_rule=exclusion_rule,
             start_date=exclusion_start,
@@ -223,14 +223,52 @@ class TestRecurrenceSet:
 
         ical_string = recurrence_set.to_ical()
 
+        # Check for specific components in the iCal string
         assert 'BEGIN:VCALENDAR' in ical_string
         assert 'BEGIN:VEVENT' in ical_string
+        assert 'DTSTART:20230101T000000Z' in ical_string
+        assert 'DTEND:20230114T000000Z' in ical_string
         assert 'RRULE:FREQ=DAILY;INTERVAL=1' in ical_string
-        assert f'DTSTART:{start_date.strftime("%Y%m%dT%H%M%SZ")}' in ical_string
-        assert f'DTEND:{end_date.strftime("%Y%m%dT%H%M%SZ")}' in ical_string
         assert 'EXRULE:FREQ=DAILY;INTERVAL=1' in ical_string
         assert 'END:VEVENT' in ical_string
         assert 'END:VCALENDAR' in ical_string
+
+        # Check for specific dates in the iCal string
+        from icalendar import Calendar
+        cal = Calendar.from_ical(ical_string)
+        event = cal.walk('VEVENT')[0]
+
+        # Check start and end dates
+        assert event['DTSTART'].dt == start_date
+        assert event['DTEND'].dt == end_date
+
+        # Check RRULE
+        rrule = event['RRULE']
+        assert rrule['FREQ'][0] == 'DAILY'
+        assert rrule['INTERVAL'][0] == 1
+
+        # Check EXRULE
+        exrule = event['EXRULE']
+        assert exrule['FREQ'][0] == 'DAILY'
+        assert exrule['INTERVAL'][0] == 1
+
+        # Generate a list of dates from the RRULE
+        from dateutil.rrule import rrulestr
+        rule = rrulestr(f"RRULE:{event['RRULE'].to_ical().decode('utf-8')}", dtstart=start_date)
+        dates = list(rule.between(start_date, end_date))
+
+        print(f"dates={dates}")
+
+        # Check that some expected dates are in the list
+        assert django_timezone.datetime(2023, 1, 2, tzinfo=utc) in dates
+        assert django_timezone.datetime(2023, 1, 5, tzinfo=utc) in dates
+        assert django_timezone.datetime(2023, 1, 13, tzinfo=utc) in dates
+
+        # Check that excluded dates are not in the list
+        assert django_timezone.datetime(2023, 1, 7, tzinfo=utc) not in dates
+        assert django_timezone.datetime(2023, 1, 8, tzinfo=utc) not in dates
+        assert django_timezone.datetime(2023, 1, 9, tzinfo=utc) not in dates
+        assert django_timezone.datetime(2023, 1, 10, tzinfo=utc) not in dates
 
 @pytest.mark.django_db
 class TestRecurrenceSetRule:
