@@ -112,10 +112,25 @@ function initRecurrenceSetWidget(name) {
     if (parentForm) {
         parentForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            updateInputAndText();
-            console.log('Form submitted, input value:', input.value);
-            parentForm.submit();
+            if (validateDateInputs()) {
+                updateInputAndText();
+                console.log('Form submitted, input value:', input.value);
+                parentForm.submit();
+            }
         });
+    }
+
+    function validateDateInputs() {
+        const dateRanges = document.querySelectorAll('.date-range-container');
+        for (let i = 0; i < dateRanges.length; i++) {
+            const startDate = dateRanges[i].querySelector('.start-date').value;
+            const endDate = dateRanges[i].querySelector('.end-date').value;
+            if (!startDate || !endDate) {
+                alert('Please set both start and end dates for all date ranges.');
+                return false;
+            }
+        }
+        return true;
     }
 
     const addRuleButton = form.querySelector('#add-rule');
@@ -389,7 +404,7 @@ class RecurrenceRuleForm {
                 endDate: endDate || null,
                 isExclusion
             };
-        }).filter(range => range.startDate !== null || range.endDate !== null);
+        });
 
         console.log('Updated rule:', JSON.stringify(this.rule, null, 2));
         this.onChange(this.rule);
@@ -459,6 +474,7 @@ class RecurrenceRuleForm {
         dateRangeContainer.innerHTML = `
             <input type="datetime-local" class="start-date">
             <input type="datetime-local" class="end-date">
+            <a href="#" class="set-far-future">Set to far future</a>
             <label>
                 <input type="checkbox" class="exclusion-checkbox">
                 Exclude
@@ -469,6 +485,7 @@ class RecurrenceRuleForm {
         const startDateInput = dateRangeContainer.querySelector('.start-date');
         const endDateInput = dateRangeContainer.querySelector('.end-date');
         const exclusionCheckbox = dateRangeContainer.querySelector('.exclusion-checkbox');
+        const setFarFutureLink = dateRangeContainer.querySelector('.set-far-future');
 
         console.log("Setting initial date values");
         if (dateRange) {
@@ -490,6 +507,12 @@ class RecurrenceRuleForm {
         dateRangeContainer.querySelector('.remove-date-range').addEventListener('click', (e) => {
             e.preventDefault();
             dateRangeContainer.remove();
+            this.updateRule();
+        });
+
+        setFarFutureLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            endDateInput.value = '9999-01-01T00:00';
             this.updateRule();
         });
 
