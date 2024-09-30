@@ -28,6 +28,7 @@ dev = [
     "coverage",  # testing
     "mypy",  # linting
     "pytest",  # testing
+    "pytest-django",  # testing
     "ruff"  # linting
 ]
 
