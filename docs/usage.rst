@@ -98,7 +98,7 @@ You can create complex recurrence patterns by combining multiple rules:
 
    recurrence_set.recalculate_occurrences()
 
-Note: Always call `recalculate_occurrences()` after making changes to RecurrenceSets to keep the `next` and `previous` occurrence fields up-to-date.
+Note: Always call `recalculate_occurrences()` after making changes to RecurrenceSets to keep the `next` and `previous` occurrence fields up-to-date. You can also call `recurrence_set.save(recalculate=True)`
 
 Exporting to iCal Format
 ~~~~~~~~~~~~~~~~~~~~~~~~

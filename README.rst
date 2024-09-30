@@ -20,21 +20,22 @@ Create repeating datetimes in Django using dateutil rrulesets with timezone awar
 Features
 --------
 
-* Create complex recurring date patterns using rrulesets
+* Create complex recurring date patterns using dateutil rrulesets
 * Automatically calculate previous and next occurrences for efficient date range queries
 * Timezone-aware datetime handling
 * Export recurrence sets to iCal format
 * Admin interface with custom widget for creating and editing recurrence patterns
-* Efficient querying of recurring events
 
 Limitations
 -----------
-This library currently has the following limitations. Feel free to submit PRs to address them.
+This library currently has the following limitations.
 
 * iCal format doesn't support recurrence sets with multiple rules
     It should create multiple iCal events, but it doesn't
 * All date ranges require an end date.
     The `count <https://icalendar.org/iCalendar-RFC-5545/3-3-10-recurrence-rule.html>`_ param isn't supported.
+
+Feel free to submit PRs to address them.
 
 Quick Start
 -----------
