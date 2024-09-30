@@ -299,7 +299,7 @@ class RecurrenceSet(models.Model):
         for rule_data in rules:
             rule = rule_data['rule']
             rule.save()
-            recurrence_set_rule = RecurrenceSetRule.objects.create(
+            RecurrenceSetRule.objects.create(
                 recurrence_set=self,
                 recurrence_rule=rule,
                 is_exclusion=rule_data['is_exclusion']
