@@ -42,6 +42,11 @@
     margin-top: 10px;
 }
 
+.recurrence-set-text ul {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
 button {
     margin-top: 5px;
 }

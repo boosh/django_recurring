@@ -449,11 +449,13 @@ class RecurrenceSetForm {
     }
 
     toText() {
-        let html = '<ul style="margin-left: 0">';
+        let html = '<ul>';
         html += '<li><strong>Recurrence Set:</strong></li>';
 
         this.rules.forEach((rule) => {
-            html += `<li style="list-style-type: disc; margin-left: 10px">${this.ruleToText(rule)}</li>`;
+            html += '<li>';
+            html += this.ruleToText(rule);
+            html += '</li>';
         });
 
         html += '</ul>';
@@ -461,27 +463,39 @@ class RecurrenceSetForm {
     }
 
     ruleToText(rule) {
-        let text = '';
-
-        text += `${rule.isExclusion ? 'Exclusion' : 'Inclusion'}: `;
+        let text = '<ul>';
+        text += '<li>';
+        text += this.getRuleDetails(rule);
+        text += '</li>';
 
         // Handle date ranges
         if (rule.dateRanges && rule.dateRanges.length > 0) {
-            rule.dateRanges.forEach((dateRange, index) => {
-                if (index > 0) text += ', ';
+            text += '<ul>';
+            rule.dateRanges.forEach((dateRange) => {
+                text += '<li style="list-style-type: disc; margin-left: 20px">';
+                text += `${dateRange.isExclusion ? 'Exclusion' : 'Inclusion'}: `;
                 text += 'From ';
                 text += dateRange.startDate ? new Date(dateRange.startDate).toLocaleString() : 'the beginning';
                 text += ' to ';
                 text += dateRange.endDate ? new Date(dateRange.endDate).toLocaleString() : 'the end';
+                text += '</li>';
             });
+            text += '</ul>';
         } else {
-            text += 'No date range specified';
+            text += '<ul><li style="list-style-type: disc; margin-left: 20px">No date range specified</li></ul>';
         }
+
+        text += '</ul>';
+        return text;
+    }
+
+    getRuleDetails(rule) {
+        let text = '';
 
         // Add frequency information
         const frequency = rule.frequency.toLowerCase().replace('ly', '');
-        const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `every ${frequency}`;
-        text += `, ${interval}`;
+        const interval = rule.interval > 1 ? `Every ${rule.interval} ${frequency}s` : `Every ${frequency}`;
+        text += interval;
 
         // Add weekday information
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
