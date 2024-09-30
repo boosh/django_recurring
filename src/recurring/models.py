@@ -355,7 +355,6 @@ class RecurrenceSet(models.Model):
         earliest_start = min(dr.start_date for dr in all_date_ranges)
         latest_end = max(dr.end_date for dr in all_date_ranges)
 
-        # Set DTSTART and UNTIL
         event.add('dtstart', earliest_start)
         event.add('dtend', latest_end)
 
