@@ -5,6 +5,11 @@
     border-radius: 4px;
 }
 
+.add-date-range {
+    display: block;
+    margin: 10px 0;
+}
+
 .rule-container, .date-container {
     margin-bottom: 10px;
     padding: 10px;
@@ -38,7 +43,7 @@ button {
 }
 
 input[type="number"], input[type="date"], input[type="datetime-local"] {
-    width: 150px;
+    width: 180px;
 }
 
 #byweekday {

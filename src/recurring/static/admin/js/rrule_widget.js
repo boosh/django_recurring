@@ -111,10 +111,12 @@ class RecurrenceSetForm {
             <div class="date-ranges-container"></div>
             <button class="add-date-range">Add Date Range</button>
             <select class="frequency-select">
-                <option value="YEARLY">Yearly</option>
-                <option value="MONTHLY">Monthly</option>
-                <option value="WEEKLY">Weekly</option>
-                <option value="DAILY">Daily</option>
+                <option value="YEARLY">Years</option>
+                <option value="MONTHLY">Months</option>
+                <option value="WEEKLY">Weeks</option>
+                <option value="DAILY">Days</option>
+                <option value="HOURLY">Hours</option>
+                <option value="MINUTELY">Minutes</option>
             </select>
             <input type="number" class="interval-input" min="1" value="1">
             <div class="byweekday-container"></div>
@@ -122,6 +124,8 @@ class RecurrenceSetForm {
             <label for="bymonthday-input">By month day:</label>
             <input type="text" class="bymonthday-input" placeholder="e.g., 1,15,-1">
             <div class="bysetpos-container"></div>
+            <div class="byhour-container"></div>
+            <div class="byminute-container"></div>
             <button class="remove-rule">Remove Rule</button>
             <button class="duplicate-rule">Duplicate Rule</button>
         `;
@@ -129,6 +133,8 @@ class RecurrenceSetForm {
         this.createWeekdayButtons(container, rule);
         this.createMonthButtons(container, rule);
         this.createBySetPosButtons(container, rule);
+        this.createHourInput(container, rule);
+        this.createMinuteInput(container, rule);
 
         container.querySelector('.add-date-range').addEventListener('click', (e) => {
             e.preventDefault();
@@ -216,6 +222,26 @@ class RecurrenceSetForm {
         });
     }
 
+    createHourInput(container, rule) {
+        const byhourContainer = container.querySelector('.byhour-container');
+        byhourContainer.innerHTML = `
+            <label for="byhour-input">By hour:</label>
+            <input type="text" class="byhour-input" placeholder="e.g., 9,12,15">
+        `;
+        const byhourInput = byhourContainer.querySelector('.byhour-input');
+        byhourInput.addEventListener('change', () => this.updateRule(container, rule));
+    }
+
+    createMinuteInput(container, rule) {
+        const byminuteContainer = container.querySelector('.byminute-container');
+        byminuteContainer.innerHTML = `
+            <label for="byminute-input">By minute:</label>
+            <input type="text" class="byminute-input" placeholder="e.g., 0,15,30,45">
+        `;
+        const byminuteInput = byminuteContainer.querySelector('.byminute-input');
+        byminuteInput.addEventListener('change', () => this.updateRule(container, rule));
+    }
+
     getOrdinalSuffix(n) {
         const s = ['th', 'st', 'nd', 'rd'];
         const v = n % 100;
@@ -229,6 +255,8 @@ class RecurrenceSetForm {
         const bymonthButtons = container.querySelectorAll('.month-button');
         const bymonthdayInput = container.querySelector('.bymonthday-input');
         const bysetposButtons = container.querySelectorAll('.bysetpos-button');
+        const byhourInput = container.querySelector('.byhour-input');
+        const byminuteInput = container.querySelector('.byminute-input');
 
         if (frequencySelect) frequencySelect.value = rule.frequency;
         if (intervalInput) intervalInput.value = rule.interval;
@@ -246,6 +274,9 @@ class RecurrenceSetForm {
         bysetposButtons.forEach(button => {
             button.classList.toggle('selected', rule.bysetpos.includes(parseInt(button.value, 10)));
         });
+
+        if (byhourInput) byhourInput.value = this.formatNumberList(rule.byhour);
+        if (byminuteInput) byminuteInput.value = this.formatNumberList(rule.byminute);
 
         // Add date ranges
         if (Array.isArray(rule.dateRanges) && rule.dateRanges.length > 0) {
@@ -311,6 +342,8 @@ class RecurrenceSetForm {
         const bymonthButtons = container.querySelectorAll('.month-button.selected');
         const bymonthdayInput = container.querySelector('.bymonthday-input');
         const bysetposButtons = container.querySelectorAll('.bysetpos-button.selected');
+        const byhourInput = container.querySelector('.byhour-input');
+        const byminuteInput = container.querySelector('.byminute-input');
         const dateRangeContainers = container.querySelectorAll('.date-range-container');
 
         rule.frequency = frequencySelect.value;
@@ -319,6 +352,8 @@ class RecurrenceSetForm {
         rule.bymonth = Array.from(bymonthButtons).map(button => parseInt(button.value, 10));
         rule.bymonthday = this.parseNumberList(bymonthdayInput.value);
         rule.bysetpos = Array.from(bysetposButtons).map(button => parseInt(button.value, 10));
+        rule.byhour = this.parseNumberList(byhourInput.value);
+        rule.byminute = this.parseNumberList(byminuteInput.value);
 
         rule.dateRanges = Array.from(dateRangeContainers).map(container => {
             const startDate = container.querySelector('.start-date').value;
@@ -443,8 +478,8 @@ class RecurrenceSetForm {
         }
 
         // Add frequency information
-        const frequency = rule.frequency.toLowerCase();
-        const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `${frequency}`;
+        const frequency = rule.frequency.toLowerCase().replace('ly', '');
+        const interval = rule.interval > 1 ? `every ${rule.interval} ${frequency}s` : `every ${frequency}`;
         text += `, ${interval}`;
 
         // Add weekday information
@@ -473,6 +508,14 @@ class RecurrenceSetForm {
                 return `${Math.abs(pos)}th from last`;
             });
             text += ` (${positions.join(', ')})`;
+        }
+
+        if (rule.byhour && rule.byhour.length > 0) {
+            text += ` at hour${rule.byhour.length > 1 ? 's' : ''} ${this.formatNumberList(rule.byhour)}`;
+        }
+
+        if (rule.byminute && rule.byminute.length > 0) {
+            text += ` at minute${rule.byminute.length > 1 ? 's' : ''} ${this.formatNumberList(rule.byminute)}`;
         }
 
         return text;
