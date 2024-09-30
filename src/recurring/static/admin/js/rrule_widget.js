@@ -1,23 +1,26 @@
 class RecurrenceSet {
     constructor() {
         this.rules = [];
-        this.dates = [];
+        this.onChange = null;
     }
 
     addRule(rule) {
         rule.id = Date.now() + Math.random();
         this.rules.push(rule);
+        this.triggerOnChange();
     }
 
     updateRule(updatedRule) {
         const index = this.rules.findIndex(rule => rule.id === updatedRule.id);
         if (index !== -1) {
             this.rules[index] = updatedRule;
+            this.triggerOnChange();
         }
     }
 
     removeRule(ruleId) {
         this.rules = this.rules.filter(rule => rule.id !== ruleId);
+        this.triggerOnChange();
     }
 
     duplicateRule(ruleId) {
@@ -26,6 +29,7 @@ class RecurrenceSet {
             const newRule = JSON.parse(JSON.stringify(originalRule));
             newRule.id = Date.now() + Math.random();
             this.rules.push(newRule);
+            this.triggerOnChange();
             return newRule;
         }
         return null;
@@ -37,10 +41,6 @@ class RecurrenceSet {
 
         this.rules.forEach((rule) => {
             html += `<li style="list-style-type: disc; margin-left: 10px">${ruleToText(rule)}</li>`;
-        });
-
-        this.dates.forEach((date) => {
-            html += `<li style="list-style-type: disc; margin-left: 10px">${date.isExclusion ? 'Exclusion' : 'Inclusion'} Date: ${date.date}</li>`;
         });
 
         html += '</ul>';
@@ -57,8 +57,13 @@ class RecurrenceSet {
     toJSON() {
         return JSON.stringify({
             rules: this.rules,
-            dates: this.dates
         });
+    }
+
+    triggerOnChange() {
+        if (typeof this.onChange === 'function') {
+            this.onChange();
+        }
     }
 }
 
@@ -74,12 +79,17 @@ function initRecurrenceSetWidget(name) {
     }
 
     const recurrenceSet = new RecurrenceSet();
+    recurrenceSet.name = name;
     const recurrenceSetForm = new RecurrenceSetForm(form, recurrenceSet);
 
-    recurrenceSetForm.onChange = function () {
+    function updateInputAndText() {
         input.value = recurrenceSet.toJSON();
         text.innerHTML = recurrenceSet.toText();
-    };
+        console.log('Updated input value:', input.value);
+    }
+
+    recurrenceSetForm.onChange = updateInputAndText;
+    recurrenceSet.onChange = updateInputAndText;
 
     const initialData = input.value || input.getAttribute('data-initial');
     console.log(`parsing initial data ${initialData}`);
@@ -87,19 +97,24 @@ function initRecurrenceSetWidget(name) {
         try {
             const parsedSet = parseICalString(initialData);
             recurrenceSetForm.setRecurrenceSet(parsedSet);
-
-            // Ensure the input value is set even if there's no interaction
-            input.value = parsedSet.toJSON();
-
-            // Render the "Recurrence Set:" list immediately
-            text.innerHTML = parsedSet.toText();
         } catch (error) {
             console.error('Error parsing initial data:', error);
             text.innerHTML = 'Error: Invalid recurrence set data';
         }
-    } else {
-        // If there's no initial data, display "No rules defined yet."
-        text.innerHTML = '<ul style="margin-left: 0"><li><strong>Recurrence Set:</strong></li><li style="list-style-type: disc; margin-left: 10px">No rules defined yet.</li></ul>';
+    }
+
+    // Always set the initial input value
+    updateInputAndText();
+
+    // Ensure the input value is always set when the form is submitted
+    const parentForm = form.closest('form');
+    if (parentForm) {
+        parentForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            updateInputAndText();
+            console.log('Form submitted, input value:', input.value);
+            parentForm.submit();
+        });
     }
 
     const addRuleButton = form.querySelector('#add-rule');
@@ -256,9 +271,15 @@ class RecurrenceRuleForm {
             <button class="remove-date-range">Remove</button>
         `;
 
-        dateRangeContainer.querySelector('.start-date').addEventListener('change', () => this.updateRule());
-        dateRangeContainer.querySelector('.end-date').addEventListener('change', () => this.updateRule());
-        dateRangeContainer.querySelector('.exclusion-checkbox').addEventListener('change', () => this.updateRule());
+        const startDateInput = dateRangeContainer.querySelector('.start-date');
+        const endDateInput = dateRangeContainer.querySelector('.end-date');
+        const exclusionCheckbox = dateRangeContainer.querySelector('.exclusion-checkbox');
+
+        startDateInput.addEventListener('input', () => this.updateRule());
+        startDateInput.addEventListener('change', () => this.updateRule());
+        endDateInput.addEventListener('input', () => this.updateRule());
+        endDateInput.addEventListener('change', () => this.updateRule());
+        exclusionCheckbox.addEventListener('change', () => this.updateRule());
         dateRangeContainer.querySelector('.remove-date-range').addEventListener('click', (e) => {
             e.preventDefault();
             dateRangeContainer.remove();
@@ -480,7 +501,9 @@ class RecurrenceRuleForm {
             exclusionCheckbox.checked = dateRange.isExclusion || false;
         }
 
+        startDateInput.addEventListener('input', () => this.updateRule());
         startDateInput.addEventListener('change', () => this.updateRule());
+        endDateInput.addEventListener('input', () => this.updateRule());
         endDateInput.addEventListener('change', () => this.updateRule());
         exclusionCheckbox.addEventListener('change', () => this.updateRule());
         dateRangeContainer.querySelector('.remove-date-range').addEventListener('click', (e) => {
@@ -604,10 +627,6 @@ function recurrenceSetToICal(recurrenceSet) {
             ical += `;BYSETPOS=${rule.bysetpos.join(',')}`;
         }
         ical += '\n';
-    });
-    recurrenceSet.dates.forEach(date => {
-        const prefix = date.isExclusion ? 'EXDATE:' : 'RDATE:';
-        ical += `${prefix}${date.date.replace(/[-:]/g, '').replace('T', '')}\n`;
     });
     return ical.trim();
 }
