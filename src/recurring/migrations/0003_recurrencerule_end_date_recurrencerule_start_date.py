@@ -4,20 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('recurring', '0002_alter_recurrencerule_byhour_and_more'),
+        ("recurring", "0002_alter_recurrencerule_byhour_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='recurrencerule',
-            name='end_date',
-            field=models.DateTimeField(blank=True, help_text='The end date of the recurrence', null=True),
+            model_name="recurrencerule",
+            name="end_date",
+            field=models.DateTimeField(
+                blank=True, help_text="The end date of the recurrence", null=True
+            ),
         ),
         migrations.AddField(
-            model_name='recurrencerule',
-            name='start_date',
-            field=models.DateTimeField(blank=True, help_text='The start date of the recurrence', null=True),
+            model_name="recurrencerule",
+            name="start_date",
+            field=models.DateTimeField(
+                blank=True, help_text="The start date of the recurrence", null=True
+            ),
         ),
     ]

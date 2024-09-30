@@ -5,27 +5,48 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('recurring', '0003_recurrencerule_end_date_recurrencerule_start_date'),
+        ("recurring", "0003_recurrencerule_end_date_recurrencerule_start_date"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='recurrencerule',
-            name='end_date',
+            model_name="recurrencerule",
+            name="end_date",
         ),
         migrations.RemoveField(
-            model_name='recurrencerule',
-            name='start_date',
+            model_name="recurrencerule",
+            name="start_date",
         ),
         migrations.CreateModel(
-            name='RecurrenceRuleDateRange',
+            name="RecurrenceRuleDateRange",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('start_date', models.DateTimeField(help_text='The start date of the date range')),
-                ('end_date', models.DateTimeField(help_text='The end date of the date range')),
-                ('recurrence_rule', models.ForeignKey(help_text='The recurrence rule this date range belongs to', on_delete=django.db.models.deletion.CASCADE, related_name='date_ranges', to='recurring.recurrencerule')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "start_date",
+                    models.DateTimeField(help_text="The start date of the date range"),
+                ),
+                (
+                    "end_date",
+                    models.DateTimeField(help_text="The end date of the date range"),
+                ),
+                (
+                    "recurrence_rule",
+                    models.ForeignKey(
+                        help_text="The recurrence rule this date range belongs to",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="date_ranges",
+                        to="recurring.recurrencerule",
+                    ),
+                ),
             ],
         ),
     ]

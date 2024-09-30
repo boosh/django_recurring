@@ -4,7 +4,7 @@ from src.recurring.utils import (
     _camel_to_snake,
     recursive_camel_to_snake,
     _snake_to_camel,
-    recursive_snake_to_camel
+    recursive_snake_to_camel,
 )
 
 
@@ -25,30 +25,30 @@ class TestUtils(unittest.TestCase):
                 "secondLevel": {
                     "thirdLevelArray": [
                         {"fourthLevel": "value"},
-                        {"anotherFourthLevel": "anotherValue"}
+                        {"anotherFourthLevel": "anotherValue"},
                     ]
                 },
-                "anotherSecondLevel": "value"
+                "anotherSecondLevel": "value",
             },
             "topLevelArray": [
                 {"nestedInArray": "value"},
-                {"anotherNestedInArray": "anotherValue"}
-            ]
+                {"anotherNestedInArray": "anotherValue"},
+            ],
         }
         expected_output = {
             "top_level": {
                 "second_level": {
                     "third_level_array": [
                         {"fourth_level": "value"},
-                        {"another_fourth_level": "anotherValue"}
+                        {"another_fourth_level": "anotherValue"},
                     ]
                 },
-                "another_second_level": "value"
+                "another_second_level": "value",
             },
             "top_level_array": [
                 {"nested_in_array": "value"},
-                {"another_nested_in_array": "anotherValue"}
-            ]
+                {"another_nested_in_array": "anotherValue"},
+            ],
         }
         self.assertEqual(recursive_camel_to_snake(input_data), expected_output)
 
@@ -68,30 +68,30 @@ class TestUtils(unittest.TestCase):
                 "second_level": {
                     "third_level_array": [
                         {"fourth_level": "value"},
-                        {"another_fourth_level": "another_value"}
+                        {"another_fourth_level": "another_value"},
                     ]
                 },
-                "another_second_level": "value"
+                "another_second_level": "value",
             },
             "top_level_array": [
                 {"nested_in_array": "value"},
-                {"another_nested_in_array": "another_value"}
-            ]
+                {"another_nested_in_array": "another_value"},
+            ],
         }
         expected_output = {
             "topLevel": {
                 "secondLevel": {
                     "thirdLevelArray": [
                         {"fourthLevel": "value"},
-                        {"anotherFourthLevel": "another_value"}
+                        {"anotherFourthLevel": "another_value"},
                     ]
                 },
-                "anotherSecondLevel": "value"
+                "anotherSecondLevel": "value",
             },
             "topLevelArray": [
                 {"nestedInArray": "value"},
-                {"anotherNestedInArray": "another_value"}
-            ]
+                {"anotherNestedInArray": "another_value"},
+            ],
         }
         self.assertEqual(recursive_snake_to_camel(input_data), expected_output)
 
@@ -120,7 +120,7 @@ class TestUtils(unittest.TestCase):
                 {"nestedDict": {"deeperKey": "value"}},
                 ["listItem1", {"dictInList": "value"}],
                 42,
-                "stringValue"
+                "stringValue",
             ]
         }
         expected_camel_to_snake = {
@@ -128,7 +128,7 @@ class TestUtils(unittest.TestCase):
                 {"nested_dict": {"deeper_key": "value"}},
                 ["listItem1", {"dict_in_list": "value"}],
                 42,
-                "stringValue"
+                "stringValue",
             ]
         }
         expected_snake_to_camel = {
@@ -136,12 +136,14 @@ class TestUtils(unittest.TestCase):
                 {"nestedDict": {"deeperKey": "value"}},
                 ["listItem1", {"dictInList": "value"}],
                 42,
-                "stringValue"
+                "stringValue",
             ]
         }
         self.assertEqual(recursive_camel_to_snake(input_data), expected_camel_to_snake)
-        self.assertEqual(recursive_snake_to_camel(expected_camel_to_snake), expected_snake_to_camel)
+        self.assertEqual(
+            recursive_snake_to_camel(expected_camel_to_snake), expected_snake_to_camel
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

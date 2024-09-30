@@ -12,6 +12,7 @@ from recurring.models import RecurrenceSet, Timezone
 def timezone_obj():
     return Timezone.objects.get_or_create(name="UTC")[0]
 
+
 @pytest.fixture
 def valid_recurrence_set_data():
     """Fixture to provide valid recurrence set data."""
@@ -19,28 +20,26 @@ def valid_recurrence_set_data():
         "name": "Test Recurrence Set",
         "description": "A test recurrence set",
         "timezone": 1,
-        "recurrence_set": json.dumps({
-            "rules": [
-                {
-                    "rule": {
-                        "frequency": "DAILY",
-                        "interval": 1
-                    },
-                    "dateRanges": [
-                        {
-                            "startDate": "2023-01-01T00:00:00",
-                            "endDate": "2023-12-31T23:59:59"
-                        }
-                    ]
-                }
-            ]
-        })
+        "recurrence_set": json.dumps(
+            {
+                "rules": [
+                    {
+                        "rule": {"frequency": "DAILY", "interval": 1},
+                        "dateRanges": [
+                            {
+                                "startDate": "2023-01-01T00:00:00",
+                                "endDate": "2023-12-31T23:59:59",
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
     }
 
 
 @pytest.mark.django_db
 class TestRecurrenceSetForm:
-
     def test_form_valid_data(self, valid_recurrence_set_data):
         """Test that the form is valid with correct data."""
         form = RecurrenceSetForm(data=valid_recurrence_set_data)
@@ -67,7 +66,10 @@ class TestRecurrenceSetForm:
         valid_recurrence_set_data["recurrence_set"] = json.dumps(data)
         form = RecurrenceSetForm(data=valid_recurrence_set_data)
         assert not form.is_valid()
-        assert any("You must add at least one rule" in error for error in form.non_field_errors())
+        assert any(
+            "You must add at least one rule" in error
+            for error in form.non_field_errors()
+        )
 
     def test_form_invalid_rule_structure(self, valid_recurrence_set_data):
         """Test that the form is invalid when rule structure is incorrect."""
@@ -99,14 +101,18 @@ class TestRecurrenceSetForm:
         assert instance.timezone.id == valid_recurrence_set_data["timezone"]
         assert instance.recurrencesetrules.count() == 1
 
-    def test_form_update_existing_instance(self, valid_recurrence_set_data, timezone_obj):
+    def test_form_update_existing_instance(
+        self, valid_recurrence_set_data, timezone_obj
+    ):
         """Test that the form updates an existing RecurrenceSet instance."""
         initial_instance = RecurrenceSet.objects.create(
             name="Initial Name",
             description="Initial Description",
-            timezone=timezone_obj
+            timezone=timezone_obj,
         )
-        form = RecurrenceSetForm(data=valid_recurrence_set_data, instance=initial_instance)
+        form = RecurrenceSetForm(
+            data=valid_recurrence_set_data, instance=initial_instance
+        )
         assert form.is_valid(), form.errors
         updated_instance = form.save()
         assert updated_instance.pk == initial_instance.pk
@@ -119,24 +125,23 @@ class TestRecurrenceSetForm:
         existing_instance = RecurrenceSet.objects.create(
             name="Existing Set",
             description="An existing recurrence set",
-            timezone=timezone_obj
+            timezone=timezone_obj,
         )
-        existing_instance.from_dict({
-            "rules": [
-                {
-                    "rule": {
-                        "frequency": "DAILY",
-                        "interval": 1
-                    },
-                    "date_ranges": [
-                        {
-                            "start_date": datetime.now(pytz.UTC),
-                            "end_date": datetime.now(pytz.UTC) + timedelta(days=30)
-                        }
-                    ]
-                }
-            ]
-        })
+        existing_instance.from_dict(
+            {
+                "rules": [
+                    {
+                        "rule": {"frequency": "DAILY", "interval": 1},
+                        "date_ranges": [
+                            {
+                                "start_date": datetime.now(pytz.UTC),
+                                "end_date": datetime.now(pytz.UTC) + timedelta(days=30),
+                            }
+                        ],
+                    }
+                ]
+            }
+        )
         form = RecurrenceSetForm(instance=existing_instance)
         assert form.initial["name"] == "Existing Set"
         assert form.initial["description"] == "An existing recurrence set"
@@ -151,12 +156,20 @@ class TestRecurrenceSetForm:
         assert widget.__class__.__name__ == "RecurrenceSetWidget"
         assert widget.attrs["style"] == "display: none;"
 
-    @pytest.mark.parametrize("invalid_field,invalid_value", [
-        ("name", ""),  # Empty name
-        ("timezone", "Invalid/Timezone"),  # Invalid timezone
-        ("recurrence_set", '{"invalid": "json"}'),  # Invalid recurrence set structure
-    ])
-    def test_form_field_validation(self, valid_recurrence_set_data, invalid_field, invalid_value):
+    @pytest.mark.parametrize(
+        "invalid_field,invalid_value",
+        [
+            ("name", ""),  # Empty name
+            ("timezone", "Invalid/Timezone"),  # Invalid timezone
+            (
+                "recurrence_set",
+                '{"invalid": "json"}',
+            ),  # Invalid recurrence set structure
+        ],
+    )
+    def test_form_field_validation(
+        self, valid_recurrence_set_data, invalid_field, invalid_value
+    ):
         """Test validation for individual fields with invalid data."""
         invalid_data = valid_recurrence_set_data.copy()
         invalid_data[invalid_field] = invalid_value

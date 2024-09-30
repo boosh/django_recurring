@@ -7,100 +7,315 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     def insert_utc_timezone(apps, schema_editor):
-        Timezone = apps.get_model('recurring', 'Timezone')
-        Timezone.objects.create(id=1, name='UTC')
+        Timezone = apps.get_model("recurring", "Timezone")
+        Timezone.objects.create(id=1, name="UTC")
 
     operations = [
         migrations.CreateModel(
-            name='RecurrenceRule',
+            name="RecurrenceRule",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('frequency', models.IntegerField(
-                    choices=[(0, 'YEARLY'), (1, 'MONTHLY'), (2, 'WEEKLY'), (3, 'DAILY'), (4, 'HOURLY'), (5, 'MINUTELY'),
-                             (6, 'SECONDLY')], help_text='The frequency of the recurrence')),
-                ('interval', models.IntegerField(default=1, help_text='The interval between each freq iteration')),
-                ('wkst', models.IntegerField(blank=True,
-                                             choices=[(0, 'MO'), (1, 'TU'), (2, 'WE'), (3, 'TH'), (4, 'FR'), (5, 'SA'),
-                                                      (6, 'SU')], help_text='The week start day', null=True)),
-                ('count',
-                 models.IntegerField(blank=True, help_text='How many occurrences will be generated', null=True)),
-                ('until', models.DateTimeField(blank=True, help_text='A date to repeat until', null=True)),
-                ('bysetpos',
-                 models.CharField(blank=True, help_text='By position (BYSETPOS)', max_length=128, null=True)),
-                ('bymonth', models.CharField(blank=True, help_text='By month (BYMONTH)', max_length=64, null=True)),
-                ('bymonthday',
-                 models.CharField(blank=True, help_text='By month day (BYMONTHDAY)', max_length=128, null=True)),
-                ('byyearday',
-                 models.CharField(blank=True, help_text='By year day (BYYEARDAY)', max_length=128, null=True)),
-                ('byweekno',
-                 models.CharField(blank=True, help_text='By week number (BYWEEKNO)', max_length=128, null=True)),
-                ('byweekday', models.CharField(blank=True, help_text='By weekday (BYDAY)', max_length=64, null=True)),
-                ('byhour', models.CharField(blank=True, help_text='By hour (BYHOUR)', max_length=128, null=True)),
-                ('byminute', models.CharField(blank=True, help_text='By minute (BYMINUTE)', max_length=128, null=True)),
-                ('bysecond', models.CharField(blank=True, help_text='By second (BYSECOND)', max_length=128, null=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='RecurrenceSet',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(help_text='The name of the recurrence set', max_length=255)),
-                ('description', models.TextField(blank=True, help_text='A description of the recurrence set')),
-                ('next_occurrence',
-                 models.DateTimeField(blank=True, help_text='The next occurrence of this recurrence set', null=True)),
-                ('previous_occurrence',
-                 models.DateTimeField(blank=True, help_text='The previous occurrence of this recurrence set',
-                                      null=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Timezone',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(help_text='The name of the timezone', max_length=64, unique=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='RecurrenceDate',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateTimeField(help_text='The date of recurrence or exclusion')),
                 (
-                'is_exclusion', models.BooleanField(default=False, help_text='Whether this date is an exclusion date')),
-                ('recurrence_set', models.ForeignKey(help_text='The recurrence set this date belongs to',
-                                                     on_delete=django.db.models.deletion.CASCADE, related_name='dates',
-                                                     to='recurring.recurrenceset')),
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "frequency",
+                    models.IntegerField(
+                        choices=[
+                            (0, "YEARLY"),
+                            (1, "MONTHLY"),
+                            (2, "WEEKLY"),
+                            (3, "DAILY"),
+                            (4, "HOURLY"),
+                            (5, "MINUTELY"),
+                            (6, "SECONDLY"),
+                        ],
+                        help_text="The frequency of the recurrence",
+                    ),
+                ),
+                (
+                    "interval",
+                    models.IntegerField(
+                        default=1, help_text="The interval between each freq iteration"
+                    ),
+                ),
+                (
+                    "wkst",
+                    models.IntegerField(
+                        blank=True,
+                        choices=[
+                            (0, "MO"),
+                            (1, "TU"),
+                            (2, "WE"),
+                            (3, "TH"),
+                            (4, "FR"),
+                            (5, "SA"),
+                            (6, "SU"),
+                        ],
+                        help_text="The week start day",
+                        null=True,
+                    ),
+                ),
+                (
+                    "count",
+                    models.IntegerField(
+                        blank=True,
+                        help_text="How many occurrences will be generated",
+                        null=True,
+                    ),
+                ),
+                (
+                    "until",
+                    models.DateTimeField(
+                        blank=True, help_text="A date to repeat until", null=True
+                    ),
+                ),
+                (
+                    "bysetpos",
+                    models.CharField(
+                        blank=True,
+                        help_text="By position (BYSETPOS)",
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "bymonth",
+                    models.CharField(
+                        blank=True,
+                        help_text="By month (BYMONTH)",
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "bymonthday",
+                    models.CharField(
+                        blank=True,
+                        help_text="By month day (BYMONTHDAY)",
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "byyearday",
+                    models.CharField(
+                        blank=True,
+                        help_text="By year day (BYYEARDAY)",
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "byweekno",
+                    models.CharField(
+                        blank=True,
+                        help_text="By week number (BYWEEKNO)",
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "byweekday",
+                    models.CharField(
+                        blank=True,
+                        help_text="By weekday (BYDAY)",
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "byhour",
+                    models.CharField(
+                        blank=True,
+                        help_text="By hour (BYHOUR)",
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "byminute",
+                    models.CharField(
+                        blank=True,
+                        help_text="By minute (BYMINUTE)",
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "bysecond",
+                    models.CharField(
+                        blank=True,
+                        help_text="By second (BYSECOND)",
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='RecurrenceSetRule',
+            name="RecurrenceSet",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 (
-                'is_exclusion', models.BooleanField(default=False, help_text='Whether this rule is an exclusion rule')),
-                ('recurrence_rule',
-                 models.ForeignKey(help_text='The recurrence rule', on_delete=django.db.models.deletion.CASCADE,
-                                   to='recurring.recurrencerule')),
-                ('recurrence_set', models.ForeignKey(help_text='The recurrence set this rule belongs to',
-                                                     on_delete=django.db.models.deletion.CASCADE,
-                                                     related_name='recurrencesetrules', to='recurring.recurrenceset')),
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        help_text="The name of the recurrence set", max_length=255
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(
+                        blank=True, help_text="A description of the recurrence set"
+                    ),
+                ),
+                (
+                    "next_occurrence",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="The next occurrence of this recurrence set",
+                        null=True,
+                    ),
+                ),
+                (
+                    "previous_occurrence",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="The previous occurrence of this recurrence set",
+                        null=True,
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="Timezone",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        help_text="The name of the timezone", max_length=64, unique=True
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="RecurrenceDate",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "date",
+                    models.DateTimeField(
+                        help_text="The date of recurrence or exclusion"
+                    ),
+                ),
+                (
+                    "is_exclusion",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Whether this date is an exclusion date",
+                    ),
+                ),
+                (
+                    "recurrence_set",
+                    models.ForeignKey(
+                        help_text="The recurrence set this date belongs to",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="dates",
+                        to="recurring.recurrenceset",
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="RecurrenceSetRule",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "is_exclusion",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Whether this rule is an exclusion rule",
+                    ),
+                ),
+                (
+                    "recurrence_rule",
+                    models.ForeignKey(
+                        help_text="The recurrence rule",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="recurring.recurrencerule",
+                    ),
+                ),
+                (
+                    "recurrence_set",
+                    models.ForeignKey(
+                        help_text="The recurrence set this rule belongs to",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="recurrencesetrules",
+                        to="recurring.recurrenceset",
+                    ),
+                ),
             ],
         ),
         migrations.AddField(
-            model_name='recurrenceset',
-            name='timezone',
-            field=models.ForeignKey(default=1, help_text='The timezone for this recurrence set',
-                                    on_delete=django.db.models.deletion.SET_DEFAULT, to='recurring.timezone'),
+            model_name="recurrenceset",
+            name="timezone",
+            field=models.ForeignKey(
+                default=1,
+                help_text="The timezone for this recurrence set",
+                on_delete=django.db.models.deletion.SET_DEFAULT,
+                to="recurring.timezone",
+            ),
         ),
         migrations.AddField(
-            model_name='recurrencerule',
-            name='timezone',
-            field=models.ForeignKey(default=1, help_text='The timezone for this rule',
-                                    on_delete=django.db.models.deletion.SET_DEFAULT, to='recurring.timezone'),
+            model_name="recurrencerule",
+            name="timezone",
+            field=models.ForeignKey(
+                default=1,
+                help_text="The timezone for this rule",
+                on_delete=django.db.models.deletion.SET_DEFAULT,
+                to="recurring.timezone",
+            ),
         ),
         migrations.RunPython(insert_utc_timezone),
     ]

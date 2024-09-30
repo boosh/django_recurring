@@ -1,12 +1,12 @@
-SECRET_KEY = 'test-key'
+SECRET_KEY = "test-key"
 INSTALLED_APPS = [
-    'django.contrib.contenttypes',
-    'django.contrib.auth',
-    'recurring',
+    "django.contrib.contenttypes",
+    "django.contrib.auth",
+    "recurring",
 ]
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',  # Use an in-memory database for tests
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ":memory:",  # Use an in-memory database for tests
     }
 }

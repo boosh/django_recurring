@@ -23,14 +23,14 @@ class RecurrenceSetWidget(forms.Widget):
         if self.form and self.form.instance and self.form.instance.pk:
             recurrence_set = self.form.instance
             recurrence_set_data = recurrence_set.to_dict()
-            recurrence_set_data['id'] = recurrence_set.pk
-            for rule in recurrence_set_data['rules']:
-                rule_obj = RecurrenceRule.objects.get(id=rule['rule']['id'])
-                rule['date_ranges'] = [
+            recurrence_set_data["id"] = recurrence_set.pk
+            for rule in recurrence_set_data["rules"]:
+                rule_obj = RecurrenceRule.objects.get(id=rule["rule"]["id"])
+                rule["date_ranges"] = [
                     {
-                        'start_date': date_range.start_date.isoformat(),
-                        'end_date': date_range.end_date.isoformat(),
-                        'is_exclusion': date_range.is_exclusion
+                        "start_date": date_range.start_date.isoformat(),
+                        "end_date": date_range.end_date.isoformat(),
+                        "is_exclusion": date_range.is_exclusion,
                     }
                     for date_range in rule_obj.date_ranges.all()
                 ]
@@ -44,9 +44,9 @@ class RecurrenceSetWidget(forms.Widget):
         if value is None:
             value = ""
         # ignore value because it doesn't include the date ranges
-        context["widget"]["value"] = self.initial if hasattr(self, 'initial') else value
+        context["widget"]["value"] = self.initial if hasattr(self, "initial") else value
 
-        if hasattr(self, 'initial'):
+        if hasattr(self, "initial"):
             context["widget"]["attrs"]["data-initial"] = self.initial
             logger.info(f"Set initial data to {self.initial}")
 

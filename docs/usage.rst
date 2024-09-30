@@ -124,5 +124,6 @@ Admin Interface
 
 django-recurring ships with a widget for the Django admin interface to create complex intervals easily:
 
-# todo - image
-
+.. image:: widget.png
+   :alt: Widget image
+   :align: center

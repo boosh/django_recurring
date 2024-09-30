@@ -4,55 +4,70 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('recurring', '0001_initial'),
+        ("recurring", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='recurrencerule',
-            name='byhour',
-            field=models.JSONField(blank=True, help_text='By hour (BYHOUR)', null=True),
+            model_name="recurrencerule",
+            name="byhour",
+            field=models.JSONField(blank=True, help_text="By hour (BYHOUR)", null=True),
         ),
         migrations.AlterField(
-            model_name='recurrencerule',
-            name='byminute',
-            field=models.JSONField(blank=True, help_text='By minute (BYMINUTE)', null=True),
+            model_name="recurrencerule",
+            name="byminute",
+            field=models.JSONField(
+                blank=True, help_text="By minute (BYMINUTE)", null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='recurrencerule',
-            name='bymonth',
-            field=models.JSONField(blank=True, help_text='By month (BYMONTH)', null=True),
+            model_name="recurrencerule",
+            name="bymonth",
+            field=models.JSONField(
+                blank=True, help_text="By month (BYMONTH)", null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='recurrencerule',
-            name='bymonthday',
-            field=models.JSONField(blank=True, help_text='By month day (BYMONTHDAY)', null=True),
+            model_name="recurrencerule",
+            name="bymonthday",
+            field=models.JSONField(
+                blank=True, help_text="By month day (BYMONTHDAY)", null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='recurrencerule',
-            name='bysecond',
-            field=models.JSONField(blank=True, help_text='By second (BYSECOND)', null=True),
+            model_name="recurrencerule",
+            name="bysecond",
+            field=models.JSONField(
+                blank=True, help_text="By second (BYSECOND)", null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='recurrencerule',
-            name='bysetpos',
-            field=models.JSONField(blank=True, help_text='By position (BYSETPOS)', null=True),
+            model_name="recurrencerule",
+            name="bysetpos",
+            field=models.JSONField(
+                blank=True, help_text="By position (BYSETPOS)", null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='recurrencerule',
-            name='byweekday',
-            field=models.JSONField(blank=True, help_text='By weekday (BYDAY)', null=True),
+            model_name="recurrencerule",
+            name="byweekday",
+            field=models.JSONField(
+                blank=True, help_text="By weekday (BYDAY)", null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='recurrencerule',
-            name='byweekno',
-            field=models.JSONField(blank=True, help_text='By week number (BYWEEKNO)', null=True),
+            model_name="recurrencerule",
+            name="byweekno",
+            field=models.JSONField(
+                blank=True, help_text="By week number (BYWEEKNO)", null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='recurrencerule',
-            name='byyearday',
-            field=models.JSONField(blank=True, help_text='By year day (BYYEARDAY)', null=True),
+            model_name="recurrencerule",
+            name="byyearday",
+            field=models.JSONField(
+                blank=True, help_text="By year day (BYYEARDAY)", null=True
+            ),
         ),
     ]

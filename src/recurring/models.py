@@ -74,9 +74,7 @@ class RecurrenceRule(models.Model):
     bysetpos = models.JSONField(
         null=True, blank=True, help_text=_("By position (BYSETPOS)")
     )
-    bymonth = models.JSONField(
-        null=True, blank=True, help_text=_("By month (BYMONTH)")
-    )
+    bymonth = models.JSONField(null=True, blank=True, help_text=_("By month (BYMONTH)"))
     bymonthday = models.JSONField(
         null=True, blank=True, help_text=_("By month day (BYMONTHDAY)")
     )
@@ -89,9 +87,7 @@ class RecurrenceRule(models.Model):
     byweekday = models.JSONField(
         null=True, blank=True, help_text=_("By weekday (BYDAY)")
     )
-    byhour = models.JSONField(
-        null=True, blank=True, help_text=_("By hour (BYHOUR)")
-    )
+    byhour = models.JSONField(null=True, blank=True, help_text=_("By hour (BYHOUR)"))
     byminute = models.JSONField(
         null=True, blank=True, help_text=_("By minute (BYMINUTE)")
     )
@@ -112,7 +108,15 @@ class RecurrenceRule(models.Model):
         return self.Frequency(self.frequency).name
 
     def _get_rrule_kwargs(self, start_date, end_date):
-        weekday_map = {'MO': MO, 'TU': TU, 'WE': WE, 'TH': TH, 'FR': FR, 'SA': SA, 'SU': SU}
+        weekday_map = {
+            "MO": MO,
+            "TU": TU,
+            "WE": WE,
+            "TH": TH,
+            "FR": FR,
+            "SA": SA,
+            "SU": SU,
+        }
 
         kwargs = {
             "freq": self.frequency,
@@ -151,21 +155,21 @@ class RecurrenceRule(models.Model):
 
     def to_dict(self):
         return {
-            'id': self.id,
-            'frequency': self.Frequency(self.frequency).name,
-            'interval': self.interval,
-            'wkst': self.wkst,
-            'count': self.count,
-            'bysetpos': self.bysetpos,
-            'bymonth': self.bymonth,
-            'bymonthday': self.bymonthday,
-            'byyearday': self.byyearday,
-            'byweekno': self.byweekno,
-            'byweekday': self.byweekday,
-            'byhour': self.byhour,
-            'byminute': self.byminute,
-            'bysecond': self.bysecond,
-            'timezone': self.timezone.name
+            "id": self.id,
+            "frequency": self.Frequency(self.frequency).name,
+            "interval": self.interval,
+            "wkst": self.wkst,
+            "count": self.count,
+            "bysetpos": self.bysetpos,
+            "bymonth": self.bymonth,
+            "bymonthday": self.bymonthday,
+            "byyearday": self.byyearday,
+            "byweekno": self.byweekno,
+            "byweekday": self.byweekday,
+            "byhour": self.byhour,
+            "byminute": self.byminute,
+            "bysecond": self.bysecond,
+            "timezone": self.timezone.name,
         }
 
 
@@ -188,21 +192,28 @@ class RecurrenceRuleDateRange(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        recurrence_set_rule = RecurrenceSetRule.objects.filter(recurrence_rule=self.recurrence_rule).first()
+        recurrence_set_rule = RecurrenceSetRule.objects.filter(
+            recurrence_rule=self.recurrence_rule
+        ).first()
         if recurrence_set_rule:
             recurrence_set_rule.recurrence_set.recalculate_occurrences()
 
     def delete(self, *args, **kwargs):
-        recurrence_set_rule = RecurrenceSetRule.objects.filter(recurrence_rule=self.recurrence_rule).first()
+        recurrence_set_rule = RecurrenceSetRule.objects.filter(
+            recurrence_rule=self.recurrence_rule
+        ).first()
         super().delete(*args, **kwargs)
         if recurrence_set_rule:
             recurrence_set_rule.recurrence_set.recalculate_occurrences()
 
 
 class RecurrenceSet(models.Model):
-    name = models.CharField(null=True, blank=True,
-                            max_length=255, help_text=_("The name of the recurrence set")
-                            )
+    name = models.CharField(
+        null=True,
+        blank=True,
+        max_length=255,
+        help_text=_("The name of the recurrence set"),
+    )
     description = models.TextField(
         blank=True, help_text=_("A description of the recurrence set")
     )
@@ -229,7 +240,9 @@ class RecurrenceSet(models.Model):
 
         for rule in self.recurrencesetrules.all():
             for date_range in rule.recurrence_rule.date_ranges.all():
-                rrule_obj = rule.recurrence_rule.to_rrule(date_range.start_date, date_range.end_date)
+                rrule_obj = rule.recurrence_rule.to_rrule(
+                    date_range.start_date, date_range.end_date
+                )
                 if date_range.is_exclusion:
                     rset.exrule(rrule_obj)
                 else:
@@ -239,68 +252,79 @@ class RecurrenceSet(models.Model):
 
     def to_dict(self):
         return {
-            'name': self.name,
-            'description': self.description,
-            'timezone': self.timezone.name,
-            'rules': [
+            "name": self.name,
+            "description": self.description,
+            "timezone": self.timezone.name,
+            "rules": [
                 {
-                    'is_exclusion': rule.is_exclusion,
-                    'rule': rule.recurrence_rule.to_dict(),
-                    'date_ranges': [
+                    "is_exclusion": rule.is_exclusion,
+                    "rule": rule.recurrence_rule.to_dict(),
+                    "date_ranges": [
                         {
-                            'start_date': date_range.start_date.isoformat(),
-                            'end_date': date_range.end_date.isoformat(),
-                            'is_exclusion': date_range.is_exclusion
+                            "start_date": date_range.start_date.isoformat(),
+                            "end_date": date_range.end_date.isoformat(),
+                            "is_exclusion": date_range.is_exclusion,
                         }
                         for date_range in rule.recurrence_rule.date_ranges.all()
-                    ]
+                    ],
                 }
                 for rule in self.recurrencesetrules.all()
-            ]
+            ],
         }
 
     def from_dict(self, data):
         rules = []
-        for rule_data in data.get('rules', []):
+        for rule_data in data.get("rules", []):
             rule = RecurrenceRule()
-            rule_dict = rule_data['rule']
-            rule.frequency = RecurrenceRule.Frequency[rule_dict['frequency']].value
-            rule.interval = rule_dict.get('interval', 1)
-            rule.wkst = rule_dict.get('wkst')
-            rule.count = rule_dict.get('count')
+            rule_dict = rule_data["rule"]
+            rule.frequency = RecurrenceRule.Frequency[rule_dict["frequency"]].value
+            rule.interval = rule_dict.get("interval", 1)
+            rule.wkst = rule_dict.get("wkst")
+            rule.count = rule_dict.get("count")
             rule.timezone = self.timezone
 
             for field in [
-                'bysetpos', 'bymonth', 'bymonthday', 'byyearday', 'byweekno',
-                'byweekday', 'byhour', 'byminute', 'bysecond'
+                "bysetpos",
+                "bymonth",
+                "bymonthday",
+                "byyearday",
+                "byweekno",
+                "byweekday",
+                "byhour",
+                "byminute",
+                "bysecond",
             ]:
                 value = rule_dict.get(field)
                 if value is not None:
                     setattr(rule, field, value)
 
             date_ranges = []
-            for date_range_data in rule_data.get('date_ranges', []):
-                date_ranges.append(RecurrenceRuleDateRange(
-                    start_date=date_range_data['start_date'],
-                    end_date=date_range_data['end_date'],
-                    is_exclusion=date_range_data.get('is_exclusion', False)
-                ))
+            for date_range_data in rule_data.get("date_ranges", []):
+                date_ranges.append(
+                    RecurrenceRuleDateRange(
+                        start_date=date_range_data["start_date"],
+                        end_date=date_range_data["end_date"],
+                        is_exclusion=date_range_data.get("is_exclusion", False),
+                    )
+                )
 
-            rules.append({
-                'rule': rule,
-                'is_exclusion': rule_data.get('is_exclusion', False),
-                'date_ranges': date_ranges
-            })
+            rules.append(
+                {
+                    "rule": rule,
+                    "is_exclusion": rule_data.get("is_exclusion", False),
+                    "date_ranges": date_ranges,
+                }
+            )
 
         for rule_data in rules:
-            rule = rule_data['rule']
+            rule = rule_data["rule"]
             rule.save()
             RecurrenceSetRule.objects.create(
                 recurrence_set=self,
                 recurrence_rule=rule,
-                is_exclusion=rule_data['is_exclusion']
+                is_exclusion=rule_data["is_exclusion"],
             )
-            for date_range in rule_data['date_ranges']:
+            for date_range in rule_data["date_ranges"]:
                 date_range.recurrence_rule = rule
                 date_range.save()
 
@@ -312,18 +336,22 @@ class RecurrenceSet(models.Model):
 
             # Calculate next occurrence
             next_occurrence = rruleset.after(now, inc=False)
-            self.next_occurrence = next_occurrence.astimezone(tz) if next_occurrence else None
+            self.next_occurrence = (
+                next_occurrence.astimezone(tz) if next_occurrence else None
+            )
 
             # Calculate previous occurrence
             prev_occurrence = rruleset.before(now, inc=False)
-            self.previous_occurrence = prev_occurrence.astimezone(tz) if prev_occurrence else None
+            self.previous_occurrence = (
+                prev_occurrence.astimezone(tz) if prev_occurrence else None
+            )
         except Exception as e:
             print(
                 f"Error recalculating occurrences for RecurrenceSet {self.id}: {str(e)}"
             )
 
     def save(self, *args, **kwargs):
-        recalculate = kwargs.pop('recalculate', True)
+        recalculate = kwargs.pop("recalculate", True)
         super().save(*args, **kwargs)
         if recalculate:
             self.recalculate_occurrences()
@@ -346,12 +374,14 @@ class RecurrenceSet(models.Model):
             str: The iCal string representation of the recurrence set.
         """
         cal = Calendar()
-        cal.add('version', '2.0')
+        cal.add("version", "2.0")
 
         # Set PRODID
         if prod_id is None:
-            prod_id = getattr(settings, 'ICAL_PROD_ID', '-//django-recurring//NONSGML v1.0//EN')
-        cal.add('prodid', prod_id)
+            prod_id = getattr(
+                settings, "ICAL_PROD_ID", "-//django-recurring//NONSGML v1.0//EN"
+            )
+        cal.add("prodid", prod_id)
 
         event = Event()
 
@@ -367,41 +397,41 @@ class RecurrenceSet(models.Model):
         earliest_start = min(dr.start_date for dr in all_date_ranges)
         latest_end = max(dr.end_date for dr in all_date_ranges)
 
-        event.add('dtstart', earliest_start)
-        event.add('dtend', latest_end)
-        event.add('dtstamp', django_timezone.now())
-        event.add('uid', str(uuid.uuid4()))
+        event.add("dtstart", earliest_start)
+        event.add("dtend", latest_end)
+        event.add("dtstamp", django_timezone.now())
+        event.add("uid", str(uuid.uuid4()))
 
         for recurrence_set_rule in self.recurrencesetrules.all():
             rule = recurrence_set_rule.recurrence_rule
             for date_range in rule.date_ranges.all():
                 rrule_dict = {
-                    'freq': rule.get_frequency_display(),
-                    'interval': rule.interval,
-                    'until': date_range.end_date,
+                    "freq": rule.get_frequency_display(),
+                    "interval": rule.interval,
+                    "until": date_range.end_date,
                 }
                 if rule.wkst is not None:
-                    rrule_dict['wkst'] = rule.wkst
+                    rrule_dict["wkst"] = rule.wkst
                 if rule.count is not None:
-                    rrule_dict['count'] = rule.count
+                    rrule_dict["count"] = rule.count
                 if rule.bysetpos:
-                    rrule_dict['bysetpos'] = rule.bysetpos
+                    rrule_dict["bysetpos"] = rule.bysetpos
                 if rule.bymonth:
-                    rrule_dict['bymonth'] = rule.bymonth
+                    rrule_dict["bymonth"] = rule.bymonth
                 if rule.bymonthday:
-                    rrule_dict['bymonthday'] = rule.bymonthday
+                    rrule_dict["bymonthday"] = rule.bymonthday
                 if rule.byyearday:
-                    rrule_dict['byyearday'] = rule.byyearday
+                    rrule_dict["byyearday"] = rule.byyearday
                 if rule.byweekno:
-                    rrule_dict['byweekno'] = rule.byweekno
+                    rrule_dict["byweekno"] = rule.byweekno
                 if rule.byweekday:
-                    rrule_dict['byday'] = rule.byweekday
+                    rrule_dict["byday"] = rule.byweekday
                 if rule.byhour:
-                    rrule_dict['byhour'] = rule.byhour
+                    rrule_dict["byhour"] = rule.byhour
                 if rule.byminute:
-                    rrule_dict['byminute'] = rule.byminute
+                    rrule_dict["byminute"] = rule.byminute
                 if rule.bysecond:
-                    rrule_dict['bysecond'] = rule.bysecond
+                    rrule_dict["bysecond"] = rule.bysecond
 
                 if recurrence_set_rule.is_exclusion or date_range.is_exclusion:
                     current_date = date_range.start_date
@@ -410,13 +440,13 @@ class RecurrenceSet(models.Model):
                     while current_date <= date_range.end_date:
                         exdates.append(current_date)
                         current_date += timedelta(days=1)
-                    event.add('exdate', exdates)
+                    event.add("exdate", exdates)
                 else:
-                    event.add('rrule', rrule_dict)
+                    event.add("rrule", rrule_dict)
 
         cal.add_component(event)
 
-        return cal.to_ical().decode('utf-8')
+        return cal.to_ical().decode("utf-8")
 
 
 class RecurrenceSetRule(models.Model):
