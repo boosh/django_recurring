@@ -109,9 +109,17 @@ Before you submit a pull request, check that it meets these guidelines:
 
 Tips
 ----
+To install dev dependencies to allow running tests::
+
+    $ python3 -m venv venv
+    $ . ./venv/bin/activate
+    $ make pip-dev
+
+To run all tests::
+
+    $ pytest
 
 To run a subset of tests::
-
 
     $ python -m unittest tests.test_django_recurring
 

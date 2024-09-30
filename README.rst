@@ -27,6 +27,15 @@ Features
 * Admin interface with custom widget for creating and editing recurrence patterns
 * Efficient querying of recurring events
 
+Limitations
+-----------
+This library currently has the following limitations. Feel free to submit PRs to address them.
+
+* iCal format doesn't support recurrence sets with multiple rules
+    It should create multiple iCal events, but it doesn't
+* All date ranges require an end date.
+    The `count <https://icalendar.org/iCalendar-RFC-5545/3-3-10-recurrence-rule.html>`_ param isn't supported.
+
 Quick Start
 -----------
 
