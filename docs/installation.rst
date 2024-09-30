@@ -47,6 +47,12 @@ After installing django-recurring, you need to add it to your Django project's s
 
        $ python manage.py migrate recurring
 
+4. Run `collectstatic` for prod releases:
+
+   .. code-block:: console
+
+       $ python manage.py collectstatic
+
 From sources
 ------------
 
