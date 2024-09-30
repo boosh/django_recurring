@@ -194,7 +194,7 @@ class RecurrenceSetForm {
 
         this.createRuleForm(ruleContainer, newRule);
         this.rules.push(newRule);
-        this.recurrenceSet.addRule(newRule);
+            this.recurrenceSet.addRule(newRule);
         this.onChange();
     }
 
@@ -242,7 +242,11 @@ class RecurrenceSetForm {
         });
 
         this.setRuleFormValues(container, rule);
-        this.addDateRange(container, rule);
+
+        // Only add a new date range if there are no existing date ranges
+        if (!rule.dateRanges || rule.dateRanges.length === 0) {
+            this.addDateRange(container, rule);
+        }
     }
 
     createWeekdayButtons(container, rule) {
