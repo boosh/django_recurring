@@ -16,10 +16,16 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
     list_display = ("name", "timezone", "next_occurrence", "previous_occurrence")
     search_fields = ("name",)
     list_filter = ("timezone",)
+    readonly_fields = ("ical_string",)
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         return form
+
+    def ical_string(self, obj):
+        return obj.to_ical()
+
+    ical_string.short_description = "iCal String"
 
     def save_model(self, request, obj, form, change):
         try:
