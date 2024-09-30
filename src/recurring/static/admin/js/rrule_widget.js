@@ -38,6 +38,18 @@ function initRecurrenceSetWidget(name) {
     // Ensure the input value is always set when the form is submitted
     const parentForm = form.closest('form');
     if (parentForm) {
+        const submitButtons = parentForm.querySelectorAll('input[type="submit"]');
+        submitButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                // Store the clicked button's name and value
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = this.name;
+                hiddenInput.value = this.value;
+                parentForm.appendChild(hiddenInput);
+            });
+        });
+
         parentForm.addEventListener('submit', (e) => {
             e.preventDefault();
             if (validateDateInputs()) {
