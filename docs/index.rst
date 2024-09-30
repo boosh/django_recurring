@@ -12,9 +12,6 @@ django-recurring is a powerful Django app that allows you to create and manage r
    usage
    examples
    models
-   forms
-   widgets
-   admin
    management_commands
    contributing
    history
