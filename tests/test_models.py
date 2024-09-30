@@ -1,4 +1,5 @@
 import pytest
+import pytz
 from dateutil.rrule import rrule, DAILY
 from django.utils import timezone as django_timezone
 
@@ -46,7 +47,7 @@ class TestRecurrenceRule:
         end_date = start_date + django_timezone.timedelta(days=7)
         rrule_obj = recurrence_rule.to_rrule(start_date, end_date)
         assert isinstance(rrule_obj, rrule)
-        assert rrule_obj.freq == DAILY
+        assert rrule_obj._freq == DAILY
 
     def test_to_dict(self, recurrence_rule):
         rule_dict = recurrence_rule.to_dict()
@@ -142,6 +143,30 @@ class TestRecurrenceSet:
         recurrence_set.recalculate_occurrences()
         assert recurrence_set.next_occurrence is not None
         assert recurrence_set.previous_occurrence is None
+
+    def test_to_ical(self, recurrence_set, recurrence_rule):
+        utc = pytz.utc
+        start_date = django_timezone.datetime(2023, 1, 1, tzinfo=utc)
+        end_date = django_timezone.datetime(2023, 12, 31, tzinfo=utc)
+        RecurrenceSetRule.objects.create(
+            recurrence_set=recurrence_set,
+            recurrence_rule=recurrence_rule,
+            is_exclusion=False
+        )
+        RecurrenceRuleDateRange.objects.create(
+            recurrence_rule=recurrence_rule,
+            start_date=start_date,
+            end_date=end_date,
+            is_exclusion=False
+        )
+        ical_string = recurrence_set.to_ical()
+        assert 'BEGIN:VCALENDAR' in ical_string
+        assert 'BEGIN:VEVENT' in ical_string
+        assert 'RRULE:FREQ=DAILY;INTERVAL=1' in ical_string
+        assert f'DTSTART:{start_date.strftime("%Y%m%dT%H%M%SZ")}' in ical_string
+        assert f'DTEND:{end_date.strftime("%Y%m%dT%H%M%SZ")}' in ical_string
+        assert 'END:VEVENT' in ical_string
+        assert 'END:VCALENDAR' in ical_string
 
 @pytest.mark.django_db
 class TestRecurrenceSetRule:
