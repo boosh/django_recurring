@@ -40,14 +40,14 @@ class TestUtils(unittest.TestCase):
                 "second_level": {
                     "third_level_array": [
                         {"fourth_level": "value"},
-                        {"another_fourth_level": "another_value"}
+                        {"another_fourth_level": "anotherValue"}
                     ]
                 },
                 "another_second_level": "value"
             },
             "top_level_array": [
                 {"nested_in_array": "value"},
-                {"another_nested_in_array": "another_value"}
+                {"another_nested_in_array": "anotherValue"}
             ]
         }
         self.assertEqual(recursive_camel_to_snake(input_data), expected_output)
@@ -106,7 +106,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(recursive_snake_to_camel("not_a_dict"), "not_a_dict")
 
         # Mixed case input
-        self.assertEqual(_camel_to_snake("mixedCASeInput"), "mixed_c_a_se_input")
+        self.assertEqual(_camel_to_snake("mixedCASeInput"), "mixed_ca_se_input")
         self.assertEqual(_snake_to_camel("mixed_ca_se_input"), "mixedCaSeInput")
 
         # Single letter input

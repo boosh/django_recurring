@@ -5,8 +5,8 @@ def _camel_to_snake(name):
     """
     Converts a single camelCase string to snake_case.
     """
-    s1 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', name)
-    return s1.lower()
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 def recursive_camel_to_snake(data):
     """
