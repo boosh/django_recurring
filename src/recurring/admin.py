@@ -12,7 +12,25 @@ from .forms import (
 from .models import (
     Timezone,
     CalendarEntry,
+    RecurrenceRule,
+    Event,
+    ExclusionDateRange,
 )
+
+
+@admin.register(RecurrenceRule)
+class RecurrenceRuleAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(ExclusionDateRange)
+class ExclusionDateRangeAdmin(admin.ModelAdmin):
+    pass
 
 
 class CalendarEntryAdmin(admin.ModelAdmin):

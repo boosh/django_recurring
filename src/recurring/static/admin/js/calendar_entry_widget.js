@@ -167,8 +167,8 @@ class CalendarEntryForm {
             <div class="recurrence-rule-container"></div>
             <div class="exclusions-container">
                 <p>Exclusions</p>
+                <button class="add-exclusion">Add Exclusion</button>
             </div>
-            <button class="add-exclusion">Add Exclusion</button>
             <button class="remove-event">Remove Event</button>
         `;
 
@@ -256,10 +256,6 @@ class CalendarEntryForm {
                             <input type="number" class="count-input" min="1" value="1">
                         </label>
                     </div>
-                    <div class="byweekday-container">
-                        <label>By Weekday:</label>
-                        <div class="weekday-buttons"></div>
-                    </div>
                     <div class="bymonth-container">
                         <label>By Month:</label>
                         <div class="month-grid"></div>
@@ -267,6 +263,10 @@ class CalendarEntryForm {
                     <div class="bymonthday-container">
                         <label>By Month Day:</label>
                         <input type="text" class="bymonthday-input" placeholder="e.g. 1,15,-1">
+                    </div>
+                    <div class="byweekday-container">
+                        <label>By Weekday:</label>
+                        <div class="weekday-buttons"></div>
                     </div>
                     <div class="bysetpos-container">
                         <label>By Set Position:</label>
