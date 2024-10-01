@@ -33,7 +33,7 @@ This library currently has the following limitations.
 * All date ranges require an end date.
     The `count <https://icalendar.org/iCalendar-RFC-5545/3-3-10-recurrence-rule.html>`_ param isn't supported.
 
-PRs welcomed.
+PRs welcome.
 
 Quick Start
 -----------
