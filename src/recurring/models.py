@@ -24,11 +24,10 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone as django_timezone
 from django.utils.translation import gettext_lazy as _
-from icalendar import Calendar, Event
+from icalendar import Calendar, Event as ICalEvent
 
 # created in migrations
 UTC_ID = 1
-
 
 class Timezone(models.Model):
     name = models.CharField(
@@ -94,15 +93,9 @@ class RecurrenceRule(models.Model):
     bysecond = models.JSONField(
         null=True, blank=True, help_text=_("By second (BYSECOND)")
     )
-    timezone = models.ForeignKey(
-        Timezone,
-        on_delete=models.SET_DEFAULT,
-        default=UTC_ID,
-        help_text=_("The timezone for this rule"),
-    )
 
     def __str__(self):
-        return f"RecurrenceRule (Frequency: {self.get_frequency_display()}, Timezone: {self.timezone.name})"
+        return f"RecurrenceRule (Frequency: {self.get_frequency_display()}"
 
     def get_frequency_display(self):
         return self.Frequency(self.frequency).name
@@ -121,7 +114,7 @@ class RecurrenceRule(models.Model):
         kwargs = {
             "freq": self.frequency,
             "interval": self.interval,
-            "dtstart": start_date.astimezone(pytz.timezone(self.timezone.name)),
+            "dtstart": start_date.astimezone(pytz.timezone(self.event.calendar_entry.timezone.name)),
             "until": end_date,
         }
 
@@ -169,45 +162,12 @@ class RecurrenceRule(models.Model):
             "byhour": self.byhour,
             "byminute": self.byminute,
             "bysecond": self.bysecond,
-            "timezone": self.timezone.name,
+            "timezone": self.event.calendar_entry.timezone.name,
         }
 
 
-class RecurrenceRuleDateRange(models.Model):
-    recurrence_rule = models.ForeignKey(
-        RecurrenceRule,
-        on_delete=models.CASCADE,
-        related_name="date_ranges",
-        help_text=_("The recurrence rule this date range belongs to"),
-    )
-    start_date = models.DateTimeField(help_text=_("The start date of the date range"))
-    end_date = models.DateTimeField(help_text=_("The end date of the date range"))
-    is_exclusion = models.BooleanField(
-        default=False, help_text=_("Whether this date range is an exclusion")
-    )
-
-    def __str__(self):
-        range_type = "Exclusion" if self.is_exclusion else "Inclusion"
-        return f"{range_type} Date Range for {self.recurrence_rule}: {self.start_date} to {self.end_date}"
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        recurrence_set_rule = RecurrenceSetRule.objects.filter(
-            recurrence_rule=self.recurrence_rule
-        ).first()
-        if recurrence_set_rule:
-            recurrence_set_rule.recurrence_set.recalculate_occurrences()
-
-    def delete(self, *args, **kwargs):
-        recurrence_set_rule = RecurrenceSetRule.objects.filter(
-            recurrence_rule=self.recurrence_rule
-        ).first()
-        super().delete(*args, **kwargs)
-        if recurrence_set_rule:
-            recurrence_set_rule.recurrence_set.recalculate_occurrences()
-
-
-class RecurrenceSet(models.Model):
+# formerly RecurrenceSet
+class CalendarEntry(models.Model):
     name = models.CharField(
         null=True,
         blank=True,
@@ -393,7 +353,7 @@ class RecurrenceSet(models.Model):
             earliest_start = min(dr.start_date for dr in rule_date_ranges)
             latest_end = max(dr.end_date for dr in rule_date_ranges)
 
-            event = Event()
+            event = ICalEvent()
             event.add("dtstamp", django_timezone.now())
             event.add("uid", str(uuid.uuid4()))
             event.add("dtstart", earliest_start)
@@ -448,7 +408,59 @@ class RecurrenceSet(models.Model):
 
         return cal.to_ical().decode("utf-8")
 
+class Event(models.Model):
+    calendar_entry = models.ForeignKey(CalendarEntry, on_delete=models.CASCADE, related_name='events')
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField(null=True, blank=True)
+    is_full_day = models.BooleanField(default=False)
+    recurrence_rule = models.OneToOneField(
+        RecurrenceRule, on_delete=models.CASCADE, help_text=_("The recurrence rule")
+    )
 
+    def clean(self):
+        if not self.is_full_day and self.end_time is None:
+            raise ValidationError("End time is required for non-full day events.")
+        if self.is_full_day and self.end_time:
+            raise ValidationError("End time should not be set for full day events.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.summary
+
+# formerly RecurrenceRuleDateRange
+class ExclusionDateRange(models.Model):
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name="exclusions",
+        help_text=_("The event rule this date range belongs to"),
+    )
+    start_date = models.DateTimeField(help_text=_("The start date of the exclusion range"))
+    end_date = models.DateTimeField(help_text=_("The end date of the exclusion range"))
+
+    def __str__(self):
+        return f"Exclusion date range for {self.event}: {self.start_date} to {self.end_date}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        recurrence_set_rule = RecurrenceSetRule.objects.filter(
+            recurrence_rule=self.recurrence_rule
+        ).first()
+        if recurrence_set_rule:
+            recurrence_set_rule.recurrence_set.recalculate_occurrences()
+
+    def delete(self, *args, **kwargs):
+        recurrence_set_rule = RecurrenceSetRule.objects.filter(
+            recurrence_rule=self.recurrence_rule
+        ).first()
+        super().delete(*args, **kwargs)
+        if recurrence_set_rule:
+            recurrence_set_rule.recurrence_set.recalculate_occurrences()
+
+# no longer used
 class RecurrenceSetRule(models.Model):
     recurrence_set = models.ForeignKey(
         RecurrenceSet,
