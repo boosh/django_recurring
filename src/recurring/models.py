@@ -118,6 +118,14 @@ class RecurrenceRule(models.Model):
     def get_wkst_display(self):
         return dict(self.WEEKDAYS)[self.wkst] if self.wkst is not None else None
 
+    def clean(self):
+        if self.count and self.until:
+            raise ValidationError("Only one of either `count` or `until` can be set")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def _get_rrule_kwargs(self, start_date, end_date):
         weekday_map = {
             MONDAY: MO,
