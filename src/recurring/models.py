@@ -423,11 +423,20 @@ class Event(models.Model):
             raise ValidationError("End time is required for non-full day events.")
         if self.is_full_day and self.end_time:
             raise ValidationError("End time should not be set for full day events.")
-        # todo - validate that start tiem < end time (if not full day)
+        if not self.is_full_day and self.end_time and self.start_time >= self.end_time:
+            raise ValidationError(
+                "Start time must be before end time for non-full day events."
+            )
 
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+        self.update_exclusions()
+
+    def update_exclusions(self):
+        for exclusion in self.exclusions.all():
+            exclusion.sync_time_component()
+            exclusion.save(sync_time=False)
 
     def __str__(self):
         return f"Event for {self.calendar_entry.name}: {self.start_time}"
@@ -449,8 +458,9 @@ class ExclusionDateRange(models.Model):
         return f"Exclusion date range for {self.event}: {self.start_date} to {self.end_date}"
 
     def save(self, *args, **kwargs):
-        # todo - set the time component of both the start and end dates to the event start time
-        #  todo - also do that if the event is modified to keep them in sync
+        sync_time = kwargs.pop("sync_time", True)
+        if sync_time:
+            self.sync_time_component()
         super().save(*args, **kwargs)
         self.event.calendar_entry.recalculate_occurrences()
 
@@ -459,8 +469,12 @@ class ExclusionDateRange(models.Model):
         super().delete(*args, **kwargs)
         calendar_entry.recalculate_occurrences()
 
+    def sync_time_component(self):
+        event_time = self.event.start_time.time()
+        self.start_date = datetime.combine(self.start_date.date(), event_time)
+        self.end_date = datetime.combine(self.end_date.date(), event_time)
+
     def to_rrule(self):
-        # the time component is kept in sync with the event start time
         kwargs = {
             "dtstart": self.start_date.astimezone(
                 pytz.timezone(self.event.calendar_entry.timezone.name)
