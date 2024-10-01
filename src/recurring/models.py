@@ -383,68 +383,68 @@ class RecurrenceSet(models.Model):
             )
         cal.add("prodid", prod_id)
 
-        event = Event()
-
         if not self.recurrencesetrules.exists():
             return ""  # Return empty string if no rules
 
-        # Find the earliest start date and latest end date
-        all_date_ranges = [
-            date_range
-            for rule in self.recurrencesetrules.all()
-            for date_range in rule.recurrence_rule.date_ranges.all()
-        ]
-        earliest_start = min(dr.start_date for dr in all_date_ranges)
-        latest_end = max(dr.end_date for dr in all_date_ranges)
-
-        event.add("dtstart", earliest_start)
-        event.add("dtend", latest_end)
-        event.add("dtstamp", django_timezone.now())
-        event.add("uid", str(uuid.uuid4()))
-
         for recurrence_set_rule in self.recurrencesetrules.all():
             rule = recurrence_set_rule.recurrence_rule
-            for date_range in rule.date_ranges.all():
-                rrule_dict = {
-                    "freq": rule.get_frequency_display(),
-                    "interval": rule.interval,
-                    "until": date_range.end_date,
-                }
-                if rule.wkst is not None:
-                    rrule_dict["wkst"] = rule.wkst
-                if rule.count is not None:
-                    rrule_dict["count"] = rule.count
-                if rule.bysetpos:
-                    rrule_dict["bysetpos"] = rule.bysetpos
-                if rule.bymonth:
-                    rrule_dict["bymonth"] = rule.bymonth
-                if rule.bymonthday:
-                    rrule_dict["bymonthday"] = rule.bymonthday
-                if rule.byyearday:
-                    rrule_dict["byyearday"] = rule.byyearday
-                if rule.byweekno:
-                    rrule_dict["byweekno"] = rule.byweekno
-                if rule.byweekday:
-                    rrule_dict["byday"] = rule.byweekday
-                if rule.byhour:
-                    rrule_dict["byhour"] = rule.byhour
-                if rule.byminute:
-                    rrule_dict["byminute"] = rule.byminute
-                if rule.bysecond:
-                    rrule_dict["bysecond"] = rule.bysecond
 
-                if recurrence_set_rule.is_exclusion or date_range.is_exclusion:
+            rule_date_ranges = rule.date_ranges.all()
+            earliest_start = min(dr.start_date for dr in rule_date_ranges)
+            latest_end = max(dr.end_date for dr in rule_date_ranges)
+
+            event = Event()
+            event.add("dtstamp", django_timezone.now())
+            event.add("uid", str(uuid.uuid4()))
+            event.add("dtstart", earliest_start)
+            event.add("dtend", latest_end)
+
+            rrule_dict = {
+                "freq": rule.get_frequency_display(),
+                "interval": rule.interval,
+                "until": latest_end,
+            }
+            if rule.wkst is not None:
+                rrule_dict["wkst"] = rule.wkst
+            if rule.count is not None:
+                rrule_dict["count"] = rule.count
+            if rule.bysetpos:
+                rrule_dict["bysetpos"] = rule.bysetpos
+            if rule.bymonth:
+                rrule_dict["bymonth"] = rule.bymonth
+            if rule.bymonthday:
+                rrule_dict["bymonthday"] = rule.bymonthday
+            if rule.byyearday:
+                rrule_dict["byyearday"] = rule.byyearday
+            if rule.byweekno:
+                rrule_dict["byweekno"] = rule.byweekno
+            if rule.byweekday:
+                rrule_dict["byday"] = rule.byweekday
+            if rule.byhour:
+                rrule_dict["byhour"] = rule.byhour
+            if rule.byminute:
+                rrule_dict["byminute"] = rule.byminute
+            if rule.bysecond:
+                rrule_dict["bysecond"] = rule.bysecond
+
+            exdates = []
+
+            for date_range in rule_date_ranges:
+                if date_range.is_exclusion:
                     current_date = date_range.start_date
-                    exdates = []
+                    range_exdates = []
 
                     while current_date <= date_range.end_date:
-                        exdates.append(current_date)
+                        range_exdates.append(current_date)
                         current_date += timedelta(days=1)
-                    event.add("exdate", exdates)
-                else:
-                    event.add("rrule", rrule_dict)
 
-        cal.add_component(event)
+                    exdates.extend(range_exdates)
+
+            if exdates:
+                event.add("exdate", exdates)
+            event.add("rrule", rrule_dict)
+
+            cal.add_component(event)
 
         return cal.to_ical().decode("utf-8")
 
