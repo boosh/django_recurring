@@ -7,16 +7,17 @@ from django.utils.html import format_html
 from django.utils.text import slugify
 
 from .forms import (
-    RecurrenceSetForm,
+    CalendarEntryForm,
 )
 from .models import (
     Timezone,
-    RecurrenceSet,
+    CalendarEntry,
 )
 
 
-class RecurrenceSetAdmin(admin.ModelAdmin):
-    form = RecurrenceSetForm
+# formerly RecurrenceSetAdmin
+class CalendarEntryAdmin(admin.ModelAdmin):
+    form = CalendarEntryForm
     list_display = ("name", "timezone", "next_occurrence", "previous_occurrence")
     search_fields = ("name",)
     list_filter = ("timezone",)
@@ -77,4 +78,4 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Timezone)
-admin.site.register(RecurrenceSet, RecurrenceSetAdmin)
+admin.site.register(CalendarEntry, CalendarEntryAdmin)
