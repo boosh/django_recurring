@@ -321,12 +321,14 @@ class CalendarEntryForm {
             input.addEventListener('change', () => this.updateEvent(container.closest('.event-container'), event));
         });
 
-        if (event.recurrenceRule) {
+        if (event.recurrenceRule && Object.keys(event.recurrenceRule).length > 0 && event.recurrenceRule.frequency) {
             hasRecurrenceCheckbox.checked = true;
             recurrenceDetails.style.display = 'block';
             container.querySelector('.exclusions-container').style.display = 'block';
             frequencySelect.value = event.recurrenceRule.frequency;
-            intervalInput.value = event.recurrenceRule.interval;
+            if (event.recurrenceRule.interval) {
+                intervalInput.value = event.recurrenceRule.interval;
+            }
             if (event.recurrenceRule.until) {
                 container.querySelector('input[name^="end-recurrence"][value="until"]').checked = true;
                 untilDateTimeInput.value = this.formatDateTimeForInput(event.recurrenceRule.until);
@@ -352,6 +354,10 @@ class CalendarEntryForm {
             if (event.recurrenceRule.byminute) {
                 byMinuteInput.value = event.recurrenceRule.byminute.join(',');
             }
+        } else {
+            hasRecurrenceCheckbox.checked = false;
+            recurrenceDetails.style.display = 'none';
+            container.querySelector('.exclusions-container').style.display = 'none';
         }
     }
 
