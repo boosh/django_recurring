@@ -431,7 +431,7 @@ class CalendarEntryForm {
     setSelectedWeekdays(container, weekdays) {
         const buttons = container.querySelectorAll('.weekday-button');
         buttons.forEach(button => {
-            button.classList.toggle('selected', weekdays.includes(button.textContent));
+            button.classList.toggle('selected', weekdays.includes(button.dataset.code));
         });
     }
 
@@ -710,7 +710,7 @@ function parseInitialData(jsonString) {
             bymonthday: eventData.rule.bymonthday,
             byyearday: eventData.rule.byyearday,
             byweekno: eventData.rule.byweekno,
-            byweekday: eventData.rule.byweekday,
+            byweekday: Array.isArray(eventData.rule.byweekday) ? eventData.rule.byweekday : [eventData.rule.byweekday],
             byhour: eventData.rule.byhour,
             byminute: eventData.rule.byminute,
             bysecond: eventData.rule.bysecond,
