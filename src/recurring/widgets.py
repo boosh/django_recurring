@@ -9,8 +9,8 @@ from .utils import recursive_snake_to_camel
 
 logger = logging.getLogger(__name__)
 
-
-class RecurrenceSetWidget(forms.Widget):
+# formerly RecurrenceSetWidget
+class CalendarEntryWidget(forms.Widget):
     template_name = "admin/recurring/recurrence_set_widget.html"
 
     class Media:

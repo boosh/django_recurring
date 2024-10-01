@@ -12,7 +12,8 @@ from .widgets import RecurrenceSetWidget
 logger = logging.getLogger(__name__)
 
 
-class RecurrenceSetForm(forms.ModelForm):
+# formerly RecurrenceSetForm
+class CalendarEntryForm(forms.ModelForm):
     recurrence_set = forms.CharField(required=False, widget=RecurrenceSetWidget)
 
     class Meta:
