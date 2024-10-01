@@ -233,16 +233,16 @@ class CalendarEntryForm {
                 </label>
                 <div class="recurrence-details" style="display: none;">
                     <div class="frequency-interval">
-                        <select class="frequency-select">
-                            <option value="YEARLY">Yearly</option>
-                            <option value="MONTHLY">Monthly</option>
-                            <option value="WEEKLY">Weekly</option>
-                            <option value="DAILY">Daily</option>
-                        </select>
                         <label>
-                            Interval:
+                            Every:
                             <input type="number" class="interval-input" min="1" value="1">
                         </label>
+                        <select class="frequency-select">
+                            <option value="YEARLY">Years</option>
+                            <option value="MONTHLY">Months</option>
+                            <option value="WEEKLY">Weeks</option>
+                            <option value="DAILY">Days</option>
+                        </select>
                     </div>
                     <div class="end-recurrence">
                         <label>
@@ -272,13 +272,19 @@ class CalendarEntryForm {
                         <label>By Set Position:</label>
                         <div class="bysetpos-buttons"></div>
                     </div>
-                    <div class="byhour-container">
-                        <label>By Hour:</label>
-                        <input type="text" class="byhour-input" placeholder="e.g. 9,12,15">
-                    </div>
-                    <div class="byminute-container">
-                        <label>By Minute:</label>
-                        <input type="text" class="byminute-input" placeholder="e.g. 0,30">
+                    <div class="byhour-byminute-container">
+                        <div class="byhour-container">
+                            <label>
+                                By Hour:
+                                <input type="text" class="byhour-input" placeholder="e.g. 9,12,15">
+                            </label>
+                        </div>
+                        <div class="byminute-container">
+                            <label>
+                                By Minute:
+                                <input type="text" class="byminute-input" placeholder="e.g. 0,30">
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>

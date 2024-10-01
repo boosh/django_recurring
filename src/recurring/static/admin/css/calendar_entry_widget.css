@@ -41,7 +41,7 @@ input[type="datetime-local"] {
     margin-top: 10px;
 }
 
-.end-recurrence {
+.end-recurrence, .byhour-byminute-container {
     display: flex;
     justify-content: space-between;
     margin-top: 10px;
@@ -51,14 +51,28 @@ input[type="datetime-local"] {
     width: 180px;
 }
 
+.byhour-container label, .byminute-container label {
+    width: 180px;
+    display: flex;
+    flex-direction: column;
+}
+
 .end-recurrence input[type="radio"] {
     margin: 5px 0;
 }
 
+.byhour-input, .byminute-input {
+    width: 100%;
+}
+
 .frequency-interval {
     display: flex;
-    justify-content: space-between;
+    /*justify-content: start;*/
     margin-top: 10px;
+}
+
+.frequency-interval label {
+    width: 60px !important;
 }
 
 .event-container {
