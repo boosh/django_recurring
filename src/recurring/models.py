@@ -411,7 +411,11 @@ class Event(models.Model):
     end_time = models.DateTimeField(null=True, blank=True)
     is_full_day = models.BooleanField(default=False)
     recurrence_rule = models.OneToOneField(
-        RecurrenceRule, on_delete=models.CASCADE, help_text=_("The recurrence rule")
+        RecurrenceRule,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text=_("The recurrence rule"),
     )
 
     def clean(self):
