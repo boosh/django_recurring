@@ -165,10 +165,6 @@ class CalendarEntryForm {
                 </div>
             </div>
             <div class="recurrence-rule-container"></div>
-            <div class="exclusions-container">
-                <p>Exclusions (dates to ignore the recurrence rule)</p>
-                <button class="add-exclusion">Add Exclusion</button>
-            </div>
             <button class="remove-event">Remove Event</button>
         `;
 
@@ -207,11 +203,6 @@ class CalendarEntryForm {
             updateEventHandler();
         });
 
-        container.querySelector('.add-exclusion').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.addExclusion(container, event);
-        });
-
         container.querySelector('.remove-event').addEventListener('click', (e) => {
             e.preventDefault();
             this.removeEvent(event.id);
@@ -222,6 +213,11 @@ class CalendarEntryForm {
         if (event.exclusions.length > 0) {
             event.exclusions.forEach(exclusion => this.addExclusion(container, event, exclusion));
         }
+
+        container.querySelector('.add-exclusion').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.addExclusion(container, event);
+        });
     }
 
     createRecurrenceRuleForm(container, event) {
@@ -288,6 +284,10 @@ class CalendarEntryForm {
                     </div>
                 </div>
             </div>
+            <div class="exclusions-container" style="display: none;">
+                <p>Exclusions (dates to ignore the recurrence rule)</p>
+                <button class="add-exclusion">Add Exclusion</button>
+            </div>
         `;
 
         const hasRecurrenceCheckbox = container.querySelector('.has-recurrence-checkbox');
@@ -298,7 +298,9 @@ class CalendarEntryForm {
         const countInput = container.querySelector('.count-input');
 
         hasRecurrenceCheckbox.addEventListener('change', () => {
-            recurrenceDetails.style.display = hasRecurrenceCheckbox.checked ? 'block' : 'none';
+            const isRecurring = hasRecurrenceCheckbox.checked;
+            recurrenceDetails.style.display = isRecurring ? 'block' : 'none';
+            container.querySelector('.exclusions-container').style.display = isRecurring ? 'block' : 'none';
             this.updateEvent(container.closest('.event-container'), event);
         });
 
@@ -321,6 +323,7 @@ class CalendarEntryForm {
         if (event.recurrenceRule) {
             hasRecurrenceCheckbox.checked = true;
             recurrenceDetails.style.display = 'block';
+            container.querySelector('.exclusions-container').style.display = 'block';
             frequencySelect.value = event.recurrenceRule.frequency;
             intervalInput.value = event.recurrenceRule.interval;
             if (event.recurrenceRule.until) {
