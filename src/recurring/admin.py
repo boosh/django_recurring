@@ -34,14 +34,20 @@ class CalendarEntryAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path('<path:object_id>/download-ical/',
-                 self.admin_site.admin_view(self.download_ical),
-                 name='%s_%s_download_ical' % (self.model._meta.app_label, self.model._meta.model_name)),
+            path(
+                "<path:object_id>/download-ical/",
+                self.admin_site.admin_view(self.download_ical),
+                name="%s_%s_download_ical"
+                % (self.model._meta.app_label, self.model._meta.model_name),
+            ),
         ]
         return custom_urls + urls
 
     def ical_download_link(self, obj):
-        url = reverse('admin:%s_%s_download_ical' % (obj._meta.app_label, obj._meta.model_name), args=[obj.pk])
+        url = reverse(
+            "admin:%s_%s_download_ical" % (obj._meta.app_label, obj._meta.model_name),
+            args=[obj.pk],
+        )
         return format_html('<a href="{}">Download iCal</a>', url)
 
     ical_download_link.short_description = "Download iCal"
@@ -52,8 +58,10 @@ class CalendarEntryAdmin(admin.ModelAdmin):
             return HttpResponse("Object not found", status=404)
 
         ical_string = obj.to_ical()
-        response = HttpResponse(ical_string, content_type='text/calendar')
-        response['Content-Disposition'] = f'attachment; filename="{slugify(obj.name)}.ics"'
+        response = HttpResponse(ical_string, content_type="text/calendar")
+        response[
+            "Content-Disposition"
+        ] = f'attachment; filename="{slugify(obj.name)}.ics"'
         return response
 
     def save_model(self, request, obj, form, change):

@@ -8,6 +8,7 @@ from .utils import recursive_snake_to_camel
 
 logger = logging.getLogger(__name__)
 
+
 class CalendarEntryWidget(forms.Widget):
     template_name = "admin/recurring/calendar_entry_widget.html"
 

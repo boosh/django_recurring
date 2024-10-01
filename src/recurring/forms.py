@@ -29,7 +29,9 @@ class CalendarEntryForm(forms.ModelForm):
             calendar_entry_data = self.instance.to_dict()
             self.initial["calendar_entry"] = json.dumps(calendar_entry_data)
             camelised = recursive_snake_to_camel(calendar_entry_data)
-            self.fields["calendar_entry"].widget.attrs["data-initial"] = json.dumps(camelised)
+            self.fields["calendar_entry"].widget.attrs["data-initial"] = json.dumps(
+                camelised
+            )
 
     def save(self, commit: bool = True):
         logger.info(f"Starting save method (commit={commit})")
@@ -71,17 +73,23 @@ class CalendarEntryForm(forms.ModelForm):
                 if not isinstance(calendar_entry_dict_camel, dict):
                     raise ValueError("Calendar entry data must be a dictionary")
 
-                calendar_entry_dict = recursive_camel_to_snake(calendar_entry_dict_camel)
+                calendar_entry_dict = recursive_camel_to_snake(
+                    calendar_entry_dict_camel
+                )
                 self.calendar_entry_data = calendar_entry_dict
 
                 if not isinstance(calendar_entry_dict.get("events"), list):
-                    raise ValueError("Calendar entry data must contain an 'events' list")
+                    raise ValueError(
+                        "Calendar entry data must contain an 'events' list"
+                    )
 
                 for event_data in calendar_entry_dict["events"]:
                     if not isinstance(event_data, dict):
                         raise ValueError("Each event must be a dictionary")
                     if "start_time" not in event_data or "end_time" not in event_data:
-                        raise ValueError("Each event must have 'start_time' and 'end_time'")
+                        raise ValueError(
+                            "Each event must have 'start_time' and 'end_time'"
+                        )
                     # todo - this is wrong. recurrence rules and exclusions are both optional
                     if "rule" not in event_data:
                         raise ValueError("Each event must contain a 'rule' key")
@@ -90,10 +98,16 @@ class CalendarEntryForm(forms.ModelForm):
 
                     # Convert start_time and end_time to timezone-aware datetimes
                     start_time = datetime.fromisoformat(event_data["start_time"])
-                    end_time = datetime.fromisoformat(event_data["end_time"]) if event_data["end_time"] else None
+                    end_time = (
+                        datetime.fromisoformat(event_data["end_time"])
+                        if event_data["end_time"]
+                        else None
+                    )
 
                     # Get the submitted timezone
-                    submitted_timezone = pytz.timezone(cleaned_data.get("timezone").name)
+                    submitted_timezone = pytz.timezone(
+                        cleaned_data.get("timezone").name
+                    )
 
                     event_data["start_time"] = submitted_timezone.localize(start_time)
                     if end_time:
@@ -102,27 +116,53 @@ class CalendarEntryForm(forms.ModelForm):
                     for exclusion_data in event_data["exclusions"]:
                         if not isinstance(exclusion_data, dict):
                             raise ValueError("Each exclusion must be a dictionary")
-                        if "start_date" not in exclusion_data or "end_date" not in exclusion_data:
-                            raise ValueError("Each exclusion must have 'start_date' and 'end_date'")
+                        if (
+                            "start_date" not in exclusion_data
+                            or "end_date" not in exclusion_data
+                        ):
+                            raise ValueError(
+                                "Each exclusion must have 'start_date' and 'end_date'"
+                            )
 
-                        exclusion_start = datetime.fromisoformat(exclusion_data["start_date"])
-                        exclusion_end = datetime.fromisoformat(exclusion_data["end_date"])
+                        exclusion_start = datetime.fromisoformat(
+                            exclusion_data["start_date"]
+                        )
+                        exclusion_end = datetime.fromisoformat(
+                            exclusion_data["end_date"]
+                        )
 
-                        exclusion_data["start_date"] = submitted_timezone.localize(exclusion_start)
-                        exclusion_data["end_date"] = submitted_timezone.localize(exclusion_end)
+                        exclusion_data["start_date"] = submitted_timezone.localize(
+                            exclusion_start
+                        )
+                        exclusion_data["end_date"] = submitted_timezone.localize(
+                            exclusion_end
+                        )
 
             except json.JSONDecodeError:
-                self.add_error("calendar_entry", "Invalid JSON data for calendar entry.")
+                self.add_error(
+                    "calendar_entry", "Invalid JSON data for calendar entry."
+                )
             except KeyError as e:
-                self.add_error("calendar_entry", f"Missing required key in calendar entry data: {str(e)}")
+                self.add_error(
+                    "calendar_entry",
+                    f"Missing required key in calendar entry data: {str(e)}",
+                )
             except ValueError as e:
-                self.add_error("calendar_entry", f"Invalid calendar entry data: {str(e)}")
+                self.add_error(
+                    "calendar_entry", f"Invalid calendar entry data: {str(e)}"
+                )
             except Exception as e:
-                self.add_error("calendar_entry", f"Error processing calendar entry data: {str(e)}")
+                self.add_error(
+                    "calendar_entry", f"Error processing calendar entry data: {str(e)}"
+                )
 
         # Check if at least one event is added
-        if not hasattr(self, "calendar_entry_data") or not self.calendar_entry_data.get("events"):
-            self.add_error(None, "You must add at least one event to the calendar entry.")
+        if not hasattr(self, "calendar_entry_data") or not self.calendar_entry_data.get(
+            "events"
+        ):
+            self.add_error(
+                None, "You must add at least one event to the calendar entry."
+            )
 
         cleaned_data["calendar_entry"] = getattr(self, "calendar_entry_data", {})
         logger.info(f"Cleaned data: {cleaned_data}")

@@ -30,6 +30,7 @@ from icalendar import Calendar, Event as ICalEvent
 # created in migrations
 UTC_ID = 1
 
+
 class Timezone(models.Model):
     name = models.CharField(
         max_length=64, unique=True, help_text=_("The name of the timezone")
@@ -115,7 +116,9 @@ class RecurrenceRule(models.Model):
         kwargs = {
             "freq": self.frequency,
             "interval": self.interval,
-            "dtstart": start_date.astimezone(pytz.timezone(self.event.calendar_entry.timezone.name)),
+            "dtstart": start_date.astimezone(
+                pytz.timezone(self.event.calendar_entry.timezone.name)
+            ),
             "until": end_date,
         }
 
@@ -166,9 +169,10 @@ class RecurrenceRule(models.Model):
             "timezone": self.event.calendar_entry.timezone.name,
         }
 
+
 class CalendarEntry(models.Model):
     class Meta:
-        verbose_name_plural = 'Calendar entries'
+        verbose_name_plural = "Calendar entries"
 
     name = models.CharField(
         null=True,
@@ -236,15 +240,19 @@ class CalendarEntry(models.Model):
     def from_dict(self, data):
         self.name = data.get("name", self.name)
         self.description = data.get("description", self.description)
-        self.timezone = Timezone.objects.get(name=data.get("timezone", self.timezone.name))
+        self.timezone = Timezone.objects.get(
+            name=data.get("timezone", self.timezone.name)
+        )
         self.save()
 
         for event_data in data.get("events", []):
             event = Event(
                 calendar_entry=self,
                 start_time=datetime.fromisoformat(event_data["start_time"]),
-                end_time=datetime.fromisoformat(event_data["end_time"]) if event_data.get("end_time") else None,
-                is_full_day=event_data.get("is_full_day", False)
+                end_time=datetime.fromisoformat(event_data["end_time"])
+                if event_data.get("end_time")
+                else None,
+                is_full_day=event_data.get("is_full_day", False),
             )
             event.save()
 
@@ -262,7 +270,7 @@ class CalendarEntry(models.Model):
                 byweekday=rule_data.get("byweekday"),
                 byhour=rule_data.get("byhour"),
                 byminute=rule_data.get("byminute"),
-                bysecond=rule_data.get("bysecond")
+                bysecond=rule_data.get("bysecond"),
             )
             rule.save()
             event.recurrence_rule = rule
@@ -272,7 +280,7 @@ class CalendarEntry(models.Model):
                 ExclusionDateRange.objects.create(
                     event=event,
                     start_date=datetime.fromisoformat(exclusion_data["start_date"]),
-                    end_date=datetime.fromisoformat(exclusion_data["end_date"])
+                    end_date=datetime.fromisoformat(exclusion_data["end_date"]),
                 )
 
     def recalculate_occurrences(self):
@@ -282,12 +290,18 @@ class CalendarEntry(models.Model):
             tz = pytz.timezone(self.timezone.name)
 
             next_occurrence = rruleset.after(now, inc=False)
-            self.next_occurrence = next_occurrence.astimezone(tz) if next_occurrence else None
+            self.next_occurrence = (
+                next_occurrence.astimezone(tz) if next_occurrence else None
+            )
 
             prev_occurrence = rruleset.before(now, inc=False)
-            self.previous_occurrence = prev_occurrence.astimezone(tz) if prev_occurrence else None
+            self.previous_occurrence = (
+                prev_occurrence.astimezone(tz) if prev_occurrence else None
+            )
         except Exception as e:
-            print(f"Error recalculating occurrences for CalendarEntry {self.id}: {str(e)}")
+            print(
+                f"Error recalculating occurrences for CalendarEntry {self.id}: {str(e)}"
+            )
 
     def save(self, *args, **kwargs):
         recalculate = kwargs.pop("recalculate", True)
@@ -316,7 +330,9 @@ class CalendarEntry(models.Model):
         cal.add("version", "2.0")
 
         if prod_id is None:
-            prod_id = getattr(settings, "ICAL_PROD_ID", "-//django-recurring//NONSGML v1.0//EN")
+            prod_id = getattr(
+                settings, "ICAL_PROD_ID", "-//django-recurring//NONSGML v1.0//EN"
+            )
         cal.add("prodid", prod_id)
 
         if not self.events.exists():
@@ -335,22 +351,37 @@ class CalendarEntry(models.Model):
                 "freq": rule.get_frequency_display(),
                 "interval": rule.interval,
             }
-            if rule.wkst is not None: rrule_dict["wkst"] = rule.wkst
-            if rule.count is not None: rrule_dict["count"] = rule.count
-            if rule.bysetpos: rrule_dict["bysetpos"] = rule.bysetpos
-            if rule.bymonth: rrule_dict["bymonth"] = rule.bymonth
-            if rule.bymonthday: rrule_dict["bymonthday"] = rule.bymonthday
-            if rule.byyearday: rrule_dict["byyearday"] = rule.byyearday
-            if rule.byweekno: rrule_dict["byweekno"] = rule.byweekno
-            if rule.byweekday: rrule_dict["byday"] = rule.byweekday
-            if rule.byhour: rrule_dict["byhour"] = rule.byhour
-            if rule.byminute: rrule_dict["byminute"] = rule.byminute
-            if rule.bysecond: rrule_dict["bysecond"] = rule.bysecond
+            if rule.wkst is not None:
+                rrule_dict["wkst"] = rule.wkst
+            if rule.count is not None:
+                rrule_dict["count"] = rule.count
+            if rule.bysetpos:
+                rrule_dict["bysetpos"] = rule.bysetpos
+            if rule.bymonth:
+                rrule_dict["bymonth"] = rule.bymonth
+            if rule.bymonthday:
+                rrule_dict["bymonthday"] = rule.bymonthday
+            if rule.byyearday:
+                rrule_dict["byyearday"] = rule.byyearday
+            if rule.byweekno:
+                rrule_dict["byweekno"] = rule.byweekno
+            if rule.byweekday:
+                rrule_dict["byday"] = rule.byweekday
+            if rule.byhour:
+                rrule_dict["byhour"] = rule.byhour
+            if rule.byminute:
+                rrule_dict["byminute"] = rule.byminute
+            if rule.bysecond:
+                rrule_dict["bysecond"] = rule.bysecond
 
             ical_event.add("rrule", rrule_dict)
 
             # the time component is kept in sync with the event start time
-            exdates = [date for exclusion in event.exclusions.all() for date in exclusion.get_all_dates()]
+            exdates = [
+                date
+                for exclusion in event.exclusions.all()
+                for date in exclusion.get_all_dates()
+            ]
             if exdates:
                 ical_event.add("exdate", exdates)
 
@@ -358,8 +389,11 @@ class CalendarEntry(models.Model):
 
         return cal.to_ical().decode("utf-8")
 
+
 class Event(models.Model):
-    calendar_entry = models.ForeignKey(CalendarEntry, on_delete=models.CASCADE, related_name='events')
+    calendar_entry = models.ForeignKey(
+        CalendarEntry, on_delete=models.CASCADE, related_name="events"
+    )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
     is_full_day = models.BooleanField(default=False)
@@ -381,6 +415,7 @@ class Event(models.Model):
     def __str__(self):
         return f"Event for {self.calendar_entry.name}: {self.start_time}"
 
+
 class ExclusionDateRange(models.Model):
     event = models.ForeignKey(
         Event,
@@ -388,7 +423,9 @@ class ExclusionDateRange(models.Model):
         related_name="exclusions",
         help_text=_("The event this exclusion date range belongs to"),
     )
-    start_date = models.DateTimeField(help_text=_("The start date of the exclusion range"))
+    start_date = models.DateTimeField(
+        help_text=_("The start date of the exclusion range")
+    )
     end_date = models.DateTimeField(help_text=_("The end date of the exclusion range"))
 
     def __str__(self):
@@ -408,7 +445,9 @@ class ExclusionDateRange(models.Model):
     def to_rrule(self):
         # the time component is kept in sync with the event start time
         kwargs = {
-            "dtstart": self.start_date.astimezone(pytz.timezone(self.event.calendar_entry.timezone.name)),
+            "dtstart": self.start_date.astimezone(
+                pytz.timezone(self.event.calendar_entry.timezone.name)
+            ),
             "until": self.end_date,
         }
         return rrule(**kwargs)
