@@ -67,12 +67,17 @@ input[type="datetime-local"] {
 
 .frequency-interval {
     display: flex;
-    /*justify-content: start;*/
+    align-items: center;
     margin-top: 10px;
 }
 
 .frequency-interval label {
-    width: 60px !important;
+    width: 120px;
+    min-width: 120px;
+}
+
+.frequency-interval select {
+    margin-left: 4px;
 }
 
 .event-container {

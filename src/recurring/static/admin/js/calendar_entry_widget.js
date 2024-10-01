@@ -166,7 +166,7 @@ class CalendarEntryForm {
             </div>
             <div class="recurrence-rule-container"></div>
             <div class="exclusions-container">
-                <p>Exclusions</p>
+                <p>Exclusions (dates to ignore the recurrence rule)</p>
                 <button class="add-exclusion">Add Exclusion</button>
             </div>
             <button class="remove-event">Remove Event</button>
