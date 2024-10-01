@@ -80,6 +80,11 @@ class RecurrenceRule(models.Model):
     count = models.IntegerField(
         null=True, blank=True, help_text=_("How many occurrences will be generated")
     )
+    until = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("The date and time until which occurrences will be generated"),
+    )
     bysetpos = models.JSONField(
         null=True, blank=True, help_text=_("By position (BYSETPOS)")
     )
@@ -139,6 +144,8 @@ class RecurrenceRule(models.Model):
             kwargs["byweekday"] = [weekday_map[day] for day in self.byweekday]
         if self.count is not None:
             kwargs["count"] = self.count
+        if self.until is not None:
+            kwargs["until"] = self.until
         if self.bysetpos:
             kwargs["bysetpos"] = self.bysetpos
         if self.bymonth:
@@ -170,6 +177,7 @@ class RecurrenceRule(models.Model):
             "interval": self.interval,
             "wkst": self.wkst,
             "count": self.count,
+            "until": self.until.isoformat() if self.until else None,
             "bysetpos": self.bysetpos,
             "bymonth": self.bymonth,
             "bymonthday": self.bymonthday,
@@ -275,6 +283,9 @@ class CalendarEntry(models.Model):
                 interval=rule_data.get("interval", 1),
                 wkst=rule_data.get("wkst"),
                 count=rule_data.get("count"),
+                until=datetime.fromisoformat(rule_data["until"])
+                if rule_data.get("until")
+                else None,
                 bysetpos=rule_data.get("bysetpos"),
                 bymonth=rule_data.get("bymonth"),
                 bymonthday=rule_data.get("bymonthday"),
@@ -355,6 +366,7 @@ class CalendarEntry(models.Model):
             ical_event = ICalEvent()
             ical_event.add("dtstamp", django_timezone.now())
             ical_event.add("uid", str(uuid.uuid4()))
+            ical_event.add("summary", self.name)
             ical_event.add("dtstart", event.start_time)
             if event.end_time:
                 ical_event.add("dtend", event.end_time)
@@ -368,6 +380,8 @@ class CalendarEntry(models.Model):
                 rrule_dict["wkst"] = rule.wkst
             if rule.count is not None:
                 rrule_dict["count"] = rule.count
+            if rule.until is not None:
+                rrule_dict["until"] = rule.until
             if rule.bysetpos:
                 rrule_dict["bysetpos"] = rule.bysetpos
             if rule.bymonth:
