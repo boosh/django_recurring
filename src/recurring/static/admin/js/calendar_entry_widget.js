@@ -64,11 +64,11 @@ function initCalendarEntryWidget(name) {
     function validateDateInputs() {
         const events = calendarEntryForm.events;
         for (let event of events) {
-            if (!event.startDateTime) {
+            if (!event.startTime) {
                 alert('Please set a start date and time for all events.');
                 return false;
             }
-            if (!event.isAllDay && !event.endDateTime) {
+            if (!event.isAllDay && !event.endTime) {
                 alert('Please set an end date and time for all non-all-day events.');
                 return false;
             }
@@ -111,8 +111,8 @@ class CalendarEntryForm {
 
         const newEvent = event || {
             id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            startDateTime: null,
-            endDateTime: null,
+            startTime: null,
+            endTime: null,
             isAllDay: false,
             recurrenceRule: null,
             exclusions: []
@@ -172,22 +172,22 @@ class CalendarEntryForm {
             <button class="remove-event">Remove Event</button>
         `;
 
-        const startDateTimeInput = container.querySelector('.start-datetime');
-        const endDateTimeInput = container.querySelector('.end-datetime');
+        const startTimeInput = container.querySelector('.start-datetime');
+        const endTimeInput = container.querySelector('.end-datetime');
         const allDayCheckbox = container.querySelector('.all-day-checkbox');
 
-        startDateTimeInput.value = this.formatDateTimeForInput(event.startDateTime);
-        endDateTimeInput.value = this.formatDateTimeForInput(event.endDateTime);
+        startTimeInput.value = this.formatDateTimeForInput(event.startTime);
+        endTimeInput.value = this.formatDateTimeForInput(event.endTime);
         allDayCheckbox.checked = event.isAllDay;
 
         const updateEventHandler = () => this.updateEvent(container, event);
 
-        startDateTimeInput.addEventListener('change', updateEventHandler);
-        endDateTimeInput.addEventListener('change', updateEventHandler);
+        startTimeInput.addEventListener('change', updateEventHandler);
+        endTimeInput.addEventListener('change', updateEventHandler);
         allDayCheckbox.addEventListener('change', () => {
-            endDateTimeInput.disabled = allDayCheckbox.checked;
+            endTimeInput.disabled = allDayCheckbox.checked;
             if (allDayCheckbox.checked) {
-                endDateTimeInput.value = '';
+                endTimeInput.value = '';
             }
             updateEventHandler();
         });
@@ -196,7 +196,7 @@ class CalendarEntryForm {
         setNowLink.addEventListener('click', (e) => {
             e.preventDefault();
             const now = new Date();
-            startDateTimeInput.value = now.toISOString().slice(0, 16);
+            startTimeInput.value = now.toISOString().slice(0, 16);
             updateEventHandler();
         });
 
@@ -204,14 +204,14 @@ class CalendarEntryForm {
         setNowEndLink.addEventListener('click', (e) => {
             e.preventDefault();
             const now = new Date();
-            endDateTimeInput.value = now.toISOString().slice(0, 16);
+            endTimeInput.value = now.toISOString().slice(0, 16);
             updateEventHandler();
         });
 
         const setFarFutureLink = container.querySelector('.set-far-future');
         setFarFutureLink.addEventListener('click', (e) => {
             e.preventDefault();
-            endDateTimeInput.value = '2999-01-01T00:00';
+            endTimeInput.value = '2999-01-01T00:00';
             updateEventHandler();
         });
 
@@ -499,8 +499,8 @@ class CalendarEntryForm {
     }
 
     updateEvent(container, event) {
-        const startDateTimeInput = container.querySelector('.start-datetime');
-        const endDateTimeInput = container.querySelector('.end-datetime');
+        const startTimeInput = container.querySelector('.start-datetime');
+        const endTimeInput = container.querySelector('.end-datetime');
         const allDayCheckbox = container.querySelector('.all-day-checkbox input');
         const exclusionContainers = container.querySelectorAll('.exclusion-container');
         const hasRecurrenceCheckbox = container.querySelector('.has-recurrence-checkbox');
@@ -515,9 +515,9 @@ class CalendarEntryForm {
         const byHourInput = container.querySelector('.byhour-input');
         const byMinuteInput = container.querySelector('.byminute-input');
 
-        event.startDateTime = startDateTimeInput.value;
+        event.startTime = startTimeInput.value;
         event.isAllDay = allDayCheckbox.checked;
-        event.endDateTime = event.isAllDay ? null : endDateTimeInput.value;
+        event.endTime = event.isAllDay ? null : endTimeInput.value;
 
         event.exclusions = Array.from(exclusionContainers).map(container => {
             return {
@@ -631,9 +631,9 @@ class CalendarEntryForm {
 
         // Start and end time on one line
         if (event.isAllDay) {
-            text += `All Day Event on ${new Date(event.startDateTime).toLocaleDateString()}<br>`;
+            text += `All Day Event on ${new Date(event.startTime).toLocaleDateString()}<br>`;
         } else {
-            text += `From ${new Date(event.startDateTime).toLocaleString()} to ${new Date(event.endDateTime).toLocaleString()}<br>`;
+            text += `From ${new Date(event.startTime).toLocaleString()} to ${new Date(event.endTime).toLocaleString()}<br>`;
         }
 
         // Recurrence information as a human-readable string
@@ -723,8 +723,8 @@ function parseInitialData(jsonString) {
 
     const events = data.events.map(eventData => ({
         id: eventData.id || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        startDateTime: eventData.startTime,
-        endDateTime: eventData.endTime,
+        startTime: eventData.startTime,
+        endTime: eventData.endTime,
         isAllDay: eventData.isFullDay,
         recurrenceRule: eventData.rule ? {
             frequency: eventData.rule.frequency,

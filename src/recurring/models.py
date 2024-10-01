@@ -279,10 +279,8 @@ class CalendarEntry(models.Model):
         for event_data in data.get("events", []):
             event = Event(
                 calendar_entry=self,
-                start_time=event_data["start_date_time"],
-                end_time=event_data["end_date_time"]
-                if event_data.get("end_date_time")
-                else None,
+                start_time=event_data["start_time"],
+                end_time=event_data["end_time"] if event_data.get("end_time") else None,
                 is_full_day=event_data.get("is_full_day", False),
             )
             event.save()

@@ -89,26 +89,21 @@ class CalendarEntryForm(forms.ModelForm):
                 for event_data in calendar_entry_dict["events"]:
                     if not isinstance(event_data, dict):
                         raise ValueError("Each event must be a dictionary")
-                    if (
-                        "start_date_time" not in event_data
-                        or "end_date_time" not in event_data
-                    ):
+                    if "start_time" not in event_data or "end_time" not in event_data:
                         raise ValueError(
-                            "Each event must have 'start_date_time' and 'end_date_time'"
+                            "Each event must have 'start_time' and 'end_time'"
                         )
 
-                    # Convert start_date_time and end_date_time to timezone-aware datetimes
-                    start_time = datetime.fromisoformat(event_data["start_date_time"])
+                    # Convert start_time and end_time to timezone-aware datetimes
+                    start_time = datetime.fromisoformat(event_data["start_time"])
                     end_time = (
-                        datetime.fromisoformat(event_data["end_date_time"])
-                        if event_data["end_date_time"]
+                        datetime.fromisoformat(event_data["end_time"])
+                        if event_data["end_time"]
                         else None
                     )
 
-                    event_data["start_date_time"] = submitted_timezone.localize(
-                        start_time
-                    )
-                    event_data["end_date_time"] = (
+                    event_data["start_time"] = submitted_timezone.localize(start_time)
+                    event_data["end_time"] = (
                         submitted_timezone.localize(end_time) if end_time else None
                     )
 
