@@ -20,7 +20,7 @@ license = {text = "MIT license"}
 dependencies = [
     "pytz",
     "icalendar==6.0.0",
-    "python-dateutil",
+    "python-dateutil>=2.0.0,<3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +31,9 @@ dev = [
     "pytest-django",  # testing
     "ruff",  # linting
     "pre-commit",
+    "build",
+    "twine",
+    "sphinx==8.0.2", # docs
 ]
 
 [project.urls]

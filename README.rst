@@ -16,6 +16,7 @@ Create repeating datetimes in Django using dateutil rrulesets with timezone awar
 
 * Free software: MIT license
 * Documentation: https://django-recurring.readthedocs.io
+* Git repo: https://github.com/boosh/django_recurring
 
 Features
 --------
@@ -117,3 +118,7 @@ Quick Start
           f.write(ical_string)
 
 For more detailed usage and examples, see the `documentation <https://django-recurring.readthedocs.io>`_.
+
+Why?
+----
+`django-recurrence <https://github.com/jazzband/django-recurrence>`_ lacks multiple features (e.g. times, hourly intervals, etc) that don't seem possible to solve. A new library was in order.
