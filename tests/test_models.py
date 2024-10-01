@@ -218,19 +218,10 @@ class TestRecurrenceSet:
             is_exclusion=False,
         )
 
-        # Create exclusion rule
-        exclusion_rule = RecurrenceRule.objects.create(
-            frequency=DAILY, interval=1, timezone=timezone_obj
-        )
-        RecurrenceSetRule.objects.create(
-            recurrence_set=recurrence_set,
-            recurrence_rule=exclusion_rule,
-            is_exclusion=True,
-        )
         exclusion_start = django_timezone.datetime(2023, 1, 7, tzinfo=utc)
         exclusion_end = django_timezone.datetime(2023, 1, 10, tzinfo=utc)
         RecurrenceRuleDateRange.objects.create(
-            recurrence_rule=exclusion_rule,
+            recurrence_rule=recurrence_rule,
             start_date=exclusion_start,
             end_date=exclusion_end,
             is_exclusion=True,

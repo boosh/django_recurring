@@ -459,6 +459,7 @@ class RecurrenceSetRule(models.Model):
     recurrence_rule = models.OneToOneField(
         RecurrenceRule, on_delete=models.CASCADE, help_text=_("The recurrence rule")
     )
+    # todo - I think we can get rid of this
     is_exclusion = models.BooleanField(
         default=False, help_text=_("Whether this rule is an exclusion rule")
     )
