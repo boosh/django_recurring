@@ -5,35 +5,31 @@ from datetime import datetime
 import pytz
 from django import forms
 
-from .models import RecurrenceSet
+from .models import CalendarEntry
 from .utils import recursive_camel_to_snake, recursive_snake_to_camel
-from .widgets import RecurrenceSetWidget
+from .widgets import CalendarEntryWidget
 
 logger = logging.getLogger(__name__)
 
 
-# formerly RecurrenceSetForm
 class CalendarEntryForm(forms.ModelForm):
-    recurrence_set = forms.CharField(required=False, widget=RecurrenceSetWidget)
+    calendar_entry = forms.CharField(required=False, widget=CalendarEntryWidget)
 
     class Meta:
-        model = RecurrenceSet
+        model = CalendarEntry
         fields = ["name", "description", "timezone"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         logger.info("Form init method")
-        self.fields["recurrence_set"].widget = RecurrenceSetWidget(form=self)
-        self.fields["recurrence_set"].widget.attrs["style"] = "display: none;"
+        self.fields["calendar_entry"].widget = CalendarEntryWidget(form=self)
+        self.fields["calendar_entry"].widget.attrs["style"] = "display: none;"
 
-        # Populate the recurrence_set field with existing data
         if self.instance.pk:
-            recurrence_set_data = self.instance.to_dict()
-            self.initial["recurrence_set"] = json.dumps(recurrence_set_data)
-            camelised = recursive_snake_to_camel(recurrence_set_data)
-            self.fields["recurrence_set"].widget.attrs["data-initial"] = json.dumps(
-                camelised
-            )
+            calendar_entry_data = self.instance.to_dict()
+            self.initial["calendar_entry"] = json.dumps(calendar_entry_data)
+            camelised = recursive_snake_to_camel(calendar_entry_data)
+            self.fields["calendar_entry"].widget.attrs["data-initial"] = json.dumps(camelised)
 
     def save(self, commit: bool = True):
         logger.info(f"Starting save method (commit={commit})")
@@ -42,14 +38,14 @@ class CalendarEntryForm(forms.ModelForm):
             logger.info("Commit is True, saving instance")
             instance.save(recalculate=False)  # Save without recalculating
 
-            logger.info("Processing recurrence_set data")
-            recurrence_set_data = self.cleaned_data.get("recurrence_set")
-            if recurrence_set_data:
-                logger.info("Clearing existing rules")
-                [rule.delete() for rule in instance.recurrencesetrules.all()]
+            logger.info("Processing calendar_entry data")
+            calendar_entry_data = self.cleaned_data.get("calendar_entry")
+            if calendar_entry_data:
+                logger.info("Clearing existing events")
+                instance.events.all().delete()
 
-                logger.info("Adding new rules and date ranges")
-                instance.from_dict(recurrence_set_data)
+                logger.info("Adding new events and exclusions")
+                instance.from_dict(calendar_entry_data)
 
             logger.info("Recalculating occurrences")
             instance.recalculate_occurrences()
@@ -67,95 +63,68 @@ class CalendarEntryForm(forms.ModelForm):
             return cleaned_data
 
         logger.info("No form errors")
-        recurrence_set_data = cleaned_data.get("recurrence_set")
-        if recurrence_set_data:
+        calendar_entry_data = cleaned_data.get("calendar_entry")
+        if calendar_entry_data:
             try:
-                # Process the recurrence_set data
-                recurrence_set_dict_camel = json.loads(recurrence_set_data)
+                calendar_entry_dict_camel = json.loads(calendar_entry_data)
 
-                # Validate the structure of recurrence_set_dict
-                if not isinstance(recurrence_set_dict_camel, dict):
-                    raise ValueError("Recurrence set data must be a dictionary")
+                if not isinstance(calendar_entry_dict_camel, dict):
+                    raise ValueError("Calendar entry data must be a dictionary")
 
-                # recursively convert all keys to snake case for consistency
-                recurrence_set_dict = recursive_camel_to_snake(
-                    recurrence_set_dict_camel
-                )
-                self.recurrence_set_data = recurrence_set_dict
+                calendar_entry_dict = recursive_camel_to_snake(calendar_entry_dict_camel)
+                self.calendar_entry_data = calendar_entry_dict
 
-                if not isinstance(recurrence_set_dict["rules"], list):
-                    raise ValueError("Recurrence set data must contain a 'rules' list")
+                if not isinstance(calendar_entry_dict.get("events"), list):
+                    raise ValueError("Calendar entry data must contain an 'events' list")
 
-                # Validate the structure
-                if not isinstance(recurrence_set_dict.get("rules"), list):
-                    raise ValueError("Recurrence set data must contain a 'rules' list")
+                for event_data in calendar_entry_dict["events"]:
+                    if not isinstance(event_data, dict):
+                        raise ValueError("Each event must be a dictionary")
+                    if "start_time" not in event_data or "end_time" not in event_data:
+                        raise ValueError("Each event must have 'start_time' and 'end_time'")
+                    # todo - this is wrong. recurrence rules and exclusions are both optional
+                    if "rule" not in event_data:
+                        raise ValueError("Each event must contain a 'rule' key")
+                    if not isinstance(event_data.get("exclusions"), list):
+                        raise ValueError("Each event must contain an 'exclusions' list")
 
-                for rule_data in recurrence_set_dict["rules"]:
-                    if not isinstance(rule_data, dict):
-                        raise ValueError("Each rule must be a dictionary")
-                    if "rule" not in rule_data:
-                        raise ValueError("Each rule must contain a 'rule' key")
-                    if not isinstance(rule_data.get("date_ranges"), list):
-                        raise ValueError("Each rule must contain a 'date_ranges' list")
+                    # Convert start_time and end_time to timezone-aware datetimes
+                    start_time = datetime.fromisoformat(event_data["start_time"])
+                    end_time = datetime.fromisoformat(event_data["end_time"]) if event_data["end_time"] else None
 
-                    for date_range_data in rule_data["date_ranges"]:
-                        if not isinstance(date_range_data, dict):
-                            raise ValueError("Each date range must be a dictionary")
-                        if (
-                            "start_date" not in date_range_data
-                            or "end_date" not in date_range_data
-                        ):
-                            raise ValueError(
-                                "Each date range must have 'start_date' and 'end_date'"
-                            )
+                    # Get the submitted timezone
+                    submitted_timezone = pytz.timezone(cleaned_data.get("timezone").name)
 
-                        # Convert start_date and end_date to timezone-aware datetimes
-                        start_date = datetime.fromisoformat(
-                            date_range_data["start_date"]
-                        )
-                        end_date = datetime.fromisoformat(date_range_data["end_date"])
+                    event_data["start_time"] = submitted_timezone.localize(start_time)
+                    if end_time:
+                        event_data["end_time"] = submitted_timezone.localize(end_time)
 
-                        # Get the submitted timezone
-                        submitted_timezone = pytz.timezone(
-                            cleaned_data.get("timezone").name
-                        )
+                    for exclusion_data in event_data["exclusions"]:
+                        if not isinstance(exclusion_data, dict):
+                            raise ValueError("Each exclusion must be a dictionary")
+                        if "start_date" not in exclusion_data or "end_date" not in exclusion_data:
+                            raise ValueError("Each exclusion must have 'start_date' and 'end_date'")
 
-                        date_range_data["start_date"] = submitted_timezone.localize(
-                            start_date
-                        )
-                        date_range_data["end_date"] = submitted_timezone.localize(
-                            end_date
-                        )
+                        exclusion_start = datetime.fromisoformat(exclusion_data["start_date"])
+                        exclusion_end = datetime.fromisoformat(exclusion_data["end_date"])
+
+                        exclusion_data["start_date"] = submitted_timezone.localize(exclusion_start)
+                        exclusion_data["end_date"] = submitted_timezone.localize(exclusion_end)
 
             except json.JSONDecodeError:
-                self.add_error(
-                    "recurrence_set", "Invalid JSON data for recurrence set."
-                )
+                self.add_error("calendar_entry", "Invalid JSON data for calendar entry.")
             except KeyError as e:
-                self.add_error(
-                    "recurrence_set",
-                    f"Missing required key in recurrence set data: {str(e)}",
-                )
+                self.add_error("calendar_entry", f"Missing required key in calendar entry data: {str(e)}")
             except ValueError as e:
-                self.add_error(
-                    "recurrence_set", f"Invalid recurrence set data: {str(e)}"
-                )
+                self.add_error("calendar_entry", f"Invalid calendar entry data: {str(e)}")
             except Exception as e:
-                self.add_error(
-                    "recurrence_set", f"Error processing recurrence set data: {str(e)}"
-                )
+                self.add_error("calendar_entry", f"Error processing calendar entry data: {str(e)}")
 
-        # Check if at least one rule with a date range is added
-        if not hasattr(self, "recurrence_set_data") or not any(
-            rule_data["date_ranges"]
-            for rule_data in self.recurrence_set_data.get("rules", [])
-        ):
-            self.add_error(
-                None,
-                "You must add at least one rule with a date range to the recurrence set.",
-            )
+        # Check if at least one event is added
+        if not hasattr(self, "calendar_entry_data") or not self.calendar_entry_data.get("events"):
+            self.add_error(None, "You must add at least one event to the calendar entry.")
 
-        cleaned_data["recurrence_set"] = getattr(self, "recurrence_set_data", {})
+        cleaned_data["calendar_entry"] = getattr(self, "calendar_entry_data", {})
         logger.info(f"Cleaned data: {cleaned_data}")
 
         return cleaned_data

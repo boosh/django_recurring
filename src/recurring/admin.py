@@ -15,7 +15,6 @@ from .models import (
 )
 
 
-# formerly RecurrenceSetAdmin
 class CalendarEntryAdmin(admin.ModelAdmin):
     form = CalendarEntryForm
     list_display = ("name", "timezone", "next_occurrence", "previous_occurrence")
