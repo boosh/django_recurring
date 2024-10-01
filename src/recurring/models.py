@@ -30,6 +30,14 @@ from icalendar import Calendar, Event as ICalEvent
 # created in migrations
 UTC_ID = 1
 
+MONDAY = "MO"
+TUESDAY = "TU"
+WEDNESDAY = "WE"
+THURSDAY = "TH"
+FRIDAY = "FR"
+SATURDAY = "SA"
+SUNDAY = "SU"
+
 
 class Timezone(models.Model):
     name = models.CharField(
@@ -51,13 +59,13 @@ class RecurrenceRule(models.Model):
         SECONDLY = SECONDLY, _("SECONDLY")
 
     WEEKDAYS = (
-        (MO.weekday, "MO"),
-        (TU.weekday, "TU"),
-        (WE.weekday, "WE"),
-        (TH.weekday, "TH"),
-        (FR.weekday, "FR"),
-        (SA.weekday, "SA"),
-        (SU.weekday, "SU"),
+        (MO.weekday, MONDAY),
+        (TU.weekday, TUESDAY),
+        (WE.weekday, WEDNESDAY),
+        (TH.weekday, THURSDAY),
+        (FR.weekday, FRIDAY),
+        (SA.weekday, SATURDAY),
+        (SU.weekday, SUNDAY),
     )
 
     frequency = models.IntegerField(
@@ -102,15 +110,18 @@ class RecurrenceRule(models.Model):
     def get_frequency_display(self):
         return self.Frequency(self.frequency).name
 
+    def get_wkst_display(self):
+        return dict(self.WEEKDAYS)[self.wkst] if self.wkst is not None else None
+
     def _get_rrule_kwargs(self, start_date, end_date):
         weekday_map = {
-            "MO": MO,
-            "TU": TU,
-            "WE": WE,
-            "TH": TH,
-            "FR": FR,
-            "SA": SA,
-            "SU": SU,
+            MONDAY: MO,
+            TUESDAY: TU,
+            WEDNESDAY: WE,
+            THURSDAY: TH,
+            FRIDAY: FR,
+            SATURDAY: SA,
+            SUNDAY: SU,
         }
 
         kwargs = {
@@ -123,7 +134,9 @@ class RecurrenceRule(models.Model):
         }
 
         if self.wkst is not None:
-            kwargs["wkst"] = weekday_map[self.wkst]
+            kwargs["wkst"] = weekday_map[self.get_wkst_display()]
+        if self.byweekday:
+            kwargs["byweekday"] = [weekday_map[day] for day in self.byweekday]
         if self.count is not None:
             kwargs["count"] = self.count
         if self.bysetpos:
