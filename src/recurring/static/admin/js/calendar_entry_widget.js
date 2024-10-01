@@ -210,9 +210,7 @@ class CalendarEntryForm {
 
         this.createRecurrenceRuleForm(container.querySelector('.recurrence-rule-container'), event);
 
-        if (event.exclusions.length === 0) {
-            this.addExclusion(container, event);
-        } else {
+        if (event.exclusions.length > 0) {
             event.exclusions.forEach(exclusion => this.addExclusion(container, event, exclusion));
         }
     }
@@ -544,6 +542,11 @@ class CalendarEntryForm {
             if (this.onChange) {
                 this.onChange();
             }
+
+            // If there are no more events, clear the events container
+            if (this.events.length === 0) {
+                this.container.querySelector('#events-container').innerHTML = '';
+            }
         }
     }
 
@@ -641,15 +644,15 @@ class CalendarEntryForm {
         }
 
         if (rule.byhour && rule.byhour.length > 0) {
-            text += ` at ${rule.byhour.join(':')}`;
+            text += ` at hour${rule.byhour.length > 1 ? 's' : ''} ${rule.byhour.join(', ')}`;
         }
 
         if (rule.byminute && rule.byminute.length > 0) {
-            text += ` and ${rule.byminute.join(':')} minutes`;
+            text += ` at minute${rule.byminute.length > 1 ? 's' : ''} ${rule.byminute.join(', ')}`;
         }
 
         if (rule.until) {
-            text += ` until ${new Date(rule.until).toLocaleDateString()}`;
+            text += ` until ${new Date(rule.until).toLocaleString()}`;
         } else if (rule.count) {
             text += ` for ${rule.count} occurrences`;
         }
