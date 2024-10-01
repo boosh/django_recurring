@@ -1,48 +1,72 @@
-.recurrence-set-widget, .recurrence-rule-widget {
+.calendar-entry-widget {
     margin-bottom: 20px;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
+    width: 60%;
 }
 
-.add-date-range {
-    display: block;
-    margin: 10px 0;
-}
-
-.freqHeader {
-    display: inline-block;
-}
-
-.rule-container, .date-container {
-    margin-bottom: 10px;
-    padding: 10px;
-    border: 1px solid #eee;
-    border-radius: 4px;
-}
-
-.date-range-container {
+.event-times {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     margin-bottom: 10px;
-    gap: 10px;
 }
 
-.date-range-container label {
+.event-times .col {
+    display: flex;
+    flex-direction: column;
     flex: 1;
+    min-width: 200px;
+    margin-right: 10px;
 }
 
-.date-range-container input[type="date"] {
+.all-day-checkbox {
+    margin-top: 5px;
+}
+
+input[type="datetime-local"] {
     width: 100%;
+    max-width: 200px;
 }
 
-.recurrence-set-text, .recurrence-rule-text {
+.recurrence-rule-container {
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.recurrence-details {
+    margin-top: 10px;
+}
+
+.end-recurrence {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.frequency-interval {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.exclusions-container {
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.calendar-entry-text {
     font-style: italic;
     color: #666;
     margin-top: 10px;
 }
 
-.recurrence-set-text ul {
+.calendar-entry-text ul {
     margin-left: 0 !important;
     padding-left: 0 !important;
 }
@@ -59,21 +83,7 @@ input[type="date"], input[type="datetime-local"] {
     width: 60px;
 }
 
-#byweekday {
-    margin-top: 10px;
-}
-
-#byweekday label {
-    margin-right: 10px;
-}
-
-/* This file was previously named recurrence_set_widget.css */
-/* Add your CSS styles for the RecurrenceSetWidget here */
-.byweekday-container, .bymonth-container {
-    margin: 10px 0;
-}
-
-.weekday-button, .month-button {
+.weekday-button, .month-button, .bysetpos-button {
     padding: 5px 10px;
     margin: 2px;
     border: 1px solid #ccc;
@@ -83,7 +93,7 @@ input[type="date"], input[type="datetime-local"] {
     box-sizing: border-box;
 }
 
-.weekday-button.selected, .month-button.selected {
+.weekday-button.selected, .month-button.selected, .bysetpos-button.selected {
     background-color: #007bff;
     color: white;
     font-weight: bold;
@@ -93,10 +103,6 @@ input[type="date"], input[type="datetime-local"] {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 5px;
-}
-
-.bymonthday-container, .bysetpos-container {
-    margin-top: 10px;
 }
 
 .bymonthday-input {
@@ -110,17 +116,4 @@ input[type="date"], input[type="datetime-local"] {
     flex-wrap: wrap;
     gap: 3px;
     margin-top: 5px;
-}
-
-.bysetpos-button {
-    padding: 5px 10px;
-    border: 1px solid #ccc;
-    background-color: #f8f8f8;
-    cursor: pointer;
-}
-
-.bysetpos-button.selected {
-    background-color: #007bff;
-    color: white;
-    font-weight: bold;
 }

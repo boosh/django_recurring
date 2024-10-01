@@ -146,21 +146,27 @@ class CalendarEntryForm {
     createEventForm(container, event) {
         container.dataset.eventId = event.id.toString();
         container.innerHTML = `
-            <label>Start:
-                <input type="datetime-local" class="start-datetime">
-            </label>
-            <a href="#" class="set-now">Now</a>
-            <label>End:
-                <input type="datetime-local" class="end-datetime">
-            </label>
-            <a href="#" class="set-far-future">Far Future</a>
-            <label>
-                <input type="checkbox" class="all-day-checkbox">
-                All Day
-            </label>
+            <div class="event-times">
+                <div class="col">
+                    <label>Start:
+                        <input type="datetime-local" class="start-datetime">
+                    </label>
+                    <a href="#" class="set-now">Now</a>
+                </div>
+                <div class="col">
+                    <label>End:
+                        <input type="datetime-local" class="end-datetime">
+                    </label>
+                    <a href="#" class="set-far-future">Far Future</a>
+                    <label class="all-day-checkbox">
+                        <input type="checkbox">
+                        All Day
+                    </label>
+                </div>
+            </div>
             <div class="recurrence-rule-container"></div>
             <div class="exclusions-container">
-              <p>Exclusions</p>
+                <p>Exclusions</p>
             </div>
             <button class="add-exclusion">Add Exclusion</button>
             <button class="remove-event">Remove Event</button>
@@ -180,6 +186,9 @@ class CalendarEntryForm {
         endDateTimeInput.addEventListener('change', updateEventHandler);
         allDayCheckbox.addEventListener('change', () => {
             endDateTimeInput.disabled = allDayCheckbox.checked;
+            if (allDayCheckbox.checked) {
+                endDateTimeInput.value = '';
+            }
             updateEventHandler();
         });
 
@@ -223,16 +232,18 @@ class CalendarEntryForm {
                     Recurring
                 </label>
                 <div class="recurrence-details" style="display: none;">
-                    <select class="frequency-select">
-                        <option value="YEARLY">Yearly</option>
-                        <option value="MONTHLY">Monthly</option>
-                        <option value="WEEKLY">Weekly</option>
-                        <option value="DAILY">Daily</option>
-                    </select>
-                    <label>
-                        Interval:
-                        <input type="number" class="interval-input" min="1" value="1">
-                    </label>
+                    <div class="frequency-interval">
+                        <select class="frequency-select">
+                            <option value="YEARLY">Yearly</option>
+                            <option value="MONTHLY">Monthly</option>
+                            <option value="WEEKLY">Weekly</option>
+                            <option value="DAILY">Daily</option>
+                        </select>
+                        <label>
+                            Interval:
+                            <input type="number" class="interval-input" min="1" value="1">
+                        </label>
+                    </div>
                     <div class="end-recurrence">
                         <label>
                             <input type="radio" name="end-recurrence-${event.id}" value="until" checked>
@@ -463,7 +474,7 @@ class CalendarEntryForm {
     updateEvent(container, event) {
         const startDateTimeInput = container.querySelector('.start-datetime');
         const endDateTimeInput = container.querySelector('.end-datetime');
-        const allDayCheckbox = container.querySelector('.all-day-checkbox');
+        const allDayCheckbox = container.querySelector('.all-day-checkbox input');
         const exclusionContainers = container.querySelectorAll('.exclusion-container');
         const hasRecurrenceCheckbox = container.querySelector('.has-recurrence-checkbox');
         const frequencySelect = container.querySelector('.frequency-select');
@@ -478,8 +489,8 @@ class CalendarEntryForm {
         const byMinuteInput = container.querySelector('.byminute-input');
 
         event.startDateTime = startDateTimeInput.value;
-        event.endDateTime = allDayCheckbox.checked ? null : endDateTimeInput.value;
         event.isAllDay = allDayCheckbox.checked;
+        event.endDateTime = event.isAllDay ? null : endDateTimeInput.value;
 
         event.exclusions = Array.from(exclusionContainers).map(container => {
             return {
