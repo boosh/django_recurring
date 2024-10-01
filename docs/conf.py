@@ -20,6 +20,8 @@
 import os
 import sys
 
+import recurring
+
 sys.path.insert(0, os.path.abspath("../src"))
 
 # -- General configuration ---------------------------------------------
@@ -54,7 +56,7 @@ author = "Boosh"
 # the built documents.
 #
 # The short X.Y version.
-import recurring
+
 version = recurring.__version__
 # The full version, including alpha/beta/rc tags.
 release = recurring.__version__

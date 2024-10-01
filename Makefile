@@ -1,4 +1,4 @@
-.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint lint/flake8
+.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint format
 
 .DEFAULT_GOAL := help
 
@@ -48,11 +48,12 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
-lint/flake8: ## check style with flake8
-	flake8 django_recurring tests
+format: ## format with ruff
+	ruff format
 
 
-lint: lint/flake8 ## check style
+lint:  ## check style
+	ruff check
 
 test: ## run tests quickly with the default Python
 	pytest
@@ -90,3 +91,6 @@ install: clean ## install the package to the active Python's site-packages
 
 pip-dev: ## Install dev dependencies (for running tests)
 	pip install -e .[dev]
+
+pre-commit: pip-dev  ## Install pre-commit hooks (formatting with ruff)
+	pre-commit install

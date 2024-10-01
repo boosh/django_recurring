@@ -114,6 +114,9 @@ To install dev dependencies to allow running tests::
     $ python3 -m venv venv
     $ . ./venv/bin/activate
     $ make pip-dev
+    $ make pre-commit
+
+This will also configure ruff to run on a pre-commit hook to automatically format code.
 
 To run all tests::
 
