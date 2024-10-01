@@ -18,6 +18,11 @@ Create repeating datetimes in Django using dateutil rrulesets with timezone awar
 * Documentation: https://django-recurring.readthedocs.io
 * Git repo: https://github.com/boosh/django_recurring
 
+Status
+--------
+
+This library is still under heavy development. It's not ready for use yet since its abstractions may be wrong, and its ical output is buggy.
+
 Features
 --------
 
@@ -33,6 +38,8 @@ This library currently has the following limitations.
 
 * All date ranges require an end date.
     The `count <https://icalendar.org/iCalendar-RFC-5545/3-3-10-recurrence-rule.html>`_ param isn't supported.
+* Incorrect abstraction for exporting to ical strings
+    Needs to support start and end times separately from inclusion/exclusion ranges
 
 PRs welcome.
 
