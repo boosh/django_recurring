@@ -57,6 +57,11 @@ input[type="datetime-local"] {
     flex-direction: column;
 }
 
+.end-date-links {
+    display: flex;
+    gap: 30px;
+}
+
 .end-recurrence input[type="radio"] {
     margin: 5px 0;
 }
