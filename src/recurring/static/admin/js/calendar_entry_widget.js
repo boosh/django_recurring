@@ -122,6 +122,27 @@ class CalendarEntryForm {
         this.updateTextDisplay();
     }
 
+    /**
+     * Parse a string of numbers and ranges into an array of numbers
+     * @param {string} input - The input string (e.g., "1-3,5,7-9")
+     * @returns {number[]} An array of numbers
+     */
+    parseNumberRanges(input) {
+        const ranges = input.split(',');
+        const numbers = [];
+        for (const range of ranges) {
+            if (range.includes('-')) {
+                const [start, end] = range.split('-').map(Number);
+                for (let i = start; i <= end; i++) {
+                    numbers.push(i);
+                }
+            } else {
+                numbers.push(Number(range));
+            }
+        }
+        return numbers;
+    }
+
     createEventForm(container, event) {
         container.dataset.eventId = event.id.toString();
         container.innerHTML = `
@@ -490,7 +511,7 @@ class CalendarEntryForm {
                 .map(button => parseInt(button.dataset.month));
 
             if (byMonthDayInput.value) {
-                event.recurrenceRule.bymonthday = byMonthDayInput.value.split(',').map(Number);
+                event.recurrenceRule.bymonthday = this.parseNumberRanges(byMonthDayInput.value);
             }
 
             event.recurrenceRule.bysetpos = Array.from(bySetPosButtons)
@@ -498,11 +519,11 @@ class CalendarEntryForm {
                 .map(button => parseInt(button.dataset.pos));
 
             if (byHourInput.value) {
-                event.recurrenceRule.byhour = byHourInput.value.split(',').map(Number);
+                event.recurrenceRule.byhour = this.parseNumberRanges(byHourInput.value);
             }
 
             if (byMinuteInput.value) {
-                event.recurrenceRule.byminute = byMinuteInput.value.split(',').map(Number);
+                event.recurrenceRule.byminute = this.parseNumberRanges(byMinuteInput.value);
             }
         } else {
             event.recurrenceRule = null;
@@ -566,49 +587,71 @@ class CalendarEntryForm {
 
     eventToText(event, index) {
         let text = `<strong>Event ${index}:</strong><br>`;
-        text += `Start: ${new Date(event.startDateTime).toLocaleString()}<br>`;
+
+        // Start and end time on one line
         if (event.isAllDay) {
-            text += 'All Day Event<br>';
+            text += `All Day Event on ${new Date(event.startDateTime).toLocaleDateString()}<br>`;
         } else {
-            text += `End: ${new Date(event.endDateTime).toLocaleString()}<br>`;
+            text += `From ${new Date(event.startDateTime).toLocaleString()} to ${new Date(event.endDateTime).toLocaleString()}<br>`;
         }
 
+        // Recurrence information as a human-readable string
         if (event.recurrenceRule) {
-            text += 'Recurrence: ';
-            text += `${event.recurrenceRule.frequency.toLowerCase()} (interval: ${event.recurrenceRule.interval})`;
-            if (event.recurrenceRule.until) {
-                text += `, until ${new Date(event.recurrenceRule.until).toLocaleString()}`;
-            } else if (event.recurrenceRule.count) {
-                text += `, ${event.recurrenceRule.count} times`;
-            }
-            text += '<br>';
-
-            if (event.recurrenceRule.byweekday && event.recurrenceRule.byweekday.length > 0) {
-                text += `On days: ${event.recurrenceRule.byweekday.join(', ')}<br>`;
-            }
-            if (event.recurrenceRule.bymonth && event.recurrenceRule.bymonth.length > 0) {
-                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                text += `In months: ${event.recurrenceRule.bymonth.map(m => monthNames[m - 1]).join(', ')}<br>`;
-            }
-            if (event.recurrenceRule.bymonthday && event.recurrenceRule.bymonthday.length > 0) {
-                text += `On days of the month: ${event.recurrenceRule.bymonthday.join(', ')}<br>`;
-            }
-            if (event.recurrenceRule.bysetpos && event.recurrenceRule.bysetpos.length > 0) {
-                text += `By set position: ${event.recurrenceRule.bysetpos.join(', ')}<br>`;
-            }
-            if (event.recurrenceRule.byhour && event.recurrenceRule.byhour.length > 0) {
-                text += `At hours: ${event.recurrenceRule.byhour.join(', ')}<br>`;
-            }
-            if (event.recurrenceRule.byminute && event.recurrenceRule.byminute.length > 0) {
-                text += `At minutes: ${event.recurrenceRule.byminute.join(', ')}<br>`;
-            }
+            text += this.recurrenceRuleToText(event.recurrenceRule) + '<br>';
         }
 
+        // Exclusions
         if (event.exclusions.length > 0) {
             text += 'Exclusions:<br>';
             event.exclusions.forEach((exclusion, i) => {
                 text += `&nbsp;&nbsp;${i + 1}. From ${new Date(exclusion.startDate).toLocaleDateString()} to ${new Date(exclusion.endDate).toLocaleDateString()}<br>`;
             });
+        }
+
+        return text;
+    }
+
+    recurrenceRuleToText(rule) {
+        const frequency = rule.frequency.toLowerCase();
+        const interval = rule.interval;
+        let text = `Repeats ${frequency}`;
+
+        if (interval > 1) {
+            text += ` every ${interval} ${frequency}s`;
+        }
+
+        if (rule.byweekday && rule.byweekday.length > 0) {
+            const days = rule.byweekday.map(day => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].indexOf(day)]);
+            text += ` on ${days.join(', ')}`;
+        }
+
+        if (rule.bymonth && rule.bymonth.length > 0) {
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const months = rule.bymonth.map(m => monthNames[m - 1]);
+            text += ` in ${months.join(', ')}`;
+        }
+
+        if (rule.bymonthday && rule.bymonthday.length > 0) {
+            text += ` on day${rule.bymonthday.length > 1 ? 's' : ''} ${rule.bymonthday.join(', ')} of the month`;
+        }
+
+        if (rule.bysetpos && rule.bysetpos.length > 0) {
+            const positions = rule.bysetpos.map(pos => pos === -1 ? 'last' : this.getOrdinal(pos));
+            text += ` on the ${positions.join(', ')} occurrence`;
+        }
+
+        if (rule.byhour && rule.byhour.length > 0) {
+            text += ` at ${rule.byhour.join(':')}`;
+        }
+
+        if (rule.byminute && rule.byminute.length > 0) {
+            text += ` and ${rule.byminute.join(':')} minutes`;
+        }
+
+        if (rule.until) {
+            text += ` until ${new Date(rule.until).toLocaleDateString()}`;
+        } else if (rule.count) {
+            text += ` for ${rule.count} occurrences`;
         }
 
         return text;
