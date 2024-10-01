@@ -696,10 +696,26 @@ function parseInitialData(jsonString) {
 
     const events = data.events.map(eventData => ({
         id: eventData.id || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        startDateTime: eventData.startDateTime,
-        endDateTime: eventData.endDateTime,
-        isAllDay: eventData.isAllDay,
-        recurrenceRule: eventData.recurrenceRule,
+        startDateTime: eventData.startTime,
+        endDateTime: eventData.endTime,
+        isAllDay: eventData.isFullDay,
+        recurrenceRule: eventData.rule ? {
+            frequency: eventData.rule.frequency,
+            interval: eventData.rule.interval,
+            wkst: eventData.rule.wkst,
+            count: eventData.rule.count,
+            until: eventData.rule.until,
+            bysetpos: eventData.rule.bysetpos,
+            bymonth: eventData.rule.bymonth,
+            bymonthday: eventData.rule.bymonthday,
+            byyearday: eventData.rule.byyearday,
+            byweekno: eventData.rule.byweekno,
+            byweekday: eventData.rule.byweekday,
+            byhour: eventData.rule.byhour,
+            byminute: eventData.rule.byminute,
+            bysecond: eventData.rule.bysecond,
+            timezone: eventData.rule.timezone
+        } : null,
         exclusions: eventData.exclusions || []
     }));
     console.log(`Parsed JSON as events: ${JSON.stringify(events)}`);
