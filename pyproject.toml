@@ -35,6 +35,7 @@ dev = [
     "twine",
     "sphinx==8.0.2", # docs
     "watchdog==5.0.3",  # docs
+    "aider-chat", # coding assistant
 ]
 
 [project.urls]

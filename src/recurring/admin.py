@@ -1,6 +1,10 @@
 from django import forms
 from django.contrib import admin
 from django.contrib import messages
+from django.http import HttpResponse
+from django.urls import reverse, path
+from django.utils.html import format_html
+from django.utils.text import slugify
 
 from .forms import (
     RecurrenceSetForm,
@@ -16,7 +20,7 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
     list_display = ("name", "timezone", "next_occurrence", "previous_occurrence")
     search_fields = ("name",)
     list_filter = ("timezone",)
-    readonly_fields = ("ical_string",)
+    readonly_fields = ("ical_string", "ical_download_link")
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -26,6 +30,31 @@ class RecurrenceSetAdmin(admin.ModelAdmin):
         return obj.to_ical()
 
     ical_string.short_description = "iCal String"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('<path:object_id>/download-ical/',
+                 self.admin_site.admin_view(self.download_ical),
+                 name='%s_%s_download_ical' % (self.model._meta.app_label, self.model._meta.model_name)),
+        ]
+        return custom_urls + urls
+
+    def ical_download_link(self, obj):
+        url = reverse('admin:%s_%s_download_ical' % (obj._meta.app_label, obj._meta.model_name), args=[obj.pk])
+        return format_html('<a href="{}">Download iCal</a>', url)
+
+    ical_download_link.short_description = "Download iCal"
+
+    def download_ical(self, request, object_id):
+        obj = self.get_object(request, object_id)
+        if obj is None:
+            return HttpResponse("Object not found", status=404)
+
+        ical_string = obj.to_ical()
+        response = HttpResponse(ical_string, content_type='text/calendar')
+        response['Content-Disposition'] = f'attachment; filename="{slugify(obj.name)}.ics"'
+        return response
 
     def save_model(self, request, obj, form, change):
         try:
