@@ -109,7 +109,7 @@ class CalendarEntryForm {
         this.container.querySelector('#events-container').appendChild(eventContainer);
 
         const newEvent = event || {
-            id: Date.now() + Math.random(),
+            id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             startDateTime: null,
             endDateTime: null,
             isAllDay: false,
@@ -123,19 +123,24 @@ class CalendarEntryForm {
     }
 
     createEventForm(container, event) {
+        container.dataset.eventId = event.id.toString();
         container.innerHTML = `
             <label>Start:
                 <input type="datetime-local" class="start-datetime">
             </label>
+            <a href="#" class="set-now">Now</a>
             <label>End:
                 <input type="datetime-local" class="end-datetime">
             </label>
+            <a href="#" class="set-far-future">Far Future</a>
             <label>
                 <input type="checkbox" class="all-day-checkbox">
                 All Day
             </label>
             <div class="recurrence-rule-container"></div>
-            <div class="exclusions-container"></div>
+            <div class="exclusions-container">
+              <p>Exclusions</p>
+            </div>
             <button class="add-exclusion">Add Exclusion</button>
             <button class="remove-event">Remove Event</button>
         `;
@@ -154,6 +159,21 @@ class CalendarEntryForm {
         endDateTimeInput.addEventListener('change', updateEventHandler);
         allDayCheckbox.addEventListener('change', () => {
             endDateTimeInput.disabled = allDayCheckbox.checked;
+            updateEventHandler();
+        });
+
+        const setNowLink = container.querySelector('.set-now');
+        setNowLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const now = new Date();
+            startDateTimeInput.value = now.toISOString().slice(0, 16);
+            updateEventHandler();
+        });
+
+        const setFarFutureLink = container.querySelector('.set-far-future');
+        setFarFutureLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            endDateTimeInput.value = '2999-01-01T00:00';
             updateEventHandler();
         });
 
@@ -296,16 +316,28 @@ class CalendarEntryForm {
     }
 
     createWeekdayButtons(container) {
-        const weekdays = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+        const weekdays = [
+            { code: 'MO', label: 'Mon' },
+            { code: 'TU', label: 'Tue' },
+            { code: 'WE', label: 'Wed' },
+            { code: 'TH', label: 'Thu' },
+            { code: 'FR', label: 'Fri' },
+            { code: 'SA', label: 'Sat' },
+            { code: 'SU', label: 'Sun' }
+        ];
         const weekdayContainer = container.querySelector('.weekday-buttons');
         weekdays.forEach(day => {
             const button = document.createElement('button');
-            button.textContent = day;
+            button.textContent = day.label;
             button.className = 'weekday-button';
+            button.dataset.code = day.code;
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 button.classList.toggle('selected');
-                this.updateEvent(container.closest('.event-container'), null);
+                const eventContainer = container.closest('.event-container');
+                const eventId = eventContainer.dataset.eventId;
+                const event = this.events.find(event => event.id.toString() === eventId);
+                this.updateEvent(eventContainer, event);
             });
             weekdayContainer.appendChild(button);
         });
@@ -322,7 +354,10 @@ class CalendarEntryForm {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 button.classList.toggle('selected');
-                this.updateEvent(container.closest('.event-container'), null);
+                const eventContainer = container.closest('.event-container');
+                const eventId = eventContainer.dataset.eventId;
+                const event = this.events.find(event => event.id.toString() === eventId);
+                this.updateEvent(eventContainer, event);
             });
             monthGrid.appendChild(button);
         });
@@ -338,7 +373,10 @@ class CalendarEntryForm {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 button.classList.toggle('selected');
-                this.updateEvent(container.closest('.event-container'), null);
+                const eventContainer = container.closest('.event-container');
+                const eventId = eventContainer.dataset.eventId;
+                const event = this.events.find(event => event.id.toString() === eventId);
+                this.updateEvent(eventContainer, event);
             });
             bySetPosContainer.appendChild(button);
         });
@@ -445,7 +483,7 @@ class CalendarEntryForm {
 
             event.recurrenceRule.byweekday = Array.from(weekdayButtons)
                 .filter(button => button.classList.contains('selected'))
-                .map(button => button.textContent);
+                .map(button => button.dataset.code);
 
             event.recurrenceRule.bymonth = Array.from(monthButtons)
                 .filter(button => button.classList.contains('selected'))
@@ -544,6 +582,26 @@ class CalendarEntryForm {
                 text += `, ${event.recurrenceRule.count} times`;
             }
             text += '<br>';
+
+            if (event.recurrenceRule.byweekday && event.recurrenceRule.byweekday.length > 0) {
+                text += `On days: ${event.recurrenceRule.byweekday.join(', ')}<br>`;
+            }
+            if (event.recurrenceRule.bymonth && event.recurrenceRule.bymonth.length > 0) {
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                text += `In months: ${event.recurrenceRule.bymonth.map(m => monthNames[m - 1]).join(', ')}<br>`;
+            }
+            if (event.recurrenceRule.bymonthday && event.recurrenceRule.bymonthday.length > 0) {
+                text += `On days of the month: ${event.recurrenceRule.bymonthday.join(', ')}<br>`;
+            }
+            if (event.recurrenceRule.bysetpos && event.recurrenceRule.bysetpos.length > 0) {
+                text += `By set position: ${event.recurrenceRule.bysetpos.join(', ')}<br>`;
+            }
+            if (event.recurrenceRule.byhour && event.recurrenceRule.byhour.length > 0) {
+                text += `At hours: ${event.recurrenceRule.byhour.join(', ')}<br>`;
+            }
+            if (event.recurrenceRule.byminute && event.recurrenceRule.byminute.length > 0) {
+                text += `At minutes: ${event.recurrenceRule.byminute.join(', ')}<br>`;
+            }
         }
 
         if (event.exclusions.length > 0) {
