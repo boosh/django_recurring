@@ -277,15 +277,15 @@ class CalendarEntry(models.Model):
         for event_data in data.get("events", []):
             event = Event(
                 calendar_entry=self,
-                start_time=datetime.fromisoformat(event_data["start_time"]),
-                end_time=datetime.fromisoformat(event_data["end_time"])
-                if event_data.get("end_time")
+                start_time=event_data["start_date_time"],
+                end_time=event_data["end_date_time"]
+                if event_data.get("end_date_time")
                 else None,
                 is_full_day=event_data.get("is_full_day", False),
             )
             event.save()
 
-            rule_data = event_data["rule"]
+            rule_data = event_data["recurrence_rule"]
             rule = RecurrenceRule(
                 frequency=RecurrenceRule.Frequency[rule_data["frequency"]].value,
                 interval=rule_data.get("interval", 1),
@@ -311,8 +311,8 @@ class CalendarEntry(models.Model):
             for exclusion_data in event_data.get("exclusions", []):
                 ExclusionDateRange.objects.create(
                     event=event,
-                    start_date=datetime.fromisoformat(exclusion_data["start_date"]),
-                    end_date=datetime.fromisoformat(exclusion_data["end_date"]),
+                    start_date=exclusion_data["start_date"],
+                    end_date=exclusion_data["end_date"],
                 )
 
     def recalculate_occurrences(self):

@@ -83,60 +83,62 @@ class CalendarEntryForm(forms.ModelForm):
                         "Calendar entry data must contain an 'events' list"
                     )
 
+                # Get the submitted timezone
+                submitted_timezone = pytz.timezone(cleaned_data.get("timezone").name)
+
                 for event_data in calendar_entry_dict["events"]:
                     if not isinstance(event_data, dict):
                         raise ValueError("Each event must be a dictionary")
-                    if "start_time" not in event_data or "end_time" not in event_data:
+                    if (
+                        "start_date_time" not in event_data
+                        or "end_date_time" not in event_data
+                    ):
                         raise ValueError(
-                            "Each event must have 'start_time' and 'end_time'"
+                            "Each event must have 'start_date_time' and 'end_date_time'"
                         )
-                    # todo - this is wrong. recurrence rules and exclusions are both optional
-                    if "rule" not in event_data:
-                        raise ValueError("Each event must contain a 'rule' key")
-                    if not isinstance(event_data.get("exclusions"), list):
-                        raise ValueError("Each event must contain an 'exclusions' list")
 
-                    # Convert start_time and end_time to timezone-aware datetimes
-                    start_time = datetime.fromisoformat(event_data["start_time"])
-                    end_time = (
-                        datetime.fromisoformat(event_data["end_time"])
-                        if event_data["end_time"]
-                        else None
+                    # Convert start_date_time and end_date_time to timezone-aware datetimes
+                    start_time = datetime.fromisoformat(event_data["start_date_time"])
+                    end_time = datetime.fromisoformat(event_data["end_date_time"])
+
+                    event_data["start_date_time"] = submitted_timezone.localize(
+                        start_time
                     )
+                    event_data["end_date_time"] = submitted_timezone.localize(end_time)
 
-                    # Get the submitted timezone
-                    submitted_timezone = pytz.timezone(
-                        cleaned_data.get("timezone").name
-                    )
+                    # Rule and exclusions are optional
+                    if "rule" in event_data:
+                        if not isinstance(event_data["rule"], dict):
+                            raise ValueError("Event rule must be a dictionary")
 
-                    event_data["start_time"] = submitted_timezone.localize(start_time)
-                    if end_time:
-                        event_data["end_time"] = submitted_timezone.localize(end_time)
+                    if "exclusions" in event_data:
+                        if not isinstance(event_data["exclusions"], list):
+                            raise ValueError("Event exclusions must be a list")
 
-                    for exclusion_data in event_data["exclusions"]:
-                        if not isinstance(exclusion_data, dict):
-                            raise ValueError("Each exclusion must be a dictionary")
-                        if (
-                            "start_date" not in exclusion_data
-                            or "end_date" not in exclusion_data
-                        ):
-                            raise ValueError(
-                                "Each exclusion must have 'start_date' and 'end_date'"
+                        for exclusion_data in event_data["exclusions"]:
+                            if not isinstance(exclusion_data, dict):
+                                raise ValueError("Each exclusion must be a dictionary")
+                            if (
+                                "start_date" not in exclusion_data
+                                or "end_date" not in exclusion_data
+                            ):
+                                raise ValueError(
+                                    "Each exclusion must have 'start_date' and 'end_date'"
+                                )
+
+                            exclusion_start = datetime.fromisoformat(
+                                exclusion_data["start_date"]
+                            )
+                            exclusion_end = datetime.fromisoformat(
+                                exclusion_data["end_date"]
                             )
 
-                        exclusion_start = datetime.fromisoformat(
-                            exclusion_data["start_date"]
-                        )
-                        exclusion_end = datetime.fromisoformat(
-                            exclusion_data["end_date"]
-                        )
-
-                        exclusion_data["start_date"] = submitted_timezone.localize(
-                            exclusion_start
-                        )
-                        exclusion_data["end_date"] = submitted_timezone.localize(
-                            exclusion_end
-                        )
+                            exclusion_data["start_date"] = submitted_timezone.localize(
+                                exclusion_start
+                            )
+                            exclusion_data["end_date"] = submitted_timezone.localize(
+                                exclusion_end
+                            )
 
             except json.JSONDecodeError:
                 self.add_error(
