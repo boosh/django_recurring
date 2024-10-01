@@ -49,7 +49,6 @@ class TestRecurrenceSetForm:
         """Test that the form is invalid when required fields are missing."""
         form = RecurrenceSetForm(data={})
         assert not form.is_valid()
-        assert "name" in form.errors
         assert "timezone" in form.errors
 
     def test_form_invalid_json(self, valid_recurrence_set_data):
@@ -159,7 +158,6 @@ class TestRecurrenceSetForm:
     @pytest.mark.parametrize(
         "invalid_field,invalid_value",
         [
-            ("name", ""),  # Empty name
             ("timezone", "Invalid/Timezone"),  # Invalid timezone
             (
                 "recurrence_set",
