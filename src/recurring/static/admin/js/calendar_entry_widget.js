@@ -28,7 +28,8 @@ function initCalendarEntryWidget(name) {
             calendarEntryForm.setEvents(parsedEvents);
         } catch (error) {
             console.error('Error parsing initial data:', error);
-            text.innerHTML = 'Error: Invalid calendar entry data';
+            console.error('Initial data:', initialData);
+            text.innerHTML = `Error: Invalid calendar entry data - ${error.message}`;
         }
     }
 
@@ -693,12 +694,14 @@ function parseInitialData(jsonString) {
     const data = JSON.parse(jsonString);
     console.log('Parsed JSON data:', data);
 
-    return data.events.map(eventData => ({
-        id: eventData.id,
+    const events = data.events.map(eventData => ({
+        id: eventData.id || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         startDateTime: eventData.startDateTime,
         endDateTime: eventData.endDateTime,
         isAllDay: eventData.isAllDay,
         recurrenceRule: eventData.recurrenceRule,
         exclusions: eventData.exclusions || []
     }));
+    console.log(`Parsed JSON as events: ${JSON.stringify(events)}`);
+    return events;
 }
