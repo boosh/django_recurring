@@ -253,7 +253,9 @@ class CalendarEntry(models.Model):
                     "start_time": event.start_time.isoformat(),
                     "end_time": event.end_time.isoformat() if event.end_time else None,
                     "is_full_day": event.is_full_day,
-                    "rule": event.recurrence_rule.to_dict(),
+                    "rule": event.recurrence_rule.to_dict()
+                    if event.recurrence_rule
+                    else {},
                     "exclusions": [
                         {
                             "start_date": exclusion.start_date.isoformat(),
@@ -285,28 +287,29 @@ class CalendarEntry(models.Model):
             )
             event.save()
 
-            rule_data = event_data["recurrence_rule"]
-            rule = RecurrenceRule(
-                frequency=RecurrenceRule.Frequency[rule_data["frequency"]].value,
-                interval=rule_data.get("interval", 1),
-                wkst=rule_data.get("wkst"),
-                count=rule_data.get("count"),
-                until=datetime.fromisoformat(rule_data["until"])
-                if rule_data.get("until")
-                else None,
-                bysetpos=rule_data.get("bysetpos"),
-                bymonth=rule_data.get("bymonth"),
-                bymonthday=rule_data.get("bymonthday"),
-                byyearday=rule_data.get("byyearday"),
-                byweekno=rule_data.get("byweekno"),
-                byweekday=rule_data.get("byweekday"),
-                byhour=rule_data.get("byhour"),
-                byminute=rule_data.get("byminute"),
-                bysecond=rule_data.get("bysecond"),
-            )
-            rule.save()
-            event.recurrence_rule = rule
-            event.save()
+            rule_data = event_data.get("recurrence_rule")
+            if rule_data:
+                rule = RecurrenceRule(
+                    frequency=RecurrenceRule.Frequency[rule_data["frequency"]].value,
+                    interval=rule_data.get("interval", 1),
+                    wkst=rule_data.get("wkst"),
+                    count=rule_data.get("count"),
+                    until=datetime.fromisoformat(rule_data["until"])
+                    if rule_data.get("until")
+                    else None,
+                    bysetpos=rule_data.get("bysetpos"),
+                    bymonth=rule_data.get("bymonth"),
+                    bymonthday=rule_data.get("bymonthday"),
+                    byyearday=rule_data.get("byyearday"),
+                    byweekno=rule_data.get("byweekno"),
+                    byweekday=rule_data.get("byweekday"),
+                    byhour=rule_data.get("byhour"),
+                    byminute=rule_data.get("byminute"),
+                    bysecond=rule_data.get("bysecond"),
+                )
+                rule.save()
+                event.recurrence_rule = rule
+                event.save()
 
             for exclusion_data in event_data.get("exclusions", []):
                 ExclusionDateRange.objects.create(

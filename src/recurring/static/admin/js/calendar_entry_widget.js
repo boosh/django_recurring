@@ -636,46 +636,56 @@ class CalendarEntryForm {
     }
 
     recurrenceRuleToText(rule) {
-        const frequency = rule.frequency.toLowerCase();
-        const interval = rule.interval;
-        let text = `Repeats ${frequency}`;
-
-        if (interval > 1) {
-            text += ` every ${interval} ${frequency}s`;
+        if (!rule || typeof rule !== 'object') {
+            return 'Invalid recurrence rule';
         }
 
-        if (rule.byweekday && rule.byweekday.length > 0) {
-            const days = rule.byweekday.map(day => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].indexOf(day)]);
-            text += ` on ${days.join(', ')}`;
-        }
+        let text = '';
 
-        if (rule.bymonth && rule.bymonth.length > 0) {
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            const months = rule.bymonth.map(m => monthNames[m - 1]);
-            text += ` in ${months.join(', ')}`;
-        }
+        if (rule.frequency) {
+            const frequency = rule.frequency.toLowerCase();
+            const interval = rule.interval || 1;
+            text += `Repeats ${frequency}`;
 
-        if (rule.bymonthday && rule.bymonthday.length > 0) {
-            text += ` on day${rule.bymonthday.length > 1 ? 's' : ''} ${rule.bymonthday.join(', ')} of the month`;
-        }
+            if (interval > 1) {
+                text += ` every ${interval} ${frequency}s`;
+            }
 
-        if (rule.bysetpos && rule.bysetpos.length > 0) {
-            const positions = rule.bysetpos.map(pos => pos === -1 ? 'last' : this.getOrdinal(pos));
-            text += ` on the ${positions.join(', ')} occurrence`;
-        }
+            if (rule.byweekday && rule.byweekday.length > 0) {
+                const days = rule.byweekday.map(day => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].indexOf(day)]);
+                text += ` on ${days.join(', ')}`;
+            }
 
-        if (rule.byhour && rule.byhour.length > 0) {
-            text += ` at hour${rule.byhour.length > 1 ? 's' : ''} ${rule.byhour.join(', ')}`;
-        }
+            if (rule.bymonth && rule.bymonth.length > 0) {
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                const months = rule.bymonth.map(m => monthNames[m - 1]);
+                text += ` in ${months.join(', ')}`;
+            }
 
-        if (rule.byminute && rule.byminute.length > 0) {
-            text += ` at minute${rule.byminute.length > 1 ? 's' : ''} ${rule.byminute.join(', ')}`;
-        }
+            if (rule.bymonthday && rule.bymonthday.length > 0) {
+                text += ` on day${rule.bymonthday.length > 1 ? 's' : ''} ${rule.bymonthday.join(', ')} of the month`;
+            }
 
-        if (rule.until) {
-            text += ` until ${new Date(rule.until).toLocaleString()}`;
-        } else if (rule.count) {
-            text += ` for ${rule.count} occurrences`;
+            if (rule.bysetpos && rule.bysetpos.length > 0) {
+                const positions = rule.bysetpos.map(pos => pos === -1 ? 'last' : this.getOrdinal(pos));
+                text += ` on the ${positions.join(', ')} occurrence`;
+            }
+
+            if (rule.byhour && rule.byhour.length > 0) {
+                text += ` at hour${rule.byhour.length > 1 ? 's' : ''} ${rule.byhour.join(', ')}`;
+            }
+
+            if (rule.byminute && rule.byminute.length > 0) {
+                text += ` at minute${rule.byminute.length > 1 ? 's' : ''} ${rule.byminute.join(', ')}`;
+            }
+
+            if (rule.until) {
+                text += ` until ${new Date(rule.until).toLocaleString()}`;
+            } else if (rule.count) {
+                text += ` for ${rule.count} occurrences`;
+            }
+        } else {
+            text = 'Recurrence rule is missing frequency';
         }
 
         return text;
@@ -710,7 +720,7 @@ function parseInitialData(jsonString) {
             bymonthday: eventData.rule.bymonthday,
             byyearday: eventData.rule.byyearday,
             byweekno: eventData.rule.byweekno,
-            byweekday: Array.isArray(eventData.rule.byweekday) ? eventData.rule.byweekday : [eventData.rule.byweekday],
+            byweekday: eventData.rule.byweekday ? (Array.isArray(eventData.rule.byweekday) ? eventData.rule.byweekday : [eventData.rule.byweekday]) : undefined,
             byhour: eventData.rule.byhour,
             byminute: eventData.rule.byminute,
             bysecond: eventData.rule.bysecond,

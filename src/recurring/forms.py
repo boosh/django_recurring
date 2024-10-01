@@ -99,12 +99,18 @@ class CalendarEntryForm(forms.ModelForm):
 
                     # Convert start_date_time and end_date_time to timezone-aware datetimes
                     start_time = datetime.fromisoformat(event_data["start_date_time"])
-                    end_time = datetime.fromisoformat(event_data["end_date_time"])
+                    end_time = (
+                        datetime.fromisoformat(event_data["end_date_time"])
+                        if event_data["end_date_time"]
+                        else None
+                    )
 
                     event_data["start_date_time"] = submitted_timezone.localize(
                         start_time
                     )
-                    event_data["end_date_time"] = submitted_timezone.localize(end_time)
+                    event_data["end_date_time"] = (
+                        submitted_timezone.localize(end_time) if end_time else None
+                    )
 
                     # Rule and exclusions are optional
                     if "rule" in event_data:
