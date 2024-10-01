@@ -54,21 +54,35 @@ If you are proposing a feature:
 * Remember that this is a volunteer-driven project, and that contributions
   are welcome :)
 
-Get Started!
-------------
+Development
+-----------
 
-Ready to contribute? Here's how to set up `django_recurring` for local development.
+Code style
+~~~~~~~~~~
+
+Please install `pre-commit <https://pre-commit.com/>`_ before git commit.  It will ensure that the code is formatted and linted as expected using `ruff <https://docs.astral.sh/ruff/>`_.
+
+.. code-block:: shell
+
+   pre-commit install
+
+Local setup
+~~~~~~~~~~~
+
+Set up `django_recurring` for local development.
 
 1. Fork the `django_recurring` repo on GitHub.
 2. Clone your fork locally::
 
     $ git clone git@github.com:your_name_here/django_recurring.git
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+3. Install your local copy into a virtualenv::
 
-    $ mkvirtualenv django_recurring
     $ cd django_recurring/
-    $ python setup.py develop
+    $ python3 -m venv venv
+    $ . ./venv/bin/activate
+    $ make pip-dev
+    $ make pre-commit
 
 4. Create a branch for local development::
 
@@ -95,7 +109,7 @@ Ready to contribute? Here's how to set up `django_recurring` for local developme
 7. Submit a pull request through the GitHub website.
 
 Pull Request Guidelines
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Before you submit a pull request, check that it meets these guidelines:
 
@@ -108,7 +122,7 @@ Before you submit a pull request, check that it meets these guidelines:
    and make sure that the tests pass for all supported Python versions.
 
 Tips
-----
+~~~~
 To install dev dependencies to allow running tests::
 
     $ python3 -m venv venv
@@ -137,4 +151,4 @@ $ bump2version patch # possible: major / minor / patch
 $ git push
 $ git push --tags
 
-Travis will then deploy to PyPI if tests pass.
+GitHub will then deploy to PyPI if tests pass.
