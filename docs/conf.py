@@ -20,9 +20,9 @@
 import os
 import sys
 
-import recurring
-
 sys.path.insert(0, os.path.abspath("../src"))
+
+import recurring  # noqa: E402
 
 # -- General configuration ---------------------------------------------
 
