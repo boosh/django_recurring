@@ -35,7 +35,7 @@ class ExclusionDateRangeAdmin(admin.ModelAdmin):
 
 class CalendarEntryAdmin(admin.ModelAdmin):
     form = CalendarEntryForm
-    list_display = ("name", "timezone", "next_occurrence", "previous_occurrence")
+    list_display = ("name", "timezone", "previous_occurrence", "next_occurrence")
     search_fields = ("name",)
     list_filter = ("timezone",)
     readonly_fields = ("ical_string", "ical_download_link")

@@ -128,9 +128,7 @@ class RecurrenceRule(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
-    def _get_rrule_kwargs(
-        self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    def _get_rrule_kwargs(self, start_date: datetime) -> Dict[str, Any]:
         weekday_map = {
             MONDAY: MO,
             TUESDAY: TU,
@@ -147,7 +145,6 @@ class RecurrenceRule(models.Model):
             "dtstart": start_date.astimezone(
                 pytz.timezone(self.event.calendar_entry.timezone.name)
             ),
-            "until": end_date,
         }
 
         if self.wkst is not None:
@@ -179,8 +176,8 @@ class RecurrenceRule(models.Model):
 
         return kwargs
 
-    def to_rrule(self, start_date: datetime, end_date: datetime) -> rrule:
-        return rrule(**self._get_rrule_kwargs(start_date, end_date))
+    def to_rrule(self, start_date: datetime) -> rrule:
+        return rrule(**self._get_rrule_kwargs(start_date))
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -239,9 +236,7 @@ class CalendarEntry(models.Model):
 
         for event in self.events.all():
             if event.recurrence_rule:
-                rrule_obj = event.recurrence_rule.to_rrule(
-                    event.start_time, event.end_time
-                )
+                rrule_obj = event.recurrence_rule.to_rrule(event.start_time)
                 rset.rrule(rrule_obj)
             else:
                 # If there's no recurrence rule, add the event as a single occurrence
