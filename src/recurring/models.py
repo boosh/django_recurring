@@ -282,7 +282,7 @@ class CalendarEntry(models.Model):
         self.timezone = Timezone.objects.get(
             name=data.get("timezone", self.timezone.name)
         )
-        self.save()
+        self.save(recalculate=False)
         tz = self.timezone.as_tz
 
         for event_data in data.get("events", []):

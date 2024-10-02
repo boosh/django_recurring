@@ -27,19 +27,20 @@ def calendar_entry(timezone_obj):
 
 
 @pytest.fixture
-def event(calendar_entry):
-    return Event.objects.create(
-        calendar_entry=calendar_entry,
-        start_time=django_timezone.now(),
-        end_time=django_timezone.now() + django_timezone.timedelta(hours=1),
+def recurrence_rule():
+    return RecurrenceRule.objects.create(
+        frequency=RecurrenceRule.Frequency.DAILY,
+        interval=1,
     )
 
 
 @pytest.fixture
-def recurrence_rule(event):
-    return RecurrenceRule.objects.create(
-        frequency=RecurrenceRule.Frequency.DAILY,
-        interval=1,
+def event(calendar_entry, recurrence_rule):
+    return Event.objects.create(
+        calendar_entry=calendar_entry,
+        start_time=django_timezone.now(),
+        end_time=django_timezone.now() + django_timezone.timedelta(hours=1),
+        recurrence_rule=recurrence_rule,
     )
 
 
@@ -73,7 +74,7 @@ class TestCalendarEntry:
         assert calendar_entry_dict["timezone"] == "UTC"
         assert len(calendar_entry_dict["events"]) == 1
 
-    def test_from_dict(self, calendar_entry, event):
+    def test_from_dict(self, calendar_entry):
         tz = calendar_entry.timezone.as_tz
         start_time_naive = datetime.fromisoformat("2023-01-01T00:00:00+00:00")
         end_time_naive = datetime.fromisoformat("2023-01-01T01:00:00+00:00")
@@ -90,7 +91,7 @@ class TestCalendarEntry:
                     "start_time": tz.localize(start_time_naive.replace(tzinfo=None)),
                     "end_time": tz.localize(end_time_naive.replace(tzinfo=None)),
                     "is_full_day": False,
-                    "rule": {
+                    "recurrence_rule": {
                         "frequency": "DAILY",
                         "interval": 1,
                         "byweekday": ["MO", "WE", "FR"],
