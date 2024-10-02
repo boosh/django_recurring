@@ -225,21 +225,27 @@ class TestRecurrenceRule:
 @pytest.mark.django_db
 class TestExclusionDateRange:
     def test_exclusion_date_range_creation(self, event):
-        start_date = django_timezone.now()
+        event_start_time = django_timezone.datetime(2023, 1, 1, 10, 30, tzinfo=pytz.utc)
+        event.start_time = event_start_time
+        event.save()
+
+        start_date = django_timezone.datetime(2023, 1, 1, tzinfo=pytz.utc)
         end_date = start_date + django_timezone.timedelta(days=7)
         exclusion = ExclusionDateRange.objects.create(
             event=event,
             start_date=start_date,
             end_date=end_date,
         )
-        assert exclusion.start_date == start_date
-        assert exclusion.end_date == end_date
+        assert exclusion.start_date.time() == event_start_time.time()
+        assert exclusion.end_date.time() == event_start_time.time()
+        assert (exclusion.end_date - exclusion.start_date).days == 7
         assert str(exclusion).startswith(
             "Exclusion date range for Event for Test Calendar Entry:"
         )
 
     def test_get_all_dates(self, event):
-        event.start_time = django_timezone.datetime(2023, 1, 1, 10, 30, tzinfo=pytz.utc)
+        event_start_time = django_timezone.datetime(2023, 1, 1, 10, 30, tzinfo=pytz.utc)
+        event.start_time = event_start_time
         event.save()
 
         start_date = django_timezone.datetime(2023, 1, 1, tzinfo=pytz.utc)
@@ -249,11 +255,11 @@ class TestExclusionDateRange:
             start_date=start_date,
             end_date=end_date,
         )
-        exclusion.sync_time_component()
         all_dates = exclusion.get_all_dates()
 
         assert len(all_dates) == 3
         for date in all_dates:
-            assert date.time() == event.start_time.time()
+            assert date.time() == event_start_time.time()
         assert all_dates[0].date() == start_date.date()
         assert all_dates[-1].date() == end_date.date()
+        assert (all_dates[-1] - all_dates[0]).days == 2
