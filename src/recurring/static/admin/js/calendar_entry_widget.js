@@ -282,7 +282,7 @@ class CalendarEntryForm {
                     </div>
                     <div class="bymonthday-container">
                         <label>By Month Day:</label>
-                        <input type="text" class="bymonthday-input" placeholder="e.g. 1,15,-1">
+                        <input type="text" class="bymonthday-input" placeholder="e.g. 1-10,15">
                     </div>
                     <div class="byweekday-container">
                         <label>By Weekday:</label>
@@ -296,13 +296,13 @@ class CalendarEntryForm {
                         <div class="byhour-container">
                             <label>
                                 By Hour:
-                                <input type="text" class="byhour-input" placeholder="e.g. 9,12,15">
+                                <input type="text" class="byhour-input" placeholder="e.g. 1-10,15">
                             </label>
                         </div>
                         <div class="byminute-container">
                             <label>
                                 By Minute:
-                                <input type="text" class="byminute-input" placeholder="e.g. 0,30">
+                                <input type="text" class="byminute-input" placeholder="e.g. 1-10,15">
                             </label>
                         </div>
                     </div>

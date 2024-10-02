@@ -207,7 +207,7 @@ class CalendarEntry(models.Model):
         null=True,
         blank=True,
         max_length=255,
-        help_text=_("The name of the calendar entry"),
+        help_text=_("The name of the calendar entry. Will be used as the ical summary"),
     )
     description = models.TextField(
         blank=True, help_text=_("A description of the calendar entry")
