@@ -39,17 +39,6 @@ Features
 * Export recurrence sets to iCal format (.ics files)
 * Admin widget for creating and editing recurrence patterns
 
-Limitations
------------
-This library currently has the following limitations.
-
-* All date ranges require an end date.
-    The `count <https://icalendar.org/iCalendar-RFC-5545/3-3-10-recurrence-rule.html>`_ param isn't supported.
-* Incorrect abstraction for exporting to ical strings
-    Needs to support start and end times separately from inclusion/exclusion ranges
-
-PRs welcome.
-
 Quick Start
 -----------
 

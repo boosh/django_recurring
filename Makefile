@@ -70,7 +70,14 @@ coverage: ## check code coverage quickly with the default Python
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/recurring.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ src/recurring src/recurring/tests src/recurring/migrations
+	sphinx-apidoc -o docs/ \
+		src/recurring src/recurring/tests \
+		src/recurring/migrations \
+		src/recurring/settings_test.py \
+		src/recurring/admin.py \
+		src/recurring/apps.py \
+		src/recurring/widgets.py \
+		src/recurring/forms.py
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
