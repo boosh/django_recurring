@@ -15,6 +15,16 @@ build:
     # rust: "1.64"
     # golang: "1.19"
 
+commands:
+  - sphinx-apidoc -o docs/ \
+      src/recurring src/recurring/tests \
+      src/recurring/migrations \
+      src/recurring/settings_test.py \
+      src/recurring/admin.py \
+      src/recurring/apps.py \
+      src/recurring/widgets.py \
+      src/recurring/forms.py
+
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
   configuration: docs/conf.py
