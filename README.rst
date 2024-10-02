@@ -63,61 +63,88 @@ Quick Start
 
       python manage.py migrate recurring
 
-4. Add a RecurrenceSet to your model:
+4. Add CalendarEntry or Event to your model:
+
+   For a calendar with multiple events:
 
    .. code-block:: python
 
       from django.db import models
-      from recurring.models import RecurrenceSet
+      from recurring.models import CalendarEntry
 
-      class Event(models.Model):
+      class Meeting(models.Model):
           name = models.CharField(max_length=200)
-          recurrence = models.ForeignKey(RecurrenceSet, on_delete=models.CASCADE)
+          calendar = models.ForeignKey(CalendarEntry, on_delete=models.CASCADE)
 
-5. Use the RecurrenceSet in your code:
+   For a single recurring event:
+
+   .. code-block:: python
+
+      from django.db import models
+      from recurring.models import Event
+
+      class Task(models.Model):
+          name = models.CharField(max_length=200)
+          schedule = models.ForeignKey(Event, on_delete=models.CASCADE)
+
+5. Use CalendarEntry or Event in your code:
 
    .. code-block:: python
 
       from django.utils import timezone
-      from recurring.models import RecurrenceSet, RecurrenceRule, RecurrenceSetRule
+      from recurring.models import CalendarEntry, Event, RecurrenceRule, Timezone, MONDAY
 
-      # Create a RecurrenceSet
-      recurrence_set = RecurrenceSet.objects.create(name="Weekly Meeting")
+      # Create a CalendarEntry with multiple events
+      calendar = CalendarEntry.objects.create(
+          name="Team Meetings",
+          timezone=Timezone.objects.get(name="UTC")
+      )
 
-      # Create a RecurrenceRule
-      rule = RecurrenceRule.objects.create(
+      weekly_rule = RecurrenceRule.objects.create(
           frequency=RecurrenceRule.Frequency.WEEKLY,
           interval=1,
-          byweekday=[0]  # Monday
+          byweekday=[MONDAY]
       )
 
-      # Add a date range to the rule
-      rule.date_ranges.create(
-          start_date=timezone.now(),
-          end_date=timezone.now() + timezone.timedelta(days=365)
+      Event.objects.create(
+          calendar_entry=calendar,
+          start_time=timezone.now(),
+          end_time=timezone.now() + timezone.timedelta(hours=1),
+          recurrence_rule=weekly_rule
       )
 
-      # Link the rule to the RecurrenceSet
-      RecurrenceSetRule.objects.create(
-          recurrence_set=recurrence_set,
-          recurrence_rule=rule
+      # Create a single recurring event
+      monthly_rule = RecurrenceRule.objects.create(
+          frequency=RecurrenceRule.Frequency.MONTHLY,
+          interval=1,
+          bysetpos=[1],
+          byweekday=[MONDAY]
       )
 
-      # Recalculate occurrences
-      recurrence_set.recalculate_occurrences()
+      task = Event.objects.create(
+          start_time=timezone.now(),
+          end_time=timezone.now() + timezone.timedelta(hours=2),
+          recurrence_rule=monthly_rule
+      )
 
-      # Query events within a date range
-      events = Event.objects.filter(
-          recurrence__next_occurrence__gte=timezone.now(),
-          recurrence__previous_occurrence__lte=timezone.now() + timezone.timedelta(days=30)
+      # Query upcoming meetings
+      upcoming_meetings = Meeting.objects.filter(
+          calendar__next_occurrence__gte=timezone.now(),
+          calendar__next_occurrence__lte=timezone.now() + timezone.timedelta(days=30)
+      )
+
+      # Query upcoming tasks
+      upcoming_tasks = Task.objects.filter(
+          schedule__start_time__gte=timezone.now(),
+          schedule__start_time__lte=timezone.now() + timezone.timedelta(days=30)
       )
 
 6. Export to iCal format:
 
    .. code-block:: python
 
-      ical_string = recurrence_set.to_ical()
-      with open('weekly_meeting.ics', 'w') as f:
+      ical_string = calendar.to_ical()
+      with open('team_meetings.ics', 'w') as f:
           f.write(ical_string)
 
 For more detailed usage and examples, see the `documentation <https://django-recurring.readthedocs.io>`_.

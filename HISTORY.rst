@@ -3,7 +3,7 @@ History
 =======
 0.3.0 (2024-10-02)
 ------------------
-* Breaking change: Total refactoring of models to better align with ical rrules.
+* Breaking change: Total refactoring of models to better align with ical/dateutil rrules.
 
 0.2.0 (2024-10-01)
 ------------------
