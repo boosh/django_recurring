@@ -198,7 +198,9 @@ class RecurrenceRule(models.Model):
             "byhour": self.byhour,
             "byminute": self.byminute,
             "bysecond": self.bysecond,
-            "timezone": self.event.calendar_entry.timezone.name,
+            "timezone": self.event.calendar_entry.timezone.name
+            if hasattr(self, "event")
+            else None,
         }
 
 
