@@ -47,6 +47,7 @@ class CalendarEntryForm(forms.ModelForm):
 
                 logger.info("Adding new events and exclusions")
                 instance.from_dict(calendar_entry_data)
+                instance.save(recalculate=False)
 
             logger.info("Recalculating occurrences")
             instance.recalculate_occurrences()
@@ -98,9 +99,14 @@ class CalendarEntryForm(forms.ModelForm):
                         else None
                     )
 
-                    event_data["start_time"] = submitted_timezone.localize(start_time)
+                    # Ensure the datetimes are timezone-aware
+                    event_data["start_time"] = submitted_timezone.localize(
+                        start_time.replace(tzinfo=None)
+                    )
                     event_data["end_time"] = (
-                        submitted_timezone.localize(end_time) if end_time else None
+                        submitted_timezone.localize(end_time.replace(tzinfo=None))
+                        if end_time
+                        else None
                     )
                     event_data["is_full_day"] = event_data.get("is_full_day", False)
 

@@ -1,3 +1,4 @@
+import traceback
 import uuid
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -237,12 +238,19 @@ class CalendarEntry(models.Model):
         rset = rruleset()
 
         for event in self.events.all():
-            rrule_obj = event.recurrence_rule.to_rrule(event.start_time, event.end_time)
-            rset.rrule(rrule_obj)
+            if event.recurrence_rule:
+                rrule_obj = event.recurrence_rule.to_rrule(
+                    event.start_time, event.end_time
+                )
+                rset.rrule(rrule_obj)
+            else:
+                # If there's no recurrence rule, add the event as a single occurrence
+                rset.rdate(event.start_time)
 
             for exclusion in event.exclusions.all():
                 # the time component is kept in sync with the event start time
-                rset.exdate(exclusion.get_all_dates())
+                for exclusion_date in exclusion.get_all_dates():
+                    rset.exdate(exclusion_date)
 
         return rset
 
@@ -326,19 +334,30 @@ class CalendarEntry(models.Model):
             now = django_timezone.now()
             tz = pytz.timezone(self.timezone.name)
 
-            next_occurrence = rruleset.after(now, inc=False)
+            # Get all occurrences as a list
+            all_occurrences = list(rruleset)
+
+            # Find the next occurrence
+            next_occurrences = [occ for occ in all_occurrences if occ > now]
             self.next_occurrence = (
-                next_occurrence.astimezone(tz) if next_occurrence else None
+                next_occurrences[0].astimezone(tz) if next_occurrences else None
             )
 
-            prev_occurrence = rruleset.before(now, inc=False)
+            # Find the previous occurrence
+            prev_occurrences = [occ for occ in all_occurrences if occ < now]
             self.previous_occurrence = (
-                prev_occurrence.astimezone(tz) if prev_occurrence else None
+                prev_occurrences[-1].astimezone(tz) if prev_occurrences else None
             )
+
         except Exception as e:
             print(
                 f"Error recalculating occurrences for CalendarEntry {self.id}: {str(e)}"
             )
+            traceback.print_exc()
+
+            # Set occurrences to None if there's an error
+            self.next_occurrence = None
+            self.previous_occurrence = None
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         recalculate = kwargs.pop("recalculate", True)
@@ -496,7 +515,6 @@ class ExclusionDateRange(models.Model):
         if sync_time:
             self.sync_time_component()
         super().save(*args, **kwargs)
-        self.event.calendar_entry.recalculate_occurrences()
 
     def delete(self, *args: Any, **kwargs: Any) -> None:
         calendar_entry = self.event.calendar_entry
@@ -505,8 +523,11 @@ class ExclusionDateRange(models.Model):
 
     def sync_time_component(self) -> None:
         event_time = self.event.start_time.time()
-        self.start_date = datetime.combine(self.start_date.date(), event_time)
-        self.end_date = datetime.combine(self.end_date.date(), event_time)
+        tz = pytz.timezone(self.event.calendar_entry.timezone.name)
+        self.start_date = tz.localize(
+            datetime.combine(self.start_date.date(), event_time)
+        )
+        self.end_date = tz.localize(datetime.combine(self.end_date.date(), event_time))
 
     def to_rrule(self) -> rrule:
         kwargs = {
