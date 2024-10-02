@@ -17,14 +17,7 @@ build:
 
   jobs:
     pre_build:
-      - sphinx-apidoc -o docs/ \
-          src/recurring src/recurring/tests \
-          src/recurring/migrations \
-          src/recurring/settings_test.py \
-          src/recurring/admin.py \
-          src/recurring/apps.py \
-          src/recurring/widgets.py \
-          src/recurring/forms.py
+      - make docs
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
