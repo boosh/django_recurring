@@ -2,6 +2,7 @@ SECRET_KEY = "test-key"
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
+    "django.contrib.admin",
     "recurring",
 ]
 DATABASES = {

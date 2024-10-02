@@ -99,7 +99,7 @@ You can create complex recurrence patterns by combining multiple rules:
    recurrence_set.recalculate_occurrences()
 
 Recalculating occurrences
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you want to query by the `next` and `previous` occurrence fields you may need to manually call `recalculate_occurrences()`. It is called when creating/deleting rules but it may be missing in some places.
 
@@ -130,4 +130,3 @@ django-recurring supports exporting RecurrenceSets to iCal format:
        f.write(ical_string)
 
 This will create an iCal file that can be imported into most calendar applications.
-
