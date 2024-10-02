@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Any, Dict, Optional
 
 import pytz
 from dateutil.rrule import (
@@ -44,7 +45,7 @@ class Timezone(models.Model):
         max_length=64, unique=True, help_text=_("The name of the timezone")
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -109,24 +110,26 @@ class RecurrenceRule(models.Model):
         null=True, blank=True, help_text=_("By second (BYSECOND)")
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"RecurrenceRule (Frequency: {self.get_frequency_display()})"
 
-    def get_frequency_display(self):
+    def get_frequency_display(self) -> str:
         return self.Frequency(self.frequency).name
 
-    def get_wkst_display(self):
+    def get_wkst_display(self) -> Optional[str]:
         return dict(self.WEEKDAYS)[self.wkst] if self.wkst is not None else None
 
-    def clean(self):
+    def clean(self) -> None:
         if self.count and self.until:
             raise ValidationError("Only one of either `count` or `until` can be set")
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         self.full_clean()
         super().save(*args, **kwargs)
 
-    def _get_rrule_kwargs(self, start_date, end_date):
+    def _get_rrule_kwargs(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
         weekday_map = {
             MONDAY: MO,
             TUESDAY: TU,
@@ -137,7 +140,7 @@ class RecurrenceRule(models.Model):
             SUNDAY: SU,
         }
 
-        kwargs = {
+        kwargs: Dict[str, Any] = {
             "freq": self.frequency,
             "interval": self.interval,
             "dtstart": start_date.astimezone(
@@ -175,10 +178,10 @@ class RecurrenceRule(models.Model):
 
         return kwargs
 
-    def to_rrule(self, start_date, end_date):
+    def to_rrule(self, start_date: datetime, end_date: datetime) -> rrule:
         return rrule(**self._get_rrule_kwargs(start_date, end_date))
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "id": self.id,
             "frequency": self.Frequency(self.frequency).name,
@@ -243,7 +246,7 @@ class CalendarEntry(models.Model):
 
         return rset
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "description": self.description,
@@ -268,7 +271,7 @@ class CalendarEntry(models.Model):
             ],
         }
 
-    def from_dict(self, data):
+    def from_dict(self, data: Dict[str, Any]) -> None:
         self.name = data.get("name", self.name)
         self.description = data.get("description", self.description)
         self.timezone = Timezone.objects.get(
@@ -317,7 +320,7 @@ class CalendarEntry(models.Model):
                     end_date=exclusion_data["end_date"].astimezone(tz),
                 )
 
-    def recalculate_occurrences(self):
+    def recalculate_occurrences(self) -> None:
         try:
             rruleset = self.to_rruleset()
             now = django_timezone.now()
@@ -337,20 +340,20 @@ class CalendarEntry(models.Model):
                 f"Error recalculating occurrences for CalendarEntry {self.id}: {str(e)}"
             )
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         recalculate = kwargs.pop("recalculate", True)
         super().save(*args, **kwargs)
         if recalculate:
             self.recalculate_occurrences()
 
-    def delete(self, *args, **kwargs):
+    def delete(self, *args: Any, **kwargs: Any) -> None:
         # todo - is this required? everything is on delete cascade
         for event in self.events.all():
             event.recurrence_rule.delete()
             event.delete()
         super().delete(*args, **kwargs)
 
-    def to_ical(self, prod_id: str = None) -> str:
+    def to_ical(self, prod_id: Optional[str] = None) -> str:
         """
         Convert the CalendarEntry to an iCal string representation.
 
@@ -443,7 +446,7 @@ class Event(models.Model):
         help_text=_("The recurrence rule"),
     )
 
-    def clean(self):
+    def clean(self) -> None:
         if not self.is_full_day and self.end_time is None:
             raise ValidationError("End time is required for non-full day events.")
         if self.is_full_day and self.end_time:
@@ -453,17 +456,17 @@ class Event(models.Model):
                 "Start time must be before end time for non-full day events."
             )
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         self.full_clean()
         super().save(*args, **kwargs)
         self.update_exclusions()
 
-    def update_exclusions(self):
+    def update_exclusions(self) -> None:
         for exclusion in self.exclusions.all():
             exclusion.sync_time_component()
             exclusion.save(sync_time=False)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Event for {self.calendar_entry.name}: {self.start_time}"
 
 
@@ -479,15 +482,15 @@ class ExclusionDateRange(models.Model):
     )
     end_date = models.DateTimeField(help_text=_("The end date of the exclusion range"))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Exclusion date range for {self.event}: {self.start_date} to {self.end_date}"
 
-    def clean(self):
+    def clean(self) -> None:
         super().clean()
         if self.start_date >= self.end_date:
             raise ValidationError("Start date must be less than the end date.")
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         self.full_clean()
         sync_time = kwargs.pop("sync_time", True)
         if sync_time:
@@ -495,22 +498,24 @@ class ExclusionDateRange(models.Model):
         super().save(*args, **kwargs)
         self.event.calendar_entry.recalculate_occurrences()
 
-    def delete(self, *args, **kwargs):
+    def delete(self, *args: Any, **kwargs: Any) -> None:
         calendar_entry = self.event.calendar_entry
         super().delete(*args, **kwargs)
         calendar_entry.recalculate_occurrences()
 
-    def sync_time_component(self):
+    def sync_time_component(self) -> None:
         event_time = self.event.start_time.time()
         self.start_date = datetime.combine(self.start_date.date(), event_time)
         self.end_date = datetime.combine(self.end_date.date(), event_time)
 
-    def to_rrule(self):
+    def to_rrule(self) -> rrule:
         kwargs = {
             "dtstart": self.start_date.astimezone(
                 pytz.timezone(self.event.calendar_entry.timezone.name)
             ),
-            "until": self.end_date,
+            "until": self.end_date.astimezone(
+                pytz.timezone(self.event.calendar_entry.timezone.name)
+            ),
         }
         return rrule(**kwargs)
 

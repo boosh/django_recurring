@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import datetime
+from typing import Any, Dict
 
 import pytz
 from django import forms
@@ -18,7 +19,7 @@ class CalendarEntryForm(forms.ModelForm):
         model = CalendarEntry
         fields = ["name", "description", "timezone"]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         logger.info("Form init method")
         self.fields["calendar_entry"].widget = CalendarEntryWidget(form=self)
@@ -31,7 +32,7 @@ class CalendarEntryForm(forms.ModelForm):
                 calendar_entry_data
             )
 
-    def save(self, commit: bool = True):
+    def save(self, commit: bool = True) -> CalendarEntry:
         logger.info(f"Starting save method (commit={commit})")
         instance = super().save(commit=False)
         if commit:
@@ -54,7 +55,7 @@ class CalendarEntryForm(forms.ModelForm):
         logger.info("Save method completed")
         return instance
 
-    def clean(self):
+    def clean(self) -> Dict[str, Any]:
         logger.info("Inside clean")
         cleaned_data = super().clean()
 
