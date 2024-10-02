@@ -23,7 +23,7 @@ diskcache==5.6.3
 distlib==0.3.8
 distro==1.9.0
 Django==5.1.1
--e git+ssh://git@github.com/boosh/django_recurring.git@10abdc3d39b5afe51e2aea64278b3a669a6853df#egg=django_recurring
+django-recurring
 docutils==0.21.2
 filelock==3.16.1
 flake8==7.1.1
