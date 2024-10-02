@@ -64,6 +64,8 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+modules.rst
+recurring.rst
 
 # PyBuilder
 target/

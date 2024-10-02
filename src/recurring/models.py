@@ -42,20 +42,50 @@ SUNDAY = "SU"
 
 
 class Timezone(models.Model):
+    """
+    Represents a timezone in the system.
+
+    :param name: The name of the timezone
+    :type name: str
+    """
+
     name = models.CharField(
         max_length=64, unique=True, help_text=_("The name of the timezone")
     )
 
     @property
     def as_tz(self):
+        """
+        Returns the timezone as a pytz timezone object.
+
+        :return: A pytz timezone object
+        :rtype: pytz.timezone
+        """
         return pytz.timezone(self.name)
 
     def __str__(self) -> str:
+        """
+        Returns a string representation of the Timezone object.
+
+        :return: The name of the timezone
+        :rtype: str
+        """
         return self.name
 
 
 class RecurrenceRule(models.Model):
+    """
+    Represents a recurrence rule for calendar events.
+
+    This model defines the parameters for recurring events, including frequency,
+    interval, and various constraints on recurrence.
+    """
+
     class Frequency(models.IntegerChoices):
+        """
+        Enumeration of possible frequency values for recurrence.
+        """
+
         YEARLY = YEARLY, _("YEARLY")
         MONTHLY = MONTHLY, _("MONTHLY")
         WEEKLY = WEEKLY, _("WEEKLY")
@@ -116,23 +146,60 @@ class RecurrenceRule(models.Model):
     )
 
     def __str__(self) -> str:
+        """
+        Returns a string representation of the RecurrenceRule.
+
+        :return: A string describing the RecurrenceRule
+        :rtype: str
+        """
         return f"RecurrenceRule (Frequency: {self.get_frequency_display()})"
 
     def get_frequency_display(self) -> str:
+        """
+        Returns the display name of the frequency.
+
+        :return: The name of the frequency
+        :rtype: str
+        """
         return self.Frequency(self.frequency).name
 
     def get_wkst_display(self) -> Optional[str]:
+        """
+        Returns the display name of the week start day.
+
+        :return: The name of the week start day, or None if not set
+        :rtype: Optional[str]
+        """
         return dict(self.WEEKDAYS)[self.wkst] if self.wkst is not None else None
 
     def clean(self) -> None:
+        """
+        Validates the RecurrenceRule object.
+
+        :raises ValidationError: If both count and until are set
+        """
         if self.count and self.until:
             raise ValidationError("Only one of either `count` or `until` can be set")
 
     def save(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Saves the RecurrenceRule object after full cleaning.
+
+        :param args: Variable length argument list
+        :param kwargs: Arbitrary keyword arguments
+        """
         self.full_clean()
         super().save(*args, **kwargs)
 
     def _get_rrule_kwargs(self, start_date: datetime) -> Dict[str, Any]:
+        """
+        Generates keyword arguments for creating an rrule object.
+
+        :param start_date: The start date for the recurrence rule
+        :type start_date: datetime
+        :return: A dictionary of keyword arguments for rrule
+        :rtype: Dict[str, Any]
+        """
         weekday_map = {
             MONDAY: MO,
             TUESDAY: TU,
@@ -179,9 +246,23 @@ class RecurrenceRule(models.Model):
         return kwargs
 
     def to_rrule(self, start_date: datetime) -> rrule:
+        """
+        Creates an rrule object from the RecurrenceRule.
+
+        :param start_date: The start date for the recurrence rule
+        :type start_date: datetime
+        :return: An rrule object
+        :rtype: rrule
+        """
         return rrule(**self._get_rrule_kwargs(start_date))
 
     def to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the RecurrenceRule to a dictionary representation.
+
+        :return: A dictionary representation of the RecurrenceRule
+        :rtype: Dict[str, Any]
+        """
         return {
             "id": self.id,
             "frequency": self.Frequency(self.frequency).name,
@@ -205,6 +286,10 @@ class RecurrenceRule(models.Model):
 
 
 class CalendarEntry(models.Model):
+    """
+    Represents a calendar entry with associated events and recurrence rules.
+    """
+
     class Meta:
         verbose_name_plural = "Calendar entries"
 
@@ -233,9 +318,21 @@ class CalendarEntry(models.Model):
     )
 
     def __str__(self):
+        """
+        Returns a string representation of the CalendarEntry.
+
+        :return: A string describing the CalendarEntry
+        :rtype: str
+        """
         return f"{self.name} (Timezone: {self.timezone.name})"
 
     def to_rruleset(self):
+        """
+        Converts the CalendarEntry to an rruleset object.
+
+        :return: An rruleset object representing the CalendarEntry
+        :rtype: rruleset
+        """
         rset = rruleset()
 
         for event in self.events.all():
@@ -254,6 +351,12 @@ class CalendarEntry(models.Model):
         return rset
 
     def to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the CalendarEntry to a dictionary representation.
+
+        :return: A dictionary representation of the CalendarEntry
+        :rtype: Dict[str, Any]
+        """
         return {
             "name": self.name,
             "description": self.description,
@@ -279,6 +382,12 @@ class CalendarEntry(models.Model):
         }
 
     def from_dict(self, data: Dict[str, Any]) -> None:
+        """
+        Populates the CalendarEntry from a dictionary representation.
+
+        :param data: A dictionary containing CalendarEntry data
+        :type data: Dict[str, Any]
+        """
         self.name = data.get("name", self.name)
         self.description = data.get("description", self.description)
         self.timezone = Timezone.objects.get(
@@ -328,6 +437,9 @@ class CalendarEntry(models.Model):
                 )
 
     def recalculate_occurrences(self) -> None:
+        """
+        Recalculates the next and previous occurrences of the CalendarEntry.
+        """
         try:
             rruleset = self.to_rruleset()
             now = django_timezone.now()
@@ -359,12 +471,24 @@ class CalendarEntry(models.Model):
             self.previous_occurrence = None
 
     def save(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Saves the CalendarEntry and optionally recalculates occurrences.
+
+        :param args: Variable length argument list
+        :param kwargs: Arbitrary keyword arguments
+        """
         recalculate = kwargs.pop("recalculate", True)
         super().save(*args, **kwargs)
         if recalculate:
             self.recalculate_occurrences()
 
     def delete(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Deletes the CalendarEntry and associated events and recurrence rules.
+
+        :param args: Variable length argument list
+        :param kwargs: Arbitrary keyword arguments
+        """
         # todo - is this required? everything is on delete cascade
         for event in self.events.all():
             event.recurrence_rule.delete()
@@ -375,11 +499,10 @@ class CalendarEntry(models.Model):
         """
         Convert the CalendarEntry to an iCal string representation.
 
-        Args:
-            prod_id (str, optional): The PRODID to use in the iCal. Defaults to None.
-
-        Returns:
-            str: The iCal string representation of the calendar entry.
+        :param prod_id: The PRODID to use in the iCal. Defaults to None.
+        :type prod_id: Optional[str]
+        :return: The iCal string representation of the calendar entry.
+        :rtype: str
         """
         cal = Calendar()
         cal.add("version", "2.0")
@@ -450,6 +573,10 @@ class CalendarEntry(models.Model):
 
 
 class Event(models.Model):
+    """
+    Represents an event within a CalendarEntry.
+    """
+
     calendar_entry = models.ForeignKey(
         CalendarEntry, on_delete=models.CASCADE, related_name="events"
     )
@@ -465,6 +592,11 @@ class Event(models.Model):
     )
 
     def clean(self) -> None:
+        """
+        Validates the Event object.
+
+        :raises ValidationError: If the event data is invalid
+        """
         if not self.is_full_day and self.end_time is None:
             raise ValidationError("End time is required for non-full day events.")
         if self.is_full_day and self.end_time:
@@ -475,20 +607,39 @@ class Event(models.Model):
             )
 
     def save(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Saves the Event object after full cleaning and updates exclusions.
+
+        :param args: Variable length argument list
+        :param kwargs: Arbitrary keyword arguments
+        """
         self.full_clean()
         super().save(*args, **kwargs)
         self.update_exclusions()
 
     def update_exclusions(self) -> None:
+        """
+        Updates the time component of all exclusions associated with this event.
+        """
         for exclusion in self.exclusions.all():
             exclusion.sync_time_component()
             exclusion.save(sync_time=False)
 
     def __str__(self) -> str:
+        """
+        Returns a string representation of the Event.
+
+        :return: A string describing the Event
+        :rtype: str
+        """
         return f"Event for {self.calendar_entry.name}: {self.start_time}"
 
 
 class ExclusionDateRange(models.Model):
+    """
+    Represents a date range for which an event should be excluded from recurrence.
+    """
+
     event = models.ForeignKey(
         Event,
         on_delete=models.CASCADE,
@@ -501,14 +652,31 @@ class ExclusionDateRange(models.Model):
     end_date = models.DateTimeField(help_text=_("The end date of the exclusion range"))
 
     def __str__(self) -> str:
+        """
+        Returns a string representation of the ExclusionDateRange.
+
+        :return: A string describing the ExclusionDateRange
+        :rtype: str
+        """
         return f"Exclusion date range for {self.event}: {self.start_date} to {self.end_date}"
 
     def clean(self) -> None:
+        """
+        Validates the ExclusionDateRange object.
+
+        :raises ValidationError: If the start date is not less than the end date
+        """
         super().clean()
         if self.start_date >= self.end_date:
             raise ValidationError("Start date must be less than the end date.")
 
     def save(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Saves the ExclusionDateRange object after full cleaning and optionally syncs time component.
+
+        :param args: Variable length argument list
+        :param kwargs: Arbitrary keyword arguments
+        """
         self.full_clean()
         sync_time = kwargs.pop("sync_time", True)
         if sync_time:
@@ -516,11 +684,20 @@ class ExclusionDateRange(models.Model):
         super().save(*args, **kwargs)
 
     def delete(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Deletes the ExclusionDateRange object and recalculates occurrences for the associated CalendarEntry.
+
+        :param args: Variable length argument list
+        :param kwargs: Arbitrary keyword arguments
+        """
         calendar_entry = self.event.calendar_entry
         super().delete(*args, **kwargs)
         calendar_entry.recalculate_occurrences()
 
     def sync_time_component(self) -> None:
+        """
+        Synchronizes the time component of the start and end dates with the event's start time.
+        """
         event_time = self.event.start_time.time()
         tz = self.event.calendar_entry.timezone.as_tz
         self.start_date = tz.localize(
@@ -529,6 +706,12 @@ class ExclusionDateRange(models.Model):
         self.end_date = tz.localize(datetime.combine(self.end_date.date(), event_time))
 
     def to_rrule(self) -> rrule:
+        """
+        Converts the ExclusionDateRange to an rrule object.
+
+        :return: An rrule object representing the ExclusionDateRange
+        :rtype: rrule
+        """
         kwargs = {
             "dtstart": self.start_date.astimezone(
                 self.event.calendar_entry.timezone.as_tz
@@ -538,4 +721,10 @@ class ExclusionDateRange(models.Model):
         return rrule(**kwargs)
 
     def get_all_dates(self) -> list[datetime]:
+        """
+        Returns a list of all dates within the ExclusionDateRange.
+
+        :return: A list of datetime objects
+        :rtype: list[datetime]
+        """
         return list(rrule(DAILY, dtstart=self.start_date, until=self.end_date))

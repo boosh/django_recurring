@@ -12,7 +12,10 @@ django-recurring
         :target: https://django-recurring.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
 
-Create repeating datetimes in Django using dateutil rrulesets with timezone awareness.
+Create ical-compatible calendar events in django. This library is good if you need:
+* iCal-compatible calendar entries with multiple events and (optionally) complex recurrence rules and multiple exclusions
+* Calendar entries you can export to iCal format (.ics files)
+* To add complex recurrence rules to your models and interact with them as dateutil rrulesets
 
 * Free software: MIT license
 * Documentation: https://django-recurring.readthedocs.io
@@ -21,7 +24,7 @@ Create repeating datetimes in Django using dateutil rrulesets with timezone awar
 Status
 --------
 
-This library is still under heavy development. It's not ready for use yet since its abstractions may be wrong, and its ical output is buggy.
+Initial release. There are likely to be bugs.
 
 The 0.x series is for development only and should not be used in live projects.
 
