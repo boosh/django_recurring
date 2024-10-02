@@ -245,7 +245,7 @@ class CalendarEntryForm {
             <div class="recurrence-rule-form">
                 <label>
                     <input type="checkbox" class="has-recurrence-checkbox">
-                    Recurring
+                    Event repeats
                 </label>
                 <div class="recurrence-details" style="display: none;">
                     <div class="frequency-interval">

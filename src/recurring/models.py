@@ -480,7 +480,13 @@ class ExclusionDateRange(models.Model):
     def __str__(self):
         return f"Exclusion date range for {self.event}: {self.start_date} to {self.end_date}"
 
+    def clean(self):
+        super().clean()
+        if self.start_date >= self.end_date:
+            raise ValidationError("Start date must be less than the end date.")
+
     def save(self, *args, **kwargs):
+        self.full_clean()
         sync_time = kwargs.pop("sync_time", True)
         if sync_time:
             self.sync_time_component()

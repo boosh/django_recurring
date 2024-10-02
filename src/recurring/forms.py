@@ -137,6 +137,15 @@ class CalendarEntryForm(forms.ModelForm):
                                 exclusion_end
                             )
 
+                            # Assert that start_date <= end_date
+                            if (
+                                exclusion_data["start_date"]
+                                >= exclusion_data["end_date"]
+                            ):
+                                raise ValueError(
+                                    "Exclusion start date must be less than the end date."
+                                )
+
             except json.JSONDecodeError:
                 self.add_error(
                     "calendar_entry", "Invalid JSON data for calendar entry."
