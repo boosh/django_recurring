@@ -64,11 +64,11 @@ function initCalendarEntryWidget(name) {
     function validateDateInputs() {
         const events = calendarEntryForm.events;
         for (let event of events) {
-            if (!event.startTime) {
+            if (!event.start_time) {
                 alert('Please set a start date and time for all events.');
                 return false;
             }
-            if (!event.isAllDay && !event.endTime) {
+            if (!event.is_full_day && !event.end_time) {
                 alert('Please set an end date and time for all non-all-day events.');
                 return false;
             }
@@ -111,9 +111,9 @@ class CalendarEntryForm {
 
         const newEvent = event || {
             id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            startTime: null,
-            endTime: null,
-            isAllDay: false,
+            start_time: null,
+            end_time: null,
+            is_full_day: false,
             recurrenceRule: null,
             exclusions: []
         };
@@ -162,8 +162,8 @@ class CalendarEntryForm {
                       <a href="#" class="set-now-end">Now</a>
                       <a href="#" class="set-far-future">Far Future</a>
                     </div>
-                    <label class="all-day-checkbox">
-                        <input type="checkbox">
+                    <label>
+                        <input type="checkbox" class="all-day-checkbox">
                         All Day
                     </label>
                 </div>
@@ -176,9 +176,13 @@ class CalendarEntryForm {
         const endTimeInput = container.querySelector('.end-datetime');
         const allDayCheckbox = container.querySelector('.all-day-checkbox');
 
-        startTimeInput.value = this.formatDateTimeForInput(event.startTime);
-        endTimeInput.value = this.formatDateTimeForInput(event.endTime);
-        allDayCheckbox.checked = event.isAllDay;
+        startTimeInput.value = this.formatDateTimeForInput(event.start_time);
+        endTimeInput.value = this.formatDateTimeForInput(event.end_time);
+        allDayCheckbox.checked = event.is_full_day;
+        endTimeInput.disabled = event.is_full_day;
+        if (event.is_full_day) {
+            endTimeInput.value = '';
+        }
 
         const updateEventHandler = () => this.updateEvent(container, event);
 
@@ -502,7 +506,7 @@ class CalendarEntryForm {
     updateEvent(container, event) {
         const startTimeInput = container.querySelector('.start-datetime');
         const endTimeInput = container.querySelector('.end-datetime');
-        const allDayCheckbox = container.querySelector('.all-day-checkbox input');
+        const allDayCheckbox = container.querySelector('.all-day-checkbox');
         const exclusionContainers = container.querySelectorAll('.exclusion-container');
         const hasRecurrenceCheckbox = container.querySelector('.has-recurrence-checkbox');
         const frequencySelect = container.querySelector('.frequency-select');
@@ -516,9 +520,9 @@ class CalendarEntryForm {
         const byHourInput = container.querySelector('.byhour-input');
         const byMinuteInput = container.querySelector('.byminute-input');
 
-        event.startTime = startTimeInput.value;
-        event.isAllDay = allDayCheckbox.checked;
-        event.endTime = event.isAllDay ? null : endTimeInput.value;
+        event.start_time = startTimeInput.value;
+        event.is_full_day = allDayCheckbox.checked;
+        event.end_time = event.is_full_day ? null : endTimeInput.value;
 
         event.exclusions = Array.from(exclusionContainers).map(container => {
             return {
@@ -631,10 +635,10 @@ class CalendarEntryForm {
         let text = `<strong>Event ${index}:</strong><br>`;
 
         // Start and end time on one line
-        if (event.isAllDay) {
-            text += `All Day Event on ${new Date(event.startTime).toLocaleDateString()}<br>`;
+        if (event.is_full_day) {
+            text += `All Day Event on ${new Date(event.start_time).toLocaleDateString()}<br>`;
         } else {
-            text += `From ${new Date(event.startTime).toLocaleString()} to ${new Date(event.endTime).toLocaleString()}<br>`;
+            text += `From ${new Date(event.start_time).toLocaleString()} to ${new Date(event.end_time).toLocaleString()}<br>`;
         }
 
         // Recurrence information as a human-readable string
@@ -724,9 +728,9 @@ function parseInitialData(jsonString) {
 
     const events = data.events.map(eventData => ({
         id: eventData.id || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        startTime: eventData.startTime,
-        endTime: eventData.endTime,
-        isAllDay: eventData.isFullDay,
+        start_time: eventData.start_time,
+        end_time: eventData.end_time,
+        is_full_day: eventData.is_full_day,
         recurrenceRule: eventData.rule ? {
             frequency: eventData.rule.frequency,
             interval: eventData.rule.interval,

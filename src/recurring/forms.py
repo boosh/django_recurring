@@ -6,7 +6,6 @@ import pytz
 from django import forms
 
 from .models import CalendarEntry
-from .utils import recursive_camel_to_snake, recursive_snake_to_camel
 from .widgets import CalendarEntryWidget
 
 logger = logging.getLogger(__name__)
@@ -28,9 +27,8 @@ class CalendarEntryForm(forms.ModelForm):
         if self.instance.pk:
             calendar_entry_data = self.instance.to_dict()
             self.initial["calendar_entry"] = json.dumps(calendar_entry_data)
-            camelised = recursive_snake_to_camel(calendar_entry_data)
             self.fields["calendar_entry"].widget.attrs["data-initial"] = json.dumps(
-                camelised
+                calendar_entry_data
             )
 
     def save(self, commit: bool = True):
@@ -68,14 +66,11 @@ class CalendarEntryForm(forms.ModelForm):
         calendar_entry_data = cleaned_data.get("calendar_entry")
         if calendar_entry_data:
             try:
-                calendar_entry_dict_camel = json.loads(calendar_entry_data)
+                calendar_entry_dict = json.loads(calendar_entry_data)
 
-                if not isinstance(calendar_entry_dict_camel, dict):
+                if not isinstance(calendar_entry_dict, dict):
                     raise ValueError("Calendar entry data must be a dictionary")
 
-                calendar_entry_dict = recursive_camel_to_snake(
-                    calendar_entry_dict_camel
-                )
                 self.calendar_entry_data = calendar_entry_dict
 
                 if not isinstance(calendar_entry_dict.get("events"), list):
@@ -106,6 +101,7 @@ class CalendarEntryForm(forms.ModelForm):
                     event_data["end_time"] = (
                         submitted_timezone.localize(end_time) if end_time else None
                     )
+                    event_data["is_full_day"] = event_data.get("is_full_day", False)
 
                     # Rule and exclusions are optional
                     if "rule" in event_data:

@@ -4,8 +4,6 @@ import logging
 from django import forms
 from django.utils.safestring import mark_safe
 
-from .utils import recursive_snake_to_camel
-
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +21,7 @@ class CalendarEntryWidget(forms.Widget):
             calendar_entry = self.form.instance
             calendar_entry_data = calendar_entry.to_dict()
             calendar_entry_data["id"] = calendar_entry.pk
-            self.initial = json.dumps(recursive_snake_to_camel(calendar_entry_data))
+            self.initial = json.dumps(calendar_entry_data)
 
     def render(self, name, value, attrs=None, renderer=None):
         if attrs is None:
