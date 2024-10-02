@@ -5,56 +5,55 @@ Usage
 Quick Start
 -----------
 
-1. Add a RecurrenceSet to your model:
+1. Add a CalendarEntry to your model:
 
    .. code-block:: python
 
       from django.db import models
-      from recurring.models import RecurrenceSet
+      from recurring.models import CalendarEntry
 
-      class Event(models.Model):
-          name = models.CharField(max_length=200)
-          recurrence = models.ForeignKey(RecurrenceSet, on_delete=models.CASCADE)
+      class Meeting(models.Model):
+          title = models.CharField(max_length=200)
+          calendar_entry = models.ForeignKey(CalendarEntry, on_delete=models.CASCADE)
 
-2. Create a RecurrenceSet with rules:
+2. Create a CalendarEntry with events and recurrence rules:
 
    .. code-block:: python
 
       from django.utils import timezone
-      from recurring.models import RecurrenceSet, RecurrenceRule, RecurrenceSetRule
+      from recurring.models import CalendarEntry, Event, RecurrenceRule, Timezone, MONDAY
 
-      # Create a RecurrenceSet
-      recurrence_set = RecurrenceSet.objects.create(name="Weekly Meeting")
+      # Create a CalendarEntry
+      calendar_entry = CalendarEntry.objects.create(
+          name="Weekly Team Meeting",
+          description="Regular team sync-up",
+          timezone=Timezone.objects.get(name="UTC")
+      )
 
-      # Create a rule
+      # Create an event with a recurrence rule
       rule = RecurrenceRule.objects.create(
           frequency=RecurrenceRule.Frequency.WEEKLY,
           interval=1,
-          byweekday=[0]  # Monday
+          byweekday=[MONDAY]  # Every Monday
       )
 
-      # Add a date range to the rule
-      rule.date_ranges.create(
-          start_date=timezone.now(),
-          end_date=timezone.now() + timezone.timedelta(days=365)
-      )
-
-      # Associate the rule with the RecurrenceSet
-      RecurrenceSetRule.objects.create(
-          recurrence_set=recurrence_set,
+      event = Event.objects.create(
+          calendar_entry=calendar_entry,
+          start_time=timezone.now().replace(hour=10, minute=0, second=0, microsecond=0),
+          end_time=timezone.now().replace(hour=11, minute=0, second=0, microsecond=0),
           recurrence_rule=rule
       )
 
       # Recalculate occurrences
-      recurrence_set.recalculate_occurrences()
+      calendar_entry.recalculate_occurrences()
 
-3. Query previous/next events within a date range:
+3. Query upcoming meetings:
 
    .. code-block:: python
 
-      events = Event.objects.filter(
-          recurrence__next_occurrence__gte=timezone.now(),
-          recurrence__previous_occurrence__lte=timezone.now() + timezone.timedelta(days=30)
+      upcoming_meetings = Meeting.objects.filter(
+          calendar_entry__next_occurrence__gte=timezone.now(),
+          calendar_entry__next_occurrence__lte=timezone.now() + timezone.timedelta(days=30)
       )
 
 Advanced Usage
@@ -63,70 +62,98 @@ Advanced Usage
 Creating Complex Recurrence Patterns
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can create complex recurrence patterns by combining multiple rules:
+You can create complex recurrence patterns by combining multiple events with different rules:
 
 .. code-block:: python
 
-   # Create a RecurrenceSet for a complex schedule
-   recurrence_set = RecurrenceSet.objects.create(name="Complex Schedule")
+   # Create a CalendarEntry for a complex schedule
+   calendar_entry = CalendarEntry.objects.create(
+       name="Complex Schedule",
+       description="A schedule with multiple recurrence patterns",
+       timezone=Timezone.objects.get(name="UTC")
+   )
 
-   # Rule 1: Every Monday and Wednesday
+   # Event 1: Every Monday and Wednesday
    rule1 = RecurrenceRule.objects.create(
        frequency=RecurrenceRule.Frequency.WEEKLY,
        interval=1,
-       byweekday=[0, 2]  # Monday and Wednesday
+       byweekday=["MO", "WE"]
    )
 
-   # Rule 2: First Friday of every month
+   event1 = Event.objects.create(
+       calendar_entry=calendar_entry,
+       start_time=timezone.now().replace(hour=9, minute=0, second=0, microsecond=0),
+       end_time=timezone.now().replace(hour=10, minute=0, second=0, microsecond=0),
+       recurrence_rule=rule1
+   )
+
+   # Event 2: First Friday of every month
    rule2 = RecurrenceRule.objects.create(
        frequency=RecurrenceRule.Frequency.MONTHLY,
        interval=1,
-       byweekday=[4],  # Friday
+       byweekday=["FR"],
        bysetpos=[1]  # First occurrence
    )
 
-   # Add rules to the RecurrenceSet
-   RecurrenceSetRule.objects.create(recurrence_set=recurrence_set, recurrence_rule=rule1)
-   RecurrenceSetRule.objects.create(recurrence_set=recurrence_set, recurrence_rule=rule2)
+   event2 = Event.objects.create(
+       calendar_entry=calendar_entry,
+       start_time=timezone.now().replace(hour=14, minute=0, second=0, microsecond=0),
+       end_time=timezone.now().replace(hour=15, minute=0, second=0, microsecond=0),
+       recurrence_rule=rule2
+   )
 
-   # Set date ranges for both rules
-   for rule in [rule1, rule2]:
-       rule.date_ranges.create(
-           start_date=timezone.now(),
-           end_date=timezone.now() + timezone.timedelta(days=365)
-       )
+   calendar_entry.recalculate_occurrences()
 
-   recurrence_set.recalculate_occurrences()
+Accessing rruleset and rrules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Recalculating occurrences
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you want to query by the `next` and `previous` occurrence fields you may need to manually call `recalculate_occurrences()`. It is called when creating/deleting rules but it may be missing in some places.
-
-You can call recalculate them in several ways:
+You can access the rruleset for a CalendarEntry and individual rrules for each event:
 
 .. code-block:: python
 
-    recurrence_set.recalculate_occurrences()
-    recurrence_set.save(recalculate=True)
+   # Get the rruleset for a CalendarEntry
+   calendar_entry = CalendarEntry.objects.get(name="Complex Schedule")
+   rruleset = calendar_entry.to_rruleset()
 
-Or you can recalculate them in bulk via the :doc:`management command <management_commands>`.
+   # Get the next 5 occurrences
+   next_occurrences = list(rruleset)[:5]
+
+   # Access individual rrules for each event
+   for event in calendar_entry.events.all():
+       if event.recurrence_rule:
+           rrule = event.recurrence_rule.to_rrule(event.start_time)
+           # Use the rrule object as needed
+
+Recalculating Occurrences
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To ensure the `next_occurrence` and `previous_occurrence` fields are up-to-date, call `recalculate_occurrences()` after making changes:
+
+.. code-block:: python
+
+   calendar_entry.recalculate_occurrences()
+
+You can also recalculate occurrences when saving:
+
+.. code-block:: python
+
+   calendar_entry.save(recalculate=True)
 
 Exporting to iCal Format
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-django-recurring supports exporting RecurrenceSets to iCal format:
+django-recurring supports exporting CalendarEntries to iCal format:
 
 .. code-block:: python
 
-   # Assuming you have a RecurrenceSet object
-   ical_string = recurrence_set.to_ical()
+   calendar_entry = CalendarEntry.objects.get(name="Weekly Team Meeting")
+   ical_string = calendar_entry.to_ical()
 
    # You can also specify a custom PRODID
-   custom_ical_string = recurrence_set.to_ical(prod_id="-//My Company//My Product//EN")
+   custom_ical_string = calendar_entry.to_ical(prod_id="-//My Company//My Product//EN")
 
    # Save the iCal string to a file
-   with open('my_event.ics', 'w') as f:
+   with open('team_meeting.ics', 'w') as f:
        f.write(ical_string)
 
-This will create an iCal file that can be imported into most calendar applications.
+This will create an iCal file containing all events and their recurrence rules, which can be imported into most calendar applications.
