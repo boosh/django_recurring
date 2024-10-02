@@ -23,14 +23,18 @@ Status
 
 This library is still under heavy development. It's not ready for use yet since its abstractions may be wrong, and its ical output is buggy.
 
+The 0.x series is for development only and should not be used in live projects.
+
 Features
 --------
 
-* Create complex recurring date patterns using dateutil rrulesets
+* Create calendar entries/schedules with multiple events, recurrence rules and exclusions
+    * E.g. Every Monday in Jan & Feb, every Tuesday in Mar and Apr, except the 3rd week of Feb and Apr.
+* Access recurrences using dateutil rrulesets
 * Automatically calculate previous and next occurrences for efficient date range queries
 * Timezone-aware datetime handling
 * Export recurrence sets to iCal format
-* Admin interface with custom widget for creating and editing recurrence patterns
+* Admin widget for creating and editing recurrence patterns
 
 Limitations
 -----------
