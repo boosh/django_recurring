@@ -31,6 +31,7 @@ def recurrence_rule():
     return RecurrenceRule.objects.create(
         frequency=RecurrenceRule.Frequency.DAILY,
         interval=1,
+        count=3,
     )
 
 
@@ -245,6 +246,7 @@ class TestExclusionDateRange:
             start_date=start_date,
             end_date=end_date,
         )
+        exclusion.sync_time_component()
         all_dates = exclusion.get_all_dates()
         assert len(all_dates) == 3
         assert all_dates[0] == start_date
