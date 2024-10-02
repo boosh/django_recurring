@@ -239,6 +239,9 @@ class TestExclusionDateRange:
         )
 
     def test_get_all_dates(self, event):
+        event.start_time = django_timezone.datetime(2023, 1, 1, 10, 30, tzinfo=pytz.utc)
+        event.save()
+
         start_date = django_timezone.datetime(2023, 1, 1, tzinfo=pytz.utc)
         end_date = django_timezone.datetime(2023, 1, 3, tzinfo=pytz.utc)
         exclusion = ExclusionDateRange.objects.create(
@@ -248,6 +251,9 @@ class TestExclusionDateRange:
         )
         exclusion.sync_time_component()
         all_dates = exclusion.get_all_dates()
+
         assert len(all_dates) == 3
-        assert all_dates[0] == start_date
-        assert all_dates[-1] == end_date
+        for date in all_dates:
+            assert date.time() == event.start_time.time()
+        assert all_dates[0].date() == start_date.date()
+        assert all_dates[-1].date() == end_date.date()
