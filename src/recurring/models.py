@@ -46,6 +46,10 @@ class Timezone(models.Model):
         max_length=64, unique=True, help_text=_("The name of the timezone")
     )
 
+    @property
+    def as_tz(self):
+        return pytz.timezone(self.name)
+
     def __str__(self) -> str:
         return self.name
 
@@ -142,9 +146,7 @@ class RecurrenceRule(models.Model):
         kwargs: Dict[str, Any] = {
             "freq": self.frequency,
             "interval": self.interval,
-            "dtstart": start_date.astimezone(
-                pytz.timezone(self.event.calendar_entry.timezone.name)
-            ),
+            "dtstart": start_date.astimezone(self.event.calendar_entry.timezone.as_tz),
         }
 
         if self.wkst is not None:
@@ -281,7 +283,7 @@ class CalendarEntry(models.Model):
             name=data.get("timezone", self.timezone.name)
         )
         self.save()
-        tz = pytz.timezone(self.timezone.name)
+        tz = self.timezone.as_tz
 
         for event_data in data.get("events", []):
             event = Event(
@@ -327,7 +329,7 @@ class CalendarEntry(models.Model):
         try:
             rruleset = self.to_rruleset()
             now = django_timezone.now()
-            tz = pytz.timezone(self.timezone.name)
+            tz = self.timezone.as_tz
 
             # Get all occurrences as a list
             all_occurrences = list(rruleset)
@@ -518,7 +520,7 @@ class ExclusionDateRange(models.Model):
 
     def sync_time_component(self) -> None:
         event_time = self.event.start_time.time()
-        tz = pytz.timezone(self.event.calendar_entry.timezone.name)
+        tz = self.event.calendar_entry.timezone.as_tz
         self.start_date = tz.localize(
             datetime.combine(self.start_date.date(), event_time)
         )
@@ -527,11 +529,9 @@ class ExclusionDateRange(models.Model):
     def to_rrule(self) -> rrule:
         kwargs = {
             "dtstart": self.start_date.astimezone(
-                pytz.timezone(self.event.calendar_entry.timezone.name)
+                self.event.calendar_entry.timezone.as_tz
             ),
-            "until": self.end_date.astimezone(
-                pytz.timezone(self.event.calendar_entry.timezone.name)
-            ),
+            "until": self.end_date.astimezone(self.event.calendar_entry.timezone.as_tz),
         }
         return rrule(**kwargs)
 

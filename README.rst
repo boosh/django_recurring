@@ -29,11 +29,11 @@ Features
 --------
 
 * Create calendar entries/schedules with multiple events, recurrence rules and exclusions
-    * E.g. Every Monday in Jan & Feb, every Tuesday in Mar and Apr, except the 3rd week of Feb and Apr.
+    * E.g. Every Monday in Jan & Feb, every Tuesday in Mar and Apr, except the 3rd weeks of Feb and Apr.
 * Access recurrences using dateutil rrulesets
 * Automatically calculate previous and next occurrences for efficient date range queries
 * Timezone-aware datetime handling
-* Export recurrence sets to iCal format
+* Export recurrence sets to iCal format (.ics files)
 * Admin widget for creating and editing recurrence patterns
 
 Limitations

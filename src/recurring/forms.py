@@ -3,7 +3,6 @@ import logging
 from datetime import datetime
 from typing import Any, Dict
 
-import pytz
 from django import forms
 
 from .models import CalendarEntry
@@ -81,7 +80,7 @@ class CalendarEntryForm(forms.ModelForm):
                     )
 
                 # Get the submitted timezone
-                submitted_timezone = pytz.timezone(cleaned_data.get("timezone").name)
+                submitted_timezone = cleaned_data.get("timezone").as_tz
 
                 for event_data in calendar_entry_dict["events"]:
                     if not isinstance(event_data, dict):

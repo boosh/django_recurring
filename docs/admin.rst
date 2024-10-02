@@ -17,11 +17,13 @@ It supports multiple events, each with recurrence patterns:
    :alt: Widget simple image
    :align: center
 
-Together, this allows creating recurrences like: every Monday in Jan & Feb, every Tuesday in Mar and Apr, except the 3rd week of Feb and Apr.
+Together, this allows creating complex recurrences like:
+
+    Every Monday in Jan & Feb, every Tuesday in Mar and Apr, except the 3rd weeks of Feb and Apr.
 
 iCal
 ------
-The iCal string for the recurrence set is also displayed in the admin and can be downloaded as an ical (.ics) file:
+The iCal string for the calendar entry is also displayed in the admin and can be downloaded as an ical (.ics) file:
 
 .. image:: widget-ical.png
    :alt: Widget ical image

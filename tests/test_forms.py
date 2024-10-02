@@ -3,9 +3,8 @@ from datetime import datetime, timedelta
 
 import pytest
 import pytz
-
-from recurring.forms import RecurrenceSetForm
-from recurring.models import RecurrenceSet, Timezone
+from recurring.forms import CalendarEntryForm
+from recurring.models import CalendarEntry, Timezone
 
 
 @pytest.fixture
@@ -14,23 +13,21 @@ def timezone_obj():
 
 
 @pytest.fixture
-def valid_recurrence_set_data():
-    """Fixture to provide valid recurrence set data."""
+def valid_calendar_entry_data():
+    """Fixture to provide valid calendar entry data."""
     return {
-        "name": "Test Recurrence Set",
-        "description": "A test recurrence set",
+        "name": "Test Calendar Entry",
+        "description": "A test calendar entry",
         "timezone": 1,
-        "recurrence_set": json.dumps(
+        "calendar_entry": json.dumps(
             {
-                "rules": [
+                "events": [
                     {
+                        "start_time": "2023-01-01T00:00:00",
+                        "end_time": "2023-01-01T01:00:00",
+                        "is_full_day": False,
                         "rule": {"frequency": "DAILY", "interval": 1},
-                        "dateRanges": [
-                            {
-                                "startDate": "2023-01-01T00:00:00",
-                                "endDate": "2023-12-31T23:59:59",
-                            }
-                        ],
+                        "exclusions": [],
                     }
                 ]
             }
@@ -39,120 +36,120 @@ def valid_recurrence_set_data():
 
 
 @pytest.mark.django_db
-class TestRecurrenceSetForm:
-    def test_form_valid_data(self, valid_recurrence_set_data):
+class TestCalendarEntryForm:
+    def test_form_valid_data(self, valid_calendar_entry_data):
         """Test that the form is valid with correct data."""
-        form = RecurrenceSetForm(data=valid_recurrence_set_data)
+        form = CalendarEntryForm(data=valid_calendar_entry_data)
         assert form.is_valid(), form.errors
 
     def test_form_missing_required_fields(self):
         """Test that the form is invalid when required fields are missing."""
-        form = RecurrenceSetForm(data={})
+        form = CalendarEntryForm(data={})
         assert not form.is_valid()
         assert "timezone" in form.errors
 
-    def test_form_invalid_json(self, valid_recurrence_set_data):
-        """Test that the form is invalid when recurrence_set JSON is malformed."""
-        valid_recurrence_set_data["recurrence_set"] = "invalid json"
-        form = RecurrenceSetForm(data=valid_recurrence_set_data)
+    def test_form_invalid_json(self, valid_calendar_entry_data):
+        """Test that the form is invalid when calendar_entry JSON is malformed."""
+        valid_calendar_entry_data["calendar_entry"] = "invalid json"
+        form = CalendarEntryForm(data=valid_calendar_entry_data)
         assert not form.is_valid()
-        assert "recurrence_set" in form.errors
+        assert "calendar_entry" in form.errors
 
-    def test_form_missing_rules(self, valid_recurrence_set_data):
-        """Test that the form is invalid when rules are missing."""
-        data = json.loads(valid_recurrence_set_data["recurrence_set"])
-        data["rules"] = []
-        valid_recurrence_set_data["recurrence_set"] = json.dumps(data)
-        form = RecurrenceSetForm(data=valid_recurrence_set_data)
+    def test_form_missing_events(self, valid_calendar_entry_data):
+        """Test that the form is invalid when events are missing."""
+        data = json.loads(valid_calendar_entry_data["calendar_entry"])
+        data["events"] = []
+        valid_calendar_entry_data["calendar_entry"] = json.dumps(data)
+        form = CalendarEntryForm(data=valid_calendar_entry_data)
         assert not form.is_valid()
         assert any(
-            "You must add at least one rule" in error
+            "You must add at least one event" in error
             for error in form.non_field_errors()
         )
 
-    def test_form_invalid_rule_structure(self, valid_recurrence_set_data):
-        """Test that the form is invalid when rule structure is incorrect."""
-        data = json.loads(valid_recurrence_set_data["recurrence_set"])
-        data["rules"][0].pop("rule")
-        valid_recurrence_set_data["recurrence_set"] = json.dumps(data)
-        form = RecurrenceSetForm(data=valid_recurrence_set_data)
+    def test_form_invalid_event_structure(self, valid_calendar_entry_data):
+        """Test that the form is invalid when event structure is incorrect."""
+        data = json.loads(valid_calendar_entry_data["calendar_entry"])
+        data["events"][0].pop("start_time")
+        valid_calendar_entry_data["calendar_entry"] = json.dumps(data)
+        form = CalendarEntryForm(data=valid_calendar_entry_data)
         assert not form.is_valid()
-        assert "recurrence_set" in form.errors
+        assert "calendar_entry" in form.errors
 
-    def test_form_invalid_date_range(self, valid_recurrence_set_data):
-        """Test that the form is invalid when date range is incorrect."""
-        data = json.loads(valid_recurrence_set_data["recurrence_set"])
-        data["rules"][0]["dateRanges"][0].pop("startDate")
-        valid_recurrence_set_data["recurrence_set"] = json.dumps(data)
-        form = RecurrenceSetForm(data=valid_recurrence_set_data)
+    def test_form_invalid_exclusion(self, valid_calendar_entry_data):
+        """Test that the form is invalid when exclusion is incorrect."""
+        data = json.loads(valid_calendar_entry_data["calendar_entry"])
+        data["events"][0]["exclusions"] = [
+            {"start_date": "2023-01-01"}
+        ]  # Missing end_date
+        valid_calendar_entry_data["calendar_entry"] = json.dumps(data)
+        form = CalendarEntryForm(data=valid_calendar_entry_data)
         assert not form.is_valid()
-        assert "recurrence_set" in form.errors
+        assert "calendar_entry" in form.errors
 
-    def test_form_save_method(self, valid_recurrence_set_data):
-        """Test that the form save method creates a RecurrenceSet instance."""
-        form = RecurrenceSetForm(data=valid_recurrence_set_data)
+    def test_form_save_method(self, valid_calendar_entry_data):
+        """Test that the form save method creates a CalendarEntry instance."""
+        form = CalendarEntryForm(data=valid_calendar_entry_data)
         assert form.is_valid(), form.errors
         instance = form.save()
-        assert isinstance(instance, RecurrenceSet)
+        assert isinstance(instance, CalendarEntry)
         assert instance.pk is not None
-        assert instance.name == valid_recurrence_set_data["name"]
-        assert instance.description == valid_recurrence_set_data["description"]
-        assert instance.timezone.id == valid_recurrence_set_data["timezone"]
-        assert instance.recurrencesetrules.count() == 1
+        assert instance.name == valid_calendar_entry_data["name"]
+        assert instance.description == valid_calendar_entry_data["description"]
+        assert instance.timezone.id == valid_calendar_entry_data["timezone"]
+        assert instance.events.count() == 1
 
     def test_form_update_existing_instance(
-        self, valid_recurrence_set_data, timezone_obj
+        self, valid_calendar_entry_data, timezone_obj
     ):
-        """Test that the form updates an existing RecurrenceSet instance."""
-        initial_instance = RecurrenceSet.objects.create(
+        """Test that the form updates an existing CalendarEntry instance."""
+        initial_instance = CalendarEntry.objects.create(
             name="Initial Name",
             description="Initial Description",
             timezone=timezone_obj,
         )
-        form = RecurrenceSetForm(
-            data=valid_recurrence_set_data, instance=initial_instance
+        form = CalendarEntryForm(
+            data=valid_calendar_entry_data, instance=initial_instance
         )
         assert form.is_valid(), form.errors
         updated_instance = form.save()
         assert updated_instance.pk == initial_instance.pk
-        assert updated_instance.name == valid_recurrence_set_data["name"]
-        assert updated_instance.description == valid_recurrence_set_data["description"]
-        assert updated_instance.timezone.id == valid_recurrence_set_data["timezone"]
+        assert updated_instance.name == valid_calendar_entry_data["name"]
+        assert updated_instance.description == valid_calendar_entry_data["description"]
+        assert updated_instance.timezone.id == valid_calendar_entry_data["timezone"]
 
     def test_form_initial_data_population(self, timezone_obj):
         """Test that the form is correctly populated with initial data from an existing instance."""
-        existing_instance = RecurrenceSet.objects.create(
-            name="Existing Set",
-            description="An existing recurrence set",
+        existing_instance = CalendarEntry.objects.create(
+            name="Existing Entry",
+            description="An existing calendar entry",
             timezone=timezone_obj,
         )
         existing_instance.from_dict(
             {
-                "rules": [
+                "events": [
                     {
+                        "start_time": datetime.now(pytz.UTC),
+                        "end_time": datetime.now(pytz.UTC) + timedelta(hours=1),
+                        "is_full_day": False,
                         "rule": {"frequency": "DAILY", "interval": 1},
-                        "date_ranges": [
-                            {
-                                "start_date": datetime.now(pytz.UTC),
-                                "end_date": datetime.now(pytz.UTC) + timedelta(days=30),
-                            }
-                        ],
+                        "exclusions": [],
                     }
                 ]
             }
         )
-        form = RecurrenceSetForm(instance=existing_instance)
-        assert form.initial["name"] == "Existing Set"
-        assert form.initial["description"] == "An existing recurrence set"
+        form = CalendarEntryForm(instance=existing_instance)
+        assert form.initial["name"] == "Existing Entry"
+        assert form.initial["description"] == "An existing calendar entry"
         assert form.initial["timezone"] == timezone_obj.id
-        assert "recurrence_set" in form.initial
-        assert isinstance(json.loads(form.initial["recurrence_set"]), dict)
+        assert "calendar_entry" in form.initial
+        assert isinstance(json.loads(form.initial["calendar_entry"]), dict)
 
     def test_form_widget_attributes(self):
         """Test that the form widget has the correct attributes."""
-        form = RecurrenceSetForm()
-        widget = form.fields["recurrence_set"].widget
-        assert widget.__class__.__name__ == "RecurrenceSetWidget"
+        form = CalendarEntryForm()
+        widget = form.fields["calendar_entry"].widget
+        assert widget.__class__.__name__ == "CalendarEntryWidget"
         assert widget.attrs["style"] == "display: none;"
 
     @pytest.mark.parametrize(
@@ -160,17 +157,17 @@ class TestRecurrenceSetForm:
         [
             ("timezone", "Invalid/Timezone"),  # Invalid timezone
             (
-                "recurrence_set",
+                "calendar_entry",
                 '{"invalid": "json"}',
-            ),  # Invalid recurrence set structure
+            ),  # Invalid calendar entry structure
         ],
     )
     def test_form_field_validation(
-        self, valid_recurrence_set_data, invalid_field, invalid_value
+        self, valid_calendar_entry_data, invalid_field, invalid_value
     ):
         """Test validation for individual fields with invalid data."""
-        invalid_data = valid_recurrence_set_data.copy()
+        invalid_data = valid_calendar_entry_data.copy()
         invalid_data[invalid_field] = invalid_value
-        form = RecurrenceSetForm(data=invalid_data)
+        form = CalendarEntryForm(data=invalid_data)
         assert not form.is_valid()
         assert invalid_field in form.errors

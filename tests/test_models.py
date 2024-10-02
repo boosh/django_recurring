@@ -1,7 +1,8 @@
+from datetime import datetime
+
 import pytest
 import pytz
 from django.utils import timezone as django_timezone
-
 from recurring.models import (
     Timezone,
     CalendarEntry,
@@ -72,15 +73,22 @@ class TestCalendarEntry:
         assert calendar_entry_dict["timezone"] == "UTC"
         assert len(calendar_entry_dict["events"]) == 1
 
-    def test_from_dict(self, calendar_entry):
+    def test_from_dict(self, calendar_entry, event):
+        tz = calendar_entry.timezone.as_tz
+        start_time_naive = datetime.fromisoformat("2023-01-01T00:00:00+00:00")
+        end_time_naive = datetime.fromisoformat("2023-01-01T01:00:00+00:00")
+
+        exclusion_start_naive = datetime.fromisoformat("2023-01-07T00:00:00+00:00")
+        exclusion_end_naive = datetime.fromisoformat("2023-01-10T00:00:00+00:00")
+
         data = {
             "name": "Updated Calendar Entry",
             "description": "An updated calendar entry",
             "timezone": "UTC",
             "events": [
                 {
-                    "start_time": "2023-01-01T00:00:00+00:00",
-                    "end_time": "2023-01-01T01:00:00+00:00",
+                    "start_time": tz.localize(start_time_naive.replace(tzinfo=None)),
+                    "end_time": tz.localize(end_time_naive.replace(tzinfo=None)),
                     "is_full_day": False,
                     "rule": {
                         "frequency": "DAILY",
@@ -89,8 +97,12 @@ class TestCalendarEntry:
                     },
                     "exclusions": [
                         {
-                            "start_date": "2023-01-07T00:00:00+00:00",
-                            "end_date": "2023-01-10T00:00:00+00:00",
+                            "start_date": tz.localize(
+                                exclusion_start_naive.replace(tzinfo=None)
+                            ),
+                            "end_date": tz.localize(
+                                exclusion_end_naive.replace(tzinfo=None)
+                            ),
                         }
                     ],
                 }

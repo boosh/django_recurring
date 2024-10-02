@@ -6,7 +6,6 @@ from django.db import migrations
 class Migration(migrations.Migration):
     dependencies = [
         ("recurring", "0002_remove_recurrenceset_timezone_and_more"),
-        ("testapp", "0002_remove_event_recurrence_set_event_calendar_entry"),
     ]
 
     operations = [
