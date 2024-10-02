@@ -40,7 +40,7 @@ Features
 * Access recurrences using dateutil rrulesets
 * Automatically calculate previous and next occurrences for efficient date range queries
 * Timezone-aware datetime handling
-* Export recurrence sets to iCal format (.ics files)
+* Export to iCal format (.ics files)
 * Admin widget for creating and editing recurrence patterns
 
 Quick Start
