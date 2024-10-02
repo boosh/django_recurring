@@ -151,26 +151,30 @@ class CalendarEntryForm {
     createEventForm(container, event) {
         container.dataset.eventId = event.id.toString();
         container.innerHTML = `
-            <div class="event-times">
-                <div class="col">
-                    <label>Start:
-                        <input type="datetime-local" class="start-datetime">
-                    </label>
-                    <a href="#" class="set-now">Now</a>
-                </div>
-                <div class="col">
-                    <label>End:
-                        <input type="datetime-local" class="end-datetime">
-                    </label>
-                    <div class="end-date-links">
-                      <a href="#" class="set-now-end">Now</a>
-                      <a href="#" class="set-far-future">Far Future</a>
+            <div>
+                <div class="event-times">
+                    <div class="col">
+                        <label>Start:
+                            <input type="datetime-local" class="start-datetime">
+                        </label>
+                        <a href="#" class="set-now">Now</a>
                     </div>
-                    <label>
-                        <input type="checkbox" class="all-day-checkbox">
-                        All Day
-                    </label>
+                    <div class="col">
+                        <label>End:
+                            <input type="datetime-local" class="end-datetime">
+                        </label>
+                        <div class="end-date-links">
+                          <a href="#" class="set-now-end">Now</a>
+                          <a href="#" class="set-far-future">Far Future</a>
+                        </div>
+                        <label>
+                            <input type="checkbox" class="all-day-checkbox">
+                            All Day
+                        </label>
+                    </div>
+                    <div></div>
                 </div>
+                <div class="help">The start and end times of each event. E.g. for an event from 9-11am on 1/1/25, you'd put 1/1/25 09:00 as the start time, and 1/1/25 11:00 as the end time.</div>
             </div>
             <div class="recurrence-rule-container"></div>
             <button class="remove-event">Remove Event</button>

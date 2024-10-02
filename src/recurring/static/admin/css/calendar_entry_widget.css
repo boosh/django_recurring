@@ -99,6 +99,11 @@ input[type="datetime-local"] {
     margin-top: 10px;
 }
 
+.event-container .help {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
 .calendar-entry-text {
     font-style: italic;
     color: #666;
