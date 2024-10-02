@@ -494,7 +494,8 @@ class CalendarEntryForm {
             this.updateEvent(container, event);
         });
 
-        container.querySelector('.exclusions-container').appendChild(exclusionContainer);
+        const addExclusionButton = container.querySelector('.add-exclusion');
+        container.querySelector('.exclusions-container').insertBefore(exclusionContainer, addExclusionButton);
         this.updateEvent(container, event);
     }
 
