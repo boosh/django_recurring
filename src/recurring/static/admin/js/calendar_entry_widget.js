@@ -78,7 +78,7 @@ function initCalendarEntryWidget(name) {
                     return false;
                 }
             }
-            if (event.recurrenceRule && event.recurrenceRule.until === '') {
+            if (event.recurrenceRule && event.recurrenceRule.until !== undefined && event.recurrenceRule.until === '') {
                 alert('Please specify when the recurring event should run until.');
                 return false;
             }
@@ -328,6 +328,13 @@ class CalendarEntryForm {
             el.addEventListener('change', () => this.updateEvent(container.closest('.event-container'), event));
         });
 
+        // Add event listeners for radio buttons
+        const untilRadio = container.querySelector('input[name^="end-recurrence"][value="until"]');
+        const countRadio = container.querySelector('input[name^="end-recurrence"][value="count"]');
+        [untilRadio, countRadio].forEach(radio => {
+            radio.addEventListener('change', () => this.updateEvent(container.closest('.event-container'), event));
+        });
+
         this.createWeekdayButtons(container);
         this.createMonthButtons(container);
         this.createBySetPosButtons(container);
@@ -541,10 +548,15 @@ class CalendarEntryForm {
                 interval: parseInt(intervalInput.value, 10)
             };
 
-            if (container.querySelector('input[name^="end-recurrence"][value="until"]').checked) {
+            const untilRadio = container.querySelector('input[name^="end-recurrence"][value="until"]');
+            const countRadio = container.querySelector('input[name^="end-recurrence"][value="count"]');
+
+            if (untilRadio.checked) {
                 event.recurrenceRule.until = untilDateTimeInput.value;
-            } else {
+                delete event.recurrenceRule.count;
+            } else if (countRadio.checked) {
                 event.recurrenceRule.count = parseInt(countInput.value, 10);
+                delete event.recurrenceRule.until;
             }
 
             event.recurrenceRule.byweekday = Array.from(weekdayButtons)
