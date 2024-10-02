@@ -73,7 +73,7 @@ function initCalendarEntryWidget(name) {
                 return false;
             }
             for (let exclusion of event.exclusions) {
-                if (!exclusion.startDate || !exclusion.endDate) {
+                if (!exclusion.start_date || !exclusion.end_date) {
                     alert('Please set both start and end dates for all exclusions.');
                     return false;
                 }
@@ -494,8 +494,8 @@ class CalendarEntryForm {
         const endDateInput = exclusionContainer.querySelector('.exclusion-end-date');
 
         if (exclusion) {
-            startDateInput.value = this.formatDateForInput(exclusion.startDate);
-            endDateInput.value = this.formatDateForInput(exclusion.endDate);
+            startDateInput.value = this.formatDateForInput(exclusion.start_date);
+            endDateInput.value = this.formatDateForInput(exclusion.end_date);
         }
 
         const updateEventHandler = () => this.updateEvent(container, event);
@@ -537,8 +537,8 @@ class CalendarEntryForm {
 
         event.exclusions = Array.from(exclusionContainers).map(container => {
             return {
-                startDate: container.querySelector('.exclusion-start-date').value,
-                endDate: container.querySelector('.exclusion-end-date').value
+                start_date: container.querySelector('.exclusion-start-date').value,
+                end_date: container.querySelector('.exclusion-end-date').value
             };
         });
 
@@ -666,7 +666,7 @@ class CalendarEntryForm {
         if (event.exclusions.length > 0) {
             text += 'Exclusions:<br>';
             event.exclusions.forEach((exclusion, i) => {
-                text += `&nbsp;&nbsp;${i + 1}. From ${new Date(exclusion.startDate).toLocaleDateString()} to ${new Date(exclusion.endDate).toLocaleDateString()}<br>`;
+                text += `&nbsp;&nbsp;${i + 1}. From ${new Date(exclusion.start_date).toLocaleDateString()} to ${new Date(exclusion.end_date).toLocaleDateString()}<br>`;
             });
         }
 
@@ -763,8 +763,8 @@ function parseInitialData(jsonString) {
             timezone: eventData.rule.timezone
         } : null,
         exclusions: eventData.exclusions ? eventData.exclusions.map(exclusion => ({
-            startDate: removeTimezone(exclusion.startDate),
-            endDate: removeTimezone(exclusion.endDate)
+            start_date: removeTimezone(exclusion.start_date),
+            end_date: removeTimezone(exclusion.end_date)
         })) : []
     }));
     console.log(`Parsed JSON as events: ${JSON.stringify(events)}`);
