@@ -78,6 +78,10 @@ function initCalendarEntryWidget(name) {
                     return false;
                 }
             }
+            if (event.recurrenceRule && event.recurrenceRule.until === '') {
+                alert('Please specify when the recurring event should run until.');
+                return false;
+            }
         }
         return true;
     }
