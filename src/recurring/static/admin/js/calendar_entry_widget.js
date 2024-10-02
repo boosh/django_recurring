@@ -78,7 +78,7 @@ function initCalendarEntryWidget(name) {
                     return false;
                 }
             }
-            if (event.recurrenceRule && event.recurrenceRule.until !== undefined && event.recurrenceRule.until === '') {
+            if (event.recurrence_rule && event.recurrence_rule.until !== undefined && event.recurrence_rule.until === '') {
                 alert('Please specify when the recurring event should run until.');
                 return false;
             }
@@ -118,7 +118,7 @@ class CalendarEntryForm {
             start_time: null,
             end_time: null,
             is_full_day: false,
-            recurrenceRule: null,
+            recurrence_rule: null,
             exclusions: []
         };
 
@@ -347,38 +347,38 @@ class CalendarEntryForm {
             input.addEventListener('change', () => this.updateEvent(container.closest('.event-container'), event));
         });
 
-        if (event.recurrenceRule && Object.keys(event.recurrenceRule).length > 0 && event.recurrenceRule.frequency) {
+        if (event.recurrence_rule && Object.keys(event.recurrence_rule).length > 0 && event.recurrence_rule.frequency) {
             hasRecurrenceCheckbox.checked = true;
             recurrenceDetails.style.display = 'block';
             container.querySelector('.exclusions-container').style.display = 'block';
-            frequencySelect.value = event.recurrenceRule.frequency;
-            if (event.recurrenceRule.interval) {
-                intervalInput.value = event.recurrenceRule.interval;
+            frequencySelect.value = event.recurrence_rule.frequency;
+            if (event.recurrence_rule.interval) {
+                intervalInput.value = event.recurrence_rule.interval;
             }
-            if (event.recurrenceRule.until) {
+            if (event.recurrence_rule.until) {
                 container.querySelector('input[name^="end-recurrence"][value="until"]').checked = true;
-                untilDateTimeInput.value = this.formatDateTimeForInput(event.recurrenceRule.until);
-            } else if (event.recurrenceRule.count) {
+                untilDateTimeInput.value = this.formatDateTimeForInput(event.recurrence_rule.until);
+            } else if (event.recurrence_rule.count) {
                 container.querySelector('input[name^="end-recurrence"][value="count"]').checked = true;
-                countInput.value = event.recurrenceRule.count;
+                countInput.value = event.recurrence_rule.count;
             }
-            if (event.recurrenceRule.byweekday) {
-                this.setSelectedWeekdays(container, event.recurrenceRule.byweekday);
+            if (event.recurrence_rule.byweekday) {
+                this.setSelectedWeekdays(container, event.recurrence_rule.byweekday);
             }
-            if (event.recurrenceRule.bymonth) {
-                this.setSelectedMonths(container, event.recurrenceRule.bymonth);
+            if (event.recurrence_rule.bymonth) {
+                this.setSelectedMonths(container, event.recurrence_rule.bymonth);
             }
-            if (event.recurrenceRule.bymonthday) {
-                byMonthDayInput.value = event.recurrenceRule.bymonthday.join(',');
+            if (event.recurrence_rule.bymonthday) {
+                byMonthDayInput.value = event.recurrence_rule.bymonthday.join(',');
             }
-            if (event.recurrenceRule.bysetpos) {
-                this.setSelectedBySetPos(container, event.recurrenceRule.bysetpos);
+            if (event.recurrence_rule.bysetpos) {
+                this.setSelectedBySetPos(container, event.recurrence_rule.bysetpos);
             }
-            if (event.recurrenceRule.byhour) {
-                byHourInput.value = event.recurrenceRule.byhour.join(',');
+            if (event.recurrence_rule.byhour) {
+                byHourInput.value = event.recurrence_rule.byhour.join(',');
             }
-            if (event.recurrenceRule.byminute) {
-                byMinuteInput.value = event.recurrenceRule.byminute.join(',');
+            if (event.recurrence_rule.byminute) {
+                byMinuteInput.value = event.recurrence_rule.byminute.join(',');
             }
         } else {
             hasRecurrenceCheckbox.checked = false;
@@ -543,7 +543,7 @@ class CalendarEntryForm {
         });
 
         if (hasRecurrenceCheckbox.checked) {
-            event.recurrenceRule = {
+            event.recurrence_rule = {
                 frequency: frequencySelect.value,
                 interval: parseInt(intervalInput.value, 10)
             };
@@ -552,38 +552,38 @@ class CalendarEntryForm {
             const countRadio = container.querySelector('input[name^="end-recurrence"][value="count"]');
 
             if (untilRadio.checked) {
-                event.recurrenceRule.until = untilDateTimeInput.value;
-                delete event.recurrenceRule.count;
+                event.recurrence_rule.until = untilDateTimeInput.value;
+                delete event.recurrence_rule.count;
             } else if (countRadio.checked) {
-                event.recurrenceRule.count = parseInt(countInput.value, 10);
-                delete event.recurrenceRule.until;
+                event.recurrence_rule.count = parseInt(countInput.value, 10);
+                delete event.recurrence_rule.until;
             }
 
-            event.recurrenceRule.byweekday = Array.from(weekdayButtons)
+            event.recurrence_rule.byweekday = Array.from(weekdayButtons)
                 .filter(button => button.classList.contains('selected'))
                 .map(button => button.dataset.code);
 
-            event.recurrenceRule.bymonth = Array.from(monthButtons)
+            event.recurrence_rule.bymonth = Array.from(monthButtons)
                 .filter(button => button.classList.contains('selected'))
                 .map(button => parseInt(button.dataset.month));
 
             if (byMonthDayInput.value) {
-                event.recurrenceRule.bymonthday = this.parseNumberRanges(byMonthDayInput.value);
+                event.recurrence_rule.bymonthday = this.parseNumberRanges(byMonthDayInput.value);
             }
 
-            event.recurrenceRule.bysetpos = Array.from(bySetPosButtons)
+            event.recurrence_rule.bysetpos = Array.from(bySetPosButtons)
                 .filter(button => button.classList.contains('selected'))
                 .map(button => parseInt(button.dataset.pos));
 
             if (byHourInput.value) {
-                event.recurrenceRule.byhour = this.parseNumberRanges(byHourInput.value);
+                event.recurrence_rule.byhour = this.parseNumberRanges(byHourInput.value);
             }
 
             if (byMinuteInput.value) {
-                event.recurrenceRule.byminute = this.parseNumberRanges(byMinuteInput.value);
+                event.recurrence_rule.byminute = this.parseNumberRanges(byMinuteInput.value);
             }
         } else {
-            event.recurrenceRule = null;
+            event.recurrence_rule = null;
         }
 
         this.updateTextDisplay();
@@ -658,8 +658,8 @@ class CalendarEntryForm {
         }
 
         // Recurrence information as a human-readable string
-        if (event.recurrenceRule) {
-            text += this.recurrenceRuleToText(event.recurrenceRule) + '<br>';
+        if (event.recurrence_rule) {
+            text += this.recurrenceRuleToText(event.recurrence_rule) + '<br>';
         }
 
         // Exclusions
@@ -745,7 +745,7 @@ function parseInitialData(jsonString) {
         start_time: removeTimezone(eventData.start_time),
         end_time: removeTimezone(eventData.end_time),
         is_full_day: eventData.is_full_day,
-        recurrenceRule: eventData.rule ? {
+        recurrence_rule: eventData.rule ? {
             frequency: eventData.rule.frequency,
             interval: eventData.rule.interval,
             wkst: eventData.rule.wkst,
