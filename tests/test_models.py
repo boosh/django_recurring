@@ -140,7 +140,7 @@ class TestCalendarEntry:
 
         assert "BEGIN:VCALENDAR" in ical_string
         assert "BEGIN:VEVENT" in ical_string
-        assert "RRULE:FREQ=DAILY;INTERVAL=1" in ical_string
+        assert "RRULE:FREQ=DAILY;COUNT=3;INTERVAL=1" in ical_string
         assert "DTSTART:20230101T000000Z" in ical_string
         assert "DTEND:20230101T010000Z" in ical_string
         assert "END:VEVENT" in ical_string
@@ -170,7 +170,7 @@ class TestCalendarEntry:
         assert "DTEND:20230101T010000Z" in ical_string
         assert "DTSTAMP:" in ical_string
         assert "UID:" in ical_string
-        assert "RRULE:FREQ=DAILY;INTERVAL=1" in ical_string
+        assert "RRULE:FREQ=DAILY;COUNT=3;INTERVAL=1" in ical_string
         assert (
             "EXDATE:20230107T000000Z,20230108T000000Z,20230109T000000Z,20230110T000000Z"
             in ical_string
