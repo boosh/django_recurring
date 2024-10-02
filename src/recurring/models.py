@@ -275,6 +275,7 @@ class CalendarEntry(models.Model):
             name=data.get("timezone", self.timezone.name)
         )
         self.save()
+        tz = pytz.timezone(self.timezone.name)
 
         for event_data in data.get("events", []):
             event = Event(
@@ -312,8 +313,8 @@ class CalendarEntry(models.Model):
             for exclusion_data in event_data.get("exclusions", []):
                 ExclusionDateRange.objects.create(
                     event=event,
-                    start_date=exclusion_data["start_date"],
-                    end_date=exclusion_data["end_date"],
+                    start_date=exclusion_data["start_date"].astimezone(tz),
+                    end_date=exclusion_data["end_date"].astimezone(tz),
                 )
 
     def recalculate_occurrences(self):
