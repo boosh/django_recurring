@@ -710,8 +710,6 @@ class CalendarEntryForm {
             } else if (rule.count) {
                 text += ` for ${rule.count} occurrences`;
             }
-        } else {
-            text = 'Recurrence rule is missing frequency';
         }
 
         return text;
@@ -740,7 +738,7 @@ function parseInitialData(jsonString) {
             interval: eventData.rule.interval,
             wkst: eventData.rule.wkst,
             count: eventData.rule.count,
-            until: removeTimezone(eventData.rule.until),
+            until: eventData.rule.until ? removeTimezone(eventData.rule.until) : undefined,
             bysetpos: eventData.rule.bysetpos,
             bymonth: eventData.rule.bymonth,
             bymonthday: eventData.rule.bymonthday,
