@@ -1,6 +1,9 @@
 =======
 History
 =======
+0.3.0 (2024-10-02)
+------------------
+* Breaking change: Total refactoring of models to better align with ical rrules.
 
 0.2.0 (2024-10-01)
 ------------------
