@@ -13,6 +13,7 @@ django-recurring
         :alt: Documentation Status
 
 Create ical-compatible calendar events in django. This library is good if you need:
+
 * iCal-compatible calendar entries with multiple events and (optionally) complex recurrence rules and multiple exclusions
 * Calendar entries you can export to iCal format (.ics files)
 * To add complex recurrence rules to your models and interact with them as dateutil rrulesets
