@@ -732,15 +732,15 @@ function parseInitialData(jsonString) {
 
     const events = data.events.map(eventData => ({
         id: eventData.id || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        start_time: eventData.start_time,
-        end_time: eventData.end_time,
+        start_time: removeTimezone(eventData.start_time),
+        end_time: removeTimezone(eventData.end_time),
         is_full_day: eventData.is_full_day,
         recurrenceRule: eventData.rule ? {
             frequency: eventData.rule.frequency,
             interval: eventData.rule.interval,
             wkst: eventData.rule.wkst,
             count: eventData.rule.count,
-            until: eventData.rule.until,
+            until: removeTimezone(eventData.rule.until),
             bysetpos: eventData.rule.bysetpos,
             bymonth: eventData.rule.bymonth,
             bymonthday: eventData.rule.bymonthday,
@@ -752,8 +752,16 @@ function parseInitialData(jsonString) {
             bysecond: eventData.rule.bysecond,
             timezone: eventData.rule.timezone
         } : null,
-        exclusions: eventData.exclusions || []
+        exclusions: eventData.exclusions ? eventData.exclusions.map(exclusion => ({
+            startDate: removeTimezone(exclusion.startDate),
+            endDate: removeTimezone(exclusion.endDate)
+        })) : []
     }));
     console.log(`Parsed JSON as events: ${JSON.stringify(events)}`);
     return events;
+}
+
+function removeTimezone(dateTimeString) {
+    if (!dateTimeString) return null;
+    return dateTimeString.replace(/([+-]\d{2}:\d{2}|Z)$/, '');
 }
