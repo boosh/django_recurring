@@ -29,6 +29,7 @@ dev = [
     "mypy",  # linting
     "pytest",  # testing
     "pytest-django",  # testing
+    "django",
     "ruff",  # linting
     "pre-commit",
     "build",

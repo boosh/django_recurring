@@ -5,7 +5,7 @@ Admin
 Widget
 ------
 
-django-recurring ships with a javascript widget for the Django admin interface to create complex intervals easily:
+django-recurring ships with a javascript widget for the Django admin interface to create complex intervals easily. Recurrence rules can have multiple exclusions:
 
 .. image:: widget-advanced.png
    :alt: Widget advanced image
@@ -16,6 +16,8 @@ It supports multiple events, each with recurrence patterns:
 .. image:: widget-simple.png
    :alt: Widget simple image
    :align: center
+
+Together, this allows creating recurrences like: every Monday in Jan & Feb, every Tuesday in Mar and Apr, except the 3rd week of Feb and Apr.
 
 iCal
 ------
