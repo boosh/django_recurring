@@ -381,36 +381,37 @@ class CalendarEntry(models.Model):
                 ical_event.add("dtend", event.end_time)
 
             rule = event.recurrence_rule
-            rrule_dict = {
-                "freq": rule.get_frequency_display(),
-                "interval": rule.interval,
-            }
-            if rule.wkst is not None:
-                rrule_dict["wkst"] = rule.wkst
-            if rule.count is not None:
-                rrule_dict["count"] = rule.count
-            if rule.until is not None:
-                rrule_dict["until"] = rule.until
-            if rule.bysetpos:
-                rrule_dict["bysetpos"] = rule.bysetpos
-            if rule.bymonth:
-                rrule_dict["bymonth"] = rule.bymonth
-            if rule.bymonthday:
-                rrule_dict["bymonthday"] = rule.bymonthday
-            if rule.byyearday:
-                rrule_dict["byyearday"] = rule.byyearday
-            if rule.byweekno:
-                rrule_dict["byweekno"] = rule.byweekno
-            if rule.byweekday:
-                rrule_dict["byday"] = rule.byweekday
-            if rule.byhour:
-                rrule_dict["byhour"] = rule.byhour
-            if rule.byminute:
-                rrule_dict["byminute"] = rule.byminute
-            if rule.bysecond:
-                rrule_dict["bysecond"] = rule.bysecond
+            if rule:
+                rrule_dict = {
+                    "freq": rule.get_frequency_display(),
+                    "interval": rule.interval,
+                }
+                if rule.wkst is not None:
+                    rrule_dict["wkst"] = rule.wkst
+                if rule.count is not None:
+                    rrule_dict["count"] = rule.count
+                if rule.until is not None:
+                    rrule_dict["until"] = rule.until
+                if rule.bysetpos:
+                    rrule_dict["bysetpos"] = rule.bysetpos
+                if rule.bymonth:
+                    rrule_dict["bymonth"] = rule.bymonth
+                if rule.bymonthday:
+                    rrule_dict["bymonthday"] = rule.bymonthday
+                if rule.byyearday:
+                    rrule_dict["byyearday"] = rule.byyearday
+                if rule.byweekno:
+                    rrule_dict["byweekno"] = rule.byweekno
+                if rule.byweekday:
+                    rrule_dict["byday"] = rule.byweekday
+                if rule.byhour:
+                    rrule_dict["byhour"] = rule.byhour
+                if rule.byminute:
+                    rrule_dict["byminute"] = rule.byminute
+                if rule.bysecond:
+                    rrule_dict["bysecond"] = rule.bysecond
 
-            ical_event.add("rrule", rrule_dict)
+                ical_event.add("rrule", rrule_dict)
 
             # the time component is kept in sync with the event start time
             exdates = [
