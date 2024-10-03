@@ -47,8 +47,14 @@ input[type="datetime-local"] {
     margin-top: 10px;
 }
 
+.end-recurrence > label:first-child {
+  width: 100px !important;
+}
+
 .end-recurrence label {
-    width: 180px;
+    flex-basis: auto;
+    min-width: auto !important;
+    width: auto !important;
 }
 
 .byhour-container label, .byminute-container label {

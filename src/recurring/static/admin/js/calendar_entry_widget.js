@@ -266,7 +266,11 @@ class CalendarEntryForm {
                     </div>
                     <div class="end-recurrence">
                         <label>
-                            <input type="radio" name="end-recurrence-${event.id}" value="until" checked>
+                            <input type="radio" name="end-recurrence-${event.id}" value="forever" checked>
+                            Forever
+                        </label>
+                        <label>
+                            <input type="radio" name="end-recurrence-${event.id}" value="until">
                             Until
                             <input type="datetime-local" class="until-datetime">
                         </label>

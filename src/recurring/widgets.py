@@ -11,7 +11,7 @@ class CalendarEntryWidget(forms.Widget):
     template_name = "admin/recurring/calendar_entry_widget.html"
 
     class Media:
-        js = ("admin/js/vendor/rrule.min.js", "admin/js/calendar_entry_widget.js")
+        js = ("admin/js/calendar_entry_widget.js",)
         css = {"all": ("admin/css/calendar_entry_widget.css",)}
 
     def __init__(self, attrs=None, form=None):
