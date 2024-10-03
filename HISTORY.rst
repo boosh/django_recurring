@@ -1,7 +1,7 @@
 =======
 History
 =======
-0.3.x (2024-10-02)
+0.3.x (2024-10-03)
 ------------------
 * Add an option to repeat events forever
 * Calculate prev/next occurrences more efficiently
