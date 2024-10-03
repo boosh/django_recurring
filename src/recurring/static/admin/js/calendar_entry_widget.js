@@ -353,9 +353,10 @@ class CalendarEntryForm {
         });
 
         // Add event listeners for radio buttons
+        const foreverRadio = container.querySelector('input[name^="end-recurrence"][value="forever"]');
         const untilRadio = container.querySelector('input[name^="end-recurrence"][value="until"]');
         const countRadio = container.querySelector('input[name^="end-recurrence"][value="count"]');
-        [untilRadio, countRadio].forEach(radio => {
+        [foreverRadio, untilRadio, countRadio].forEach(radio => {
             radio.addEventListener('change', () => this.updateEvent(container.closest('.event-container'), event));
         });
 
