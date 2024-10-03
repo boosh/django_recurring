@@ -4,6 +4,10 @@ Examples
 
 This page provides various examples of how to use django-recurring in your Django projects.
 
+.. note::
+
+    This documentation was generated with AI. Code examples may not be 100% accurate. For tested, working code, see the source for the `save()` method in `forms.py <https://django-recurring.readthedocs.io/en/latest/_modules/recurring/forms.html#CalendarEntryForm.save>`_
+
 Creating a CalendarEntry with Multiple Events
 ---------------------------------------------
 
@@ -48,9 +52,6 @@ Creating a CalendarEntry with Multiple Events
        recurrence_rule=monthly_rule
    )
 
-   # Recalculate occurrences
-   calendar_entry.recalculate_occurrences()
-
 Complex Recurrence Pattern
 --------------------------
 
@@ -94,7 +95,7 @@ Complex Recurrence Pattern
        recurrence_rule=monthly_friday_rule
    )
 
-   calendar_entry.recalculate_occurrences()
+
 
 Accessing rruleset and rrules
 -----------------------------
@@ -146,8 +147,6 @@ Using CalendarEntry in Your Own Model
        )
    )
 
-   calendar_entry.recalculate_occurrences()
-
    meeting = Meeting.objects.create(title="Monthly Board Meeting", calendar_entry=calendar_entry)
 
    # Query meetings within a date range
@@ -155,6 +154,10 @@ Using CalendarEntry in Your Own Model
        calendar_entry__next_occurrence__gte=timezone.now(),
        calendar_entry__next_occurrence__lte=timezone.now() + timezone.timedelta(days=30)
    )
+
+.. important::
+
+    See notes on :ref:`recalculating occurrences <recalculating-occurrences>`
 
 Exporting to iCal Format
 ------------------------
@@ -174,7 +177,3 @@ django-recurring supports exporting CalendarEntries to iCal format:
        f.write(ical_string)
 
 The resulting iCal file will contain all the events and their recurrence rules, which can be imported into most calendar applications.
-
-.. important::
-
-    See notes on :doc:`recalculating occurrences <usage>`

@@ -30,7 +30,7 @@ Status
 
 Initial release. There are likely to be bugs.
 
-The 0.x series is for development only and should not be used in live projects.
+The 0.x series is for development only and should not be used in live projects. Semver is ignored on the 0.x branch.
 
 Features
 --------
@@ -41,7 +41,7 @@ Features
 * Automatically calculate previous and next occurrences for efficient date range queries
 * Timezone-aware datetime handling
 * Export to iCal format (.ics files)
-* Admin widget for creating and editing recurrence patterns
+* `Admin widget <https://django-recurring.readthedocs.io/en/latest/admin.html>`_ for creating and editing recurrence patterns
 
 Quick Start
 -----------
@@ -69,7 +69,7 @@ Quick Start
 
 4. Add CalendarEntry or Event to your model:
 
-   For a calendar with multiple events:
+   For a calendar entry with multiple events:
 
    .. code-block:: python
 
@@ -80,7 +80,7 @@ Quick Start
           name = models.CharField(max_length=200)
           calendar = models.ForeignKey(CalendarEntry, on_delete=models.CASCADE)
 
-   For a single recurring event:
+   For more basic instances of a single recurring event:
 
    .. code-block:: python
 
@@ -130,6 +130,10 @@ Quick Start
           end_time=timezone.now() + timezone.timedelta(hours=2),
           recurrence_rule=monthly_rule
       )
+
+      # automatically recalculate occurrences now there are some
+      # events and recurrence rules
+      calendar.save()
 
       # Query upcoming meetings
       upcoming_meetings = Meeting.objects.filter(

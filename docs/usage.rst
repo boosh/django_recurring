@@ -2,6 +2,10 @@
 Usage
 =====
 
+.. note::
+
+    This documentation was generated with AI. Code examples may not be 100% accurate. For tested, working code, see the source for the `save()` method in `forms.py <https://django-recurring.readthedocs.io/en/latest/_modules/recurring/forms.html#CalendarEntryForm.save>`_
+
 Quick Start
 -----------
 
@@ -124,20 +128,22 @@ You can access the rruleset for a CalendarEntry and individual rrules for each e
            rrule = event.recurrence_rule.to_rrule(event.start_time)
            # Use the rrule object as needed
 
+.. _recalculating-occurrences:
+
 Recalculating Occurrences
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To ensure the `next_occurrence` and `previous_occurrence` fields are up-to-date, call `recalculate_occurrences()` after making changes:
+The `next_occurrence` and `previous_occurrence` fields are updated by calling `recalculate_occurrences()`. By default, this is run when `CalendarEntry` instances are saved. However, you can run it manually with:
 
 .. code-block:: python
 
    calendar_entry.recalculate_occurrences()
 
-You can also recalculate occurrences when saving:
+Or you can save `CalendarEntry` objects without recalculating occurrences with:
 
 .. code-block:: python
 
-   calendar_entry.save(recalculate=True)
+   calendar_entry.save(recalculate=False)
 
 Exporting to iCal Format
 ~~~~~~~~~~~~~~~~~~~~~~~~
