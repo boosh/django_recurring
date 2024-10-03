@@ -278,6 +278,8 @@ class CalendarEntryForm {
                             <option value="MONTHLY">Months</option>
                             <option value="WEEKLY">Weeks</option>
                             <option value="DAILY">Days</option>
+                            <option value="HOURLY">Hours</option>
+                            <option value="MINUTELY">Minutes</option>
                         </select>
                     </div>
                     <div class="end-recurrence">

@@ -107,6 +107,11 @@ class RecurrenceRule(models.Model):
     frequency = models.IntegerField(
         choices=Frequency.choices, help_text=_("The frequency of the recurrence")
     )
+
+    @property
+    def frequency_name(self):
+        return RecurrenceRule.Frequency(self.frequency).name.lower()
+
     interval = models.IntegerField(
         default=1, help_text=_("The interval between each freq iteration")
     )
@@ -279,6 +284,7 @@ class RecurrenceRule(models.Model):
             "byhour": self.byhour,
             "byminute": self.byminute,
             "bysecond": self.bysecond,
+            # todo - remove this since it's already on the calendar entry
             "timezone": self.event.calendar_entry.timezone.name
             if hasattr(self, "event")
             else None,
@@ -727,4 +733,10 @@ class ExclusionDateRange(models.Model):
         :return: A list of datetime objects
         :rtype: list[datetime]
         """
-        return list(rrule(DAILY, dtstart=self.start_date, until=self.end_date))
+        return list(
+            rrule(
+                self.event.recurrence_rule.frequency,
+                dtstart=self.start_date,
+                until=self.end_date,
+            )
+        )
