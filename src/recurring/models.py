@@ -294,13 +294,16 @@ class CalendarEntry(models.Model):
         verbose_name_plural = "Calendar entries"
 
     name = models.CharField(
-        null=True,
-        blank=True,
         max_length=255,
-        help_text=_("The name of the calendar entry. Will be used as the ical summary"),
+        help_text=_(
+            "The name of the calendar entry. Will be used as the ical filename, slugified, and ical summary if no description is set"
+        ),
     )
     description = models.TextField(
-        blank=True, help_text=_("A description of the calendar entry")
+        blank=True,
+        help_text=_(
+            "A description of the calendar entry. Will be used as the ical summary"
+        ),
     )
     timezone = models.ForeignKey(
         Timezone,
@@ -515,7 +518,9 @@ class CalendarEntry(models.Model):
             ical_event = ICalEvent()
             ical_event.add("dtstamp", django_timezone.now())
             ical_event.add("uid", str(uuid.uuid4()))
-            ical_event.add("summary", self.name)
+            ical_event.add(
+                "summary", self.description if self.description else self.name
+            )
             ical_event.add("dtstart", event.start_time)
             if event.end_time:
                 ical_event.add("dtend", event.end_time)
