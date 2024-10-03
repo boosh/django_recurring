@@ -445,20 +445,15 @@ class CalendarEntry(models.Model):
             now = django_timezone.now()
             tz = self.timezone.as_tz
 
-            # Get all occurrences as a list
-            all_occurrences = list(rruleset)
-
             # Find the next occurrence
-            next_occurrences = [occ for occ in all_occurrences if occ > now]
-            self.next_occurrence = (
-                next_occurrences[0].astimezone(tz) if next_occurrences else None
-            )
+            self.next_occurrence = rruleset.after(now)
+            if self.next_occurrence:
+                self.next_occurrence = self.next_occurrence.astimezone(tz)
 
             # Find the previous occurrence
-            prev_occurrences = [occ for occ in all_occurrences if occ < now]
-            self.previous_occurrence = (
-                prev_occurrences[-1].astimezone(tz) if prev_occurrences else None
-            )
+            self.previous_occurrence = rruleset.before(now, inc=False)
+            if self.previous_occurrence:
+                self.previous_occurrence = self.previous_occurrence.astimezone(tz)
 
         except Exception as e:
             print(
