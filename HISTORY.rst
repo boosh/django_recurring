@@ -1,6 +1,11 @@
 =======
 History
 =======
+0.3.1 (2024-10-02)
+------------------
+* Add an option to repeat events forever
+* Calculate prev/next occurrences more efficiently
+
 0.3.0 (2024-10-02)
 ------------------
 * Breaking change: Total refactoring of models to better align with ical/dateutil rrules.
