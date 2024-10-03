@@ -78,9 +78,25 @@ function initCalendarEntryWidget(name) {
                     return false;
                 }
             }
-            if (event.recurrence_rule && event.recurrence_rule.until !== undefined && event.recurrence_rule.until === '') {
-                alert('Please specify when the recurring event should run until.');
-                return false;
+            if (event.recurrence_rule) {
+                const foreverRadio = container.querySelector('input[name^="end-recurrence"][value="forever"]');
+                const untilRadio = container.querySelector('input[name^="end-recurrence"][value="until"]');
+                const countRadio = container.querySelector('input[name^="end-recurrence"][value="count"]');
+
+                if (!foreverRadio.checked && !untilRadio.checked && !countRadio.checked) {
+                    alert('Please specify an end condition for the recurring event.');
+                    return false;
+                }
+
+                if (untilRadio.checked && event.recurrence_rule.until === '') {
+                    alert('Please specify when the recurring event should run until.');
+                    return false;
+                }
+
+                if (countRadio.checked && (!event.recurrence_rule.count || event.recurrence_rule.count <= 0)) {
+                    alert('Please specify a valid count for the recurring event.');
+                    return false;
+                }
             }
         }
         return true;
@@ -556,10 +572,14 @@ class CalendarEntryForm {
                 interval: parseInt(intervalInput.value, 10)
             };
 
+            const foreverRadio = container.querySelector('input[name^="end-recurrence"][value="forever"]');
             const untilRadio = container.querySelector('input[name^="end-recurrence"][value="until"]');
             const countRadio = container.querySelector('input[name^="end-recurrence"][value="count"]');
 
-            if (untilRadio.checked) {
+            if (foreverRadio.checked) {
+                delete event.recurrence_rule.until;
+                delete event.recurrence_rule.count;
+            } else if (untilRadio.checked) {
                 event.recurrence_rule.until = untilDateTimeInput.value;
                 delete event.recurrence_rule.count;
             } else if (countRadio.checked) {
@@ -729,6 +749,8 @@ class CalendarEntryForm {
                 text += ` until ${new Date(rule.until).toLocaleString()}`;
             } else if (rule.count) {
                 text += ` for ${rule.count} occurrences`;
+            } else {
+                text += ` forever`;
             }
         }
 
