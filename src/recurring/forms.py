@@ -110,8 +110,8 @@ class CalendarEntryForm(forms.ModelForm):
                     event_data["is_full_day"] = event_data.get("is_full_day", False)
 
                     # Rule and exclusions are optional
-                    if "rule" in event_data:
-                        if not isinstance(event_data["rule"], dict):
+                    if "recurrence_rule" in event_data:
+                        if not isinstance(event_data["recurrence_rule"], dict):
                             raise ValueError("Event rule must be a dictionary")
 
                     if "exclusions" in event_data:

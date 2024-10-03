@@ -26,7 +26,7 @@ def valid_calendar_entry_data():
                         "start_time": "2023-01-01T00:00:00",
                         "end_time": "2023-01-01T01:00:00",
                         "is_full_day": False,
-                        "rule": {"frequency": "DAILY", "interval": 1},
+                        "recurrence_rule": {"frequency": "DAILY", "interval": 1},
                         "exclusions": [],
                     }
                 ]
@@ -132,7 +132,7 @@ class TestCalendarEntryForm:
                         "start_time": datetime.now(pytz.UTC),
                         "end_time": datetime.now(pytz.UTC) + timedelta(hours=1),
                         "is_full_day": False,
-                        "rule": {"frequency": "DAILY", "interval": 1},
+                        "recurrence_rule": {"frequency": "DAILY", "interval": 1},
                         "exclusions": [],
                     }
                 ]

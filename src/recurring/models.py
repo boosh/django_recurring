@@ -369,7 +369,7 @@ class CalendarEntry(models.Model):
                     "start_time": event.start_time.isoformat(),
                     "end_time": event.end_time.isoformat() if event.end_time else None,
                     "is_full_day": event.is_full_day,
-                    "rule": event.recurrence_rule.to_dict()
+                    "recurrence_rule": event.recurrence_rule.to_dict()
                     if event.recurrence_rule
                     else {},
                     "exclusions": [
