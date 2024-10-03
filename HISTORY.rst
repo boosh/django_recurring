@@ -6,6 +6,7 @@ History
 * Add an option to repeat events forever
 * Calculate prev/next occurrences more efficiently
 * Make the calendar entry name mandatory
+* Support hourly and minutely repeating events
 
 0.3.0 (2024-10-02)
 ------------------
