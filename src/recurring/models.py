@@ -302,14 +302,12 @@ class CalendarEntry(models.Model):
     name = models.CharField(
         max_length=255,
         help_text=_(
-            "The name of the calendar entry. Will be used as the ical filename, slugified, and ical summary if no description is set"
+            "Will be used as the ical filename, slugified, and ical summary if no description is set"
         ),
     )
     description = models.TextField(
         blank=True,
-        help_text=_(
-            "A description of the calendar entry. Will be used as the ical summary"
-        ),
+        help_text=_("Will be used as the ical summary"),
     )
     timezone = models.ForeignKey(
         Timezone,
