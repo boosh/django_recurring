@@ -67,7 +67,7 @@ Quick Start
 
       python manage.py migrate recurring
 
-4. Add CalendarEntry or Event to your model:
+4. Add CalendarEntry to your model:
 
    For a calendar entry with multiple events:
 
@@ -80,18 +80,7 @@ Quick Start
           name = models.CharField(max_length=200)
           calendar = models.ForeignKey(CalendarEntry, on_delete=models.CASCADE)
 
-   For more basic instances of a single recurring event:
-
-   .. code-block:: python
-
-      from django.db import models
-      from recurring.models import Event
-
-      class Task(models.Model):
-          name = models.CharField(max_length=200)
-          schedule = models.ForeignKey(Event, on_delete=models.CASCADE)
-
-5. Use CalendarEntry or Event in your code:
+5. Use CalendarEntry in your code:
 
    .. code-block:: python
 

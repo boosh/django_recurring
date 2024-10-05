@@ -49,6 +49,7 @@ class Timezone(models.Model):
     :type name: str
     """
 
+    # todo - validate the tz name on save to prevent creating instances that aren't real
     name = models.CharField(
         max_length=64, unique=True, help_text=_("The name of the timezone")
     )
@@ -380,22 +381,34 @@ class CalendarEntry(models.Model):
         :return: A dictionary representation of the CalendarEntry
         :rtype: Dict[str, Any]
         """
+        tz = self.timezone.as_tz
+
         return {
             "name": self.name,
             "description": self.description,
             "timezone": self.timezone.name,
             "events": [
                 {
-                    "start_time": event.start_time.isoformat(),
-                    "end_time": event.end_time.isoformat() if event.end_time else None,
+                    "start_time_utc": event.start_time.isoformat(),
+                    "start_time": event.start_time.astimezone(tz).isoformat(),
+                    "end_time_utc": event.end_time.isoformat()
+                    if event.end_time
+                    else None,
+                    "end_time": event.end_time.astimezone(tz).isoformat()
+                    if event.end_time
+                    else None,
                     "is_full_day": event.is_full_day,
                     "recurrence_rule": event.recurrence_rule.to_dict()
                     if event.recurrence_rule
                     else {},
                     "exclusions": [
                         {
-                            "start_date": exclusion.start_date.isoformat(),
-                            "end_date": exclusion.end_date.isoformat(),
+                            "start_date_utc": exclusion.start_date.isoformat(),
+                            "start_date": exclusion.start_date.astimezone(
+                                tz
+                            ).isoformat(),
+                            "end_date_utc": exclusion.end_date.isoformat(),
+                            "end_date": exclusion.end_date.astimezone(tz).isoformat(),
                         }
                         for exclusion in event.exclusions.all()
                     ],
@@ -417,7 +430,6 @@ class CalendarEntry(models.Model):
             name=data.get("timezone", self.timezone.name)
         )
         self.save(recalculate=False)
-        tz = self.timezone.as_tz
 
         for event_data in data.get("events", []):
             event = Event(
@@ -455,8 +467,8 @@ class CalendarEntry(models.Model):
             for exclusion_data in event_data.get("exclusions", []):
                 ExclusionDateRange.objects.create(
                     event=event,
-                    start_date=exclusion_data["start_date"].astimezone(tz),
-                    end_date=exclusion_data["end_date"].astimezone(tz),
+                    start_date=exclusion_data["start_date"],
+                    end_date=exclusion_data["end_date"],
                 )
 
     def calculate_occurrences(
@@ -526,6 +538,8 @@ class CalendarEntry(models.Model):
         :return: The iCal string representation of the calendar entry.
         :rtype: str
         """
+        tz = self.timezone.as_tz
+
         cal = Calendar()
         cal.add("version", "2.0")
 
@@ -545,9 +559,9 @@ class CalendarEntry(models.Model):
             ical_event.add(
                 "summary", self.description if self.description else self.name
             )
-            ical_event.add("dtstart", event.start_time)
+            ical_event.add("dtstart", event.start_time.astimezone(tz))
             if event.end_time:
-                ical_event.add("dtend", event.end_time)
+                ical_event.add("dtend", event.end_time.astimezone(tz))
 
             rule = event.recurrence_rule
             if rule:
@@ -560,7 +574,7 @@ class CalendarEntry(models.Model):
                 if rule.count is not None:
                     rrule_dict["count"] = rule.count
                 if rule.until is not None:
-                    rrule_dict["until"] = rule.until
+                    rrule_dict["until"] = rule.until.astimezone(tz)
                 if rule.bysetpos:
                     rrule_dict["bysetpos"] = rule.bysetpos
                 if rule.bymonth:
@@ -751,10 +765,14 @@ class ExclusionDateRange(models.Model):
         :return: A list of datetime objects
         :rtype: list[datetime]
         """
+        if not hasattr(self.event, "recurrence_rule") or not self.event.recurrence_rule:
+            return []
+
+        tz = self.event.calendar_entry.timezone.as_tz
         return list(
             rrule(
                 self.event.recurrence_rule.frequency,
-                dtstart=self.start_date,
-                until=self.end_date,
+                dtstart=self.start_date.astimezone(tz),
+                until=self.end_date.astimezone(tz),
             )
         )

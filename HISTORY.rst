@@ -8,6 +8,7 @@ History
 * Also calculate the first/last occurrences within a bounded range
 * Make the calendar entry name mandatory
 * Support hourly and minutely repeating events
+* Improve timezone support
 
 0.3.0 (2024-10-02)
 ------------------

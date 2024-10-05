@@ -190,7 +190,7 @@ class CalendarEntryForm {
                     </div>
                     <div></div>
                 </div>
-                <div class="help">The start and end times of each event. E.g. for an event from 9-11am on 1/1/25, you'd put 1/1/25 09:00 as the start time, and 1/1/25 11:00 as the end time.</div>
+                <div class="help">The start and end times of each event in the selected timezone. E.g. for an event from 9-11am on 1/1/25, you'd put 1/1/25 09:00 as the start time, and 1/1/25 11:00 as the end time.</div>
             </div>
             <div class="recurrence-rule-container"></div>
             <button class="remove-event">Remove Event</button>
