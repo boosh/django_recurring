@@ -33,6 +33,18 @@ class ExclusionDateRangeAdmin(admin.ModelAdmin):
     pass
 
 
+@admin.action(description="Recalculate occurrences for selected")
+def recalculate_occurrences(modeladmin, request, queryset):
+    count = 0
+    for entry in queryset:
+        entry.calculate_occurrences()
+        count += 1
+
+    messages.success(
+        request, f"Successfully recalculated occurrences for {count} calendar entries."
+    )
+
+
 class CalendarEntryAdmin(admin.ModelAdmin):
     form = CalendarEntryForm
     list_display = (
@@ -43,6 +55,7 @@ class CalendarEntryAdmin(admin.ModelAdmin):
         "next_occurrence",
         "last_occurrence",
     )
+    actions = [recalculate_occurrences]
     search_fields = ("name",)
     list_filter = ("timezone",)
     readonly_fields = ("ical_string", "ical_download_link")
