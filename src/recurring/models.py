@@ -459,14 +459,17 @@ class CalendarEntry(models.Model):
                     end_date=exclusion_data["end_date"].astimezone(tz),
                 )
 
-    def calculate_occurrences(self, occurence_window_years: int = 5) -> None:
+    def calculate_occurrences(
+        self, window_days: int = 365, window_multiple: int = 5
+    ) -> None:
         """
         Recalculates the cached occurrences of the CalendarEntry, including:
 
-        * first_occurrence/last_occurrence (across all events in the CalendarEntry). Last occurrence is capped at up to `last_occurence_years` years from now for performance reasons.
+        * first_occurrence/last_occurrence (across all events in the CalendarEntry). Capped based on the window parameters for performance reasons.
         * previous_occurrence/next_occurrence (relative to the time this method was last called)
 
-        :param occurence_window_years: The maximum number of years from now to use to calculate the 'first'/'last' occurrences
+        :param window_days: The number of days to use as the basis for calculating the delta from now for the the 'first'/'last' occurrences
+        :param window_multiple: Multiplied by `occurence_window_days` to create the delta from now to use to calculate the 'first'/'last' occurrences. E.g. if window_days=365 and window_multiple=5, we'll only look forwards and backwards 5 years to calculate the 'first' and 'last' occurrences.
         """
         try:
             rruleset = self.to_rruleset()
@@ -476,7 +479,7 @@ class CalendarEntry(models.Model):
             self.next_occurrence = rruleset.after(now)
             self.previous_occurrence = rruleset.before(now, inc=False)
 
-            window_delta = timedelta(days=365 * occurence_window_years)
+            window_delta = timedelta(days=window_days * window_multiple)
 
             self.first_occurrence = rruleset.after(now - window_delta, inc=True)
             self.last_occurrence = rruleset.before(now + window_delta, inc=True)
