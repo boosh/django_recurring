@@ -49,7 +49,7 @@ Quick Start
       )
 
       # Recalculate occurrences
-      calendar_entry.recalculate_occurrences()
+      calendar_entry.calculate_occurrences()
 
 3. Query upcoming meetings:
 
@@ -106,7 +106,7 @@ You can create complex recurrence patterns by combining multiple events with dif
        recurrence_rule=rule2
    )
 
-   calendar_entry.recalculate_occurrences()
+   calendar_entry.calculate_occurrences()
 
 Accessing rruleset and rrules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -131,19 +131,23 @@ You can access the rruleset for a CalendarEntry and individual rrules for each e
 .. _recalculating-occurrences:
 
 Recalculating Occurrences
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
-The `next_occurrence` and `previous_occurrence` fields are updated by calling `recalculate_occurrences()`. By default, this is run when `CalendarEntry` instances are saved. However, you can run it manually with:
+To optimise querying for recurrences within a range, the `CalendarEntry` has precomputed `occurrence fields <https://django-recurring.readthedocs.io/en/latest/recurring.html#recurring.models.CalendarEntry.calculate_occurrences>`_. These include dates of e.g. first/last occurrence, and the previous/next occurrence from the date they were last calculated.
 
-.. code-block:: python
-
-   calendar_entry.recalculate_occurrences()
-
-Or you can save `CalendarEntry` objects without recalculating occurrences with:
+To recalculate them, call `calculate_occurrences()`, e.g.:
 
 .. code-block:: python
 
-   calendar_entry.save(recalculate=False)
+   calendar_entry_obj.calculate_occurrences()
+
+By default this is called each time a `CalendarEntry` instance is saved. However, to avoid infinite recursion, you can save `CalendarEntry` objects without recalculating occurrences with:
+
+.. code-block:: python
+
+   calendar_entry_obj.save(recalculate=False)
+
+The main use case for this method is if you need to process your events on a cron. You could easily query for all `CalendarEntry` instances that were last processed before `now()` (e.g via `last_processed_at` stored in your own model), and whose `next_occurrence` < `now()`. After running your task (e.g. sending emails, etc), call `calendar_entry_obj.save()` to recalculate occurrences for that instance, ready for the next time your cron runs.
 
 Exporting to iCal Format
 ~~~~~~~~~~~~~~~~~~~~~~~~

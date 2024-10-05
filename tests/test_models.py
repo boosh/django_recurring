@@ -121,12 +121,14 @@ class TestCalendarEntry:
         assert event.recurrence_rule.byweekday == ["MO", "WE", "FR"]
         assert event.exclusions.count() == 1
 
-    def test_recalculate_occurrences(self, calendar_entry, event, recurrence_rule):
+    def test_calculate_occurrences(self, calendar_entry, event, recurrence_rule):
         event.recurrence_rule = recurrence_rule
         event.save()
-        calendar_entry.recalculate_occurrences()
+        calendar_entry.calculate_occurrences()
         assert calendar_entry.next_occurrence is not None
         assert calendar_entry.previous_occurrence is not None
+        assert calendar_entry.first_occurrence is not None
+        assert calendar_entry.last_occurrence is not None
 
     def test_to_ical(self, calendar_entry, event, recurrence_rule):
         utc = pytz.utc

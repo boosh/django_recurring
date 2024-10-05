@@ -49,8 +49,7 @@ class CalendarEntryForm(forms.ModelForm):
                 instance.save(recalculate=False)
 
             logger.info("Recalculating occurrences")
-            instance.recalculate_occurrences()
-            instance.save()  # Save to ensure the recalculated occurrences are stored
+            instance.calculate_occurrences()
 
         logger.info("Save method completed")
         return instance

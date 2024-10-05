@@ -1,6 +1,6 @@
 import traceback
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 import pytz
@@ -315,13 +315,29 @@ class CalendarEntry(models.Model):
         default=UTC_ID,
         help_text=_("The timezone for this calendar entry"),
     )
+    first_occurrence = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("The first occurrence of this calendar entry"),
+    )
+    last_occurrence = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("The last occurrence of this calendar entry"),
+    )
     next_occurrence = models.DateTimeField(
-        null=True, blank=True, help_text=_("The next occurrence of this calendar entry")
+        null=True,
+        blank=True,
+        help_text=_(
+            "The next occurrence of this calendar entry from the last time occurrences were calculated"
+        ),
     )
     previous_occurrence = models.DateTimeField(
         null=True,
         blank=True,
-        help_text=_("The previous occurrence of this calendar entry"),
+        help_text=_(
+            "The previous occurrence of this calendar entry from the last time occurrences were calculated"
+        ),
     )
 
     def __str__(self):
@@ -443,34 +459,34 @@ class CalendarEntry(models.Model):
                     end_date=exclusion_data["end_date"].astimezone(tz),
                 )
 
-    def recalculate_occurrences(self) -> None:
+    def calculate_occurrences(self, occurence_window_years: int = 5) -> None:
         """
-        Recalculates the next and previous occurrences of the CalendarEntry.
+        Recalculates the cached occurrences of the CalendarEntry, including:
+
+        * first_occurrence/last_occurrence (across all events in the CalendarEntry). Last occurrence is capped at up to `last_occurence_years` years from now for performance reasons.
+        * previous_occurrence/next_occurrence (relative to the time this method was last called)
+
+        :param occurence_window_years: The maximum number of years from now to use to calculate the 'first'/'last' occurrences
         """
         try:
             rruleset = self.to_rruleset()
-            now = django_timezone.now()
             tz = self.timezone.as_tz
+            now = datetime.now().astimezone(tz)
 
-            # Find the next occurrence
             self.next_occurrence = rruleset.after(now)
-            if self.next_occurrence:
-                self.next_occurrence = self.next_occurrence.astimezone(tz)
-
-            # Find the previous occurrence
             self.previous_occurrence = rruleset.before(now, inc=False)
-            if self.previous_occurrence:
-                self.previous_occurrence = self.previous_occurrence.astimezone(tz)
 
+            window_delta = timedelta(days=365 * occurence_window_years)
+
+            self.first_occurrence = rruleset.after(now - window_delta, inc=True)
+            self.last_occurrence = rruleset.before(now + window_delta, inc=True)
         except Exception as e:
             print(
                 f"Error recalculating occurrences for CalendarEntry {self.id}: {str(e)}"
             )
             traceback.print_exc()
 
-            # Set occurrences to None if there's an error
-            self.next_occurrence = None
-            self.previous_occurrence = None
+        self.save(recalculate=False)
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         """
@@ -478,11 +494,12 @@ class CalendarEntry(models.Model):
 
         :param args: Variable length argument list
         :param kwargs: Arbitrary keyword arguments
+        :keyword bool recalculate: Whether to recalculate occurrences. Defaults to ``True``.
         """
         recalculate = kwargs.pop("recalculate", True)
         super().save(*args, **kwargs)
         if recalculate:
-            self.recalculate_occurrences()
+            self.calculate_occurrences()
 
     def delete(self, *args: Any, **kwargs: Any) -> None:
         """
@@ -696,7 +713,7 @@ class ExclusionDateRange(models.Model):
         """
         calendar_entry = self.event.calendar_entry
         super().delete(*args, **kwargs)
-        calendar_entry.recalculate_occurrences()
+        calendar_entry.calculate_occurrences()
 
     def sync_time_component(self) -> None:
         """
