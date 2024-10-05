@@ -5,6 +5,7 @@ History
 ------------------
 * Add an option to repeat events forever
 * Calculate prev/next occurrences more efficiently
+* Also calculate the first/last occurrences within a bounded range
 * Make the calendar entry name mandatory
 * Support hourly and minutely repeating events
 
