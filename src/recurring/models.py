@@ -2,8 +2,8 @@ import traceback
 import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-import pytz
 from dateutil.rrule import (
     YEARLY,
     MONTHLY,
@@ -57,12 +57,12 @@ class Timezone(models.Model):
     @property
     def as_tz(self):
         """
-        Returns the timezone as a pytz timezone object.
+        Returns the timezone as a ZoneInfo timezone object.
 
-        :return: A pytz timezone object
-        :rtype: pytz.timezone
+        :return: A ZoneInfo timezone object
+        :rtype: ZoneInfo
         """
-        return pytz.timezone(self.name)
+        return ZoneInfo(self.name)
 
     def __str__(self) -> str:
         """
@@ -72,6 +72,22 @@ class Timezone(models.Model):
         :rtype: str
         """
         return self.name
+
+    def clean(self) -> None:
+        try:
+            ZoneInfo(self.name)
+        except ZoneInfoNotFoundError:
+            raise ValidationError(f"Invalid timezone: {self.name}")
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Saves the TimeZone object after full cleaning.
+
+        :param args: Variable length argument list
+        :param kwargs: Arbitrary keyword arguments
+        """
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class RecurrenceRule(models.Model):
@@ -738,10 +754,10 @@ class ExclusionDateRange(models.Model):
         """
         event_time = self.event.start_time.time()
         tz = self.event.calendar_entry.timezone.as_tz
-        self.start_date = tz.localize(
-            datetime.combine(self.start_date.date(), event_time)
+        self.start_date = datetime.combine(
+            self.start_date.date(), event_time, tzinfo=tz
         )
-        self.end_date = tz.localize(datetime.combine(self.end_date.date(), event_time))
+        self.end_date = datetime.combine(self.end_date.date(), event_time, tzinfo=tz)
 
     def to_rrule(self) -> rrule:
         """

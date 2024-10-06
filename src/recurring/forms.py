@@ -98,11 +98,12 @@ class CalendarEntryForm(forms.ModelForm):
                     )
 
                     # Ensure the datetimes are timezone-aware
-                    event_data["start_time"] = submitted_timezone.localize(
-                        start_time.replace(tzinfo=None)
+                    event_data["start_time"] = start_time.replace(
+                        tzinfo=submitted_timezone
                     )
+
                     event_data["end_time"] = (
-                        submitted_timezone.localize(end_time.replace(tzinfo=None))
+                        end_time.replace(tzinfo=submitted_timezone)
                         if end_time
                         else None
                     )
@@ -135,11 +136,12 @@ class CalendarEntryForm(forms.ModelForm):
                                 exclusion_data["end_date"]
                             )
 
-                            exclusion_data["start_date"] = submitted_timezone.localize(
-                                exclusion_start
+                            exclusion_data["start_date"] = exclusion_start.replace(
+                                tzinfo=submitted_timezone
                             )
-                            exclusion_data["end_date"] = submitted_timezone.localize(
-                                exclusion_end
+
+                            exclusion_data["end_date"] = exclusion_end.replace(
+                                tzinfo=submitted_timezone
                             )
 
                             # Assert that start_date <= end_date

@@ -18,7 +18,6 @@ classifiers = [
 ]
 license = {text = "MIT license"}
 dependencies = [
-    "pytz",
     "icalendar==6.0.0",
     "python-dateutil>=2.0.0,<3.0.0",
 ]

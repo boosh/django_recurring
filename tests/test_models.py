@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
-import pytz
 from django.utils import timezone as django_timezone
+
 from recurring.models import (
     Timezone,
     CalendarEntry,
@@ -89,8 +89,8 @@ class TestCalendarEntry:
             "timezone": "UTC",
             "events": [
                 {
-                    "start_time": tz.localize(start_time_naive.replace(tzinfo=None)),
-                    "end_time": tz.localize(end_time_naive.replace(tzinfo=None)),
+                    "start_time": start_time_naive.replace(tzinfo=tz),
+                    "end_time": end_time_naive.replace(tzinfo=tz),
                     "is_full_day": False,
                     "recurrence_rule": {
                         "frequency": "DAILY",
@@ -99,12 +99,8 @@ class TestCalendarEntry:
                     },
                     "exclusions": [
                         {
-                            "start_date": tz.localize(
-                                exclusion_start_naive.replace(tzinfo=None)
-                            ),
-                            "end_date": tz.localize(
-                                exclusion_end_naive.replace(tzinfo=None)
-                            ),
+                            "start_date": exclusion_start_naive.replace(tzinfo=tz),
+                            "end_date": exclusion_end_naive.replace(tzinfo=tz),
                         }
                     ],
                 }
@@ -131,7 +127,7 @@ class TestCalendarEntry:
         assert calendar_entry.last_occurrence is not None
 
     def test_to_ical(self, calendar_entry, event, recurrence_rule):
-        utc = pytz.utc
+        utc = timezone.utc
         event.start_time = django_timezone.datetime(2023, 1, 1, tzinfo=utc)
         event.end_time = django_timezone.datetime(2023, 1, 1, 1, tzinfo=utc)
         event.recurrence_rule = recurrence_rule
@@ -149,7 +145,7 @@ class TestCalendarEntry:
         assert "END:VCALENDAR" in ical_string
 
     def test_to_ical_with_exclusions(self, calendar_entry, event, recurrence_rule):
-        utc = pytz.utc
+        utc = timezone.utc
         event.start_time = django_timezone.datetime(2023, 1, 1, tzinfo=utc)
         event.end_time = django_timezone.datetime(2023, 1, 1, 1, tzinfo=utc)
         event.recurrence_rule = recurrence_rule
@@ -181,7 +177,7 @@ class TestCalendarEntry:
         assert "END:VCALENDAR" in ical_string
 
     def test_to_ical_with_custom_prodid(self, calendar_entry, event, recurrence_rule):
-        utc = pytz.utc
+        utc = timezone.utc
         event.start_time = django_timezone.datetime(2023, 1, 1, tzinfo=utc)
         event.end_time = django_timezone.datetime(2023, 1, 1, 1, tzinfo=utc)
         event.recurrence_rule = recurrence_rule
@@ -227,11 +223,13 @@ class TestRecurrenceRule:
 @pytest.mark.django_db
 class TestExclusionDateRange:
     def test_exclusion_date_range_creation(self, event):
-        event_start_time = django_timezone.datetime(2023, 1, 1, 10, 30, tzinfo=pytz.utc)
+        event_start_time = django_timezone.datetime(
+            2023, 1, 1, 10, 30, tzinfo=timezone.utc
+        )
         event.start_time = event_start_time
         event.save()
 
-        start_date = django_timezone.datetime(2023, 1, 1, tzinfo=pytz.utc)
+        start_date = django_timezone.datetime(2023, 1, 1, tzinfo=timezone.utc)
         end_date = start_date + django_timezone.timedelta(days=7)
         exclusion = ExclusionDateRange.objects.create(
             event=event,
@@ -246,12 +244,14 @@ class TestExclusionDateRange:
         )
 
     def test_get_all_dates(self, event):
-        event_start_time = django_timezone.datetime(2023, 1, 1, 10, 30, tzinfo=pytz.utc)
+        event_start_time = django_timezone.datetime(
+            2023, 1, 1, 10, 30, tzinfo=timezone.utc
+        )
         event.start_time = event_start_time
         event.save()
 
-        start_date = django_timezone.datetime(2023, 1, 1, tzinfo=pytz.utc)
-        end_date = django_timezone.datetime(2023, 1, 3, tzinfo=pytz.utc)
+        start_date = django_timezone.datetime(2023, 1, 1, tzinfo=timezone.utc)
+        end_date = django_timezone.datetime(2023, 1, 3, tzinfo=timezone.utc)
         exclusion = ExclusionDateRange.objects.create(
             event=event,
             start_date=start_date,

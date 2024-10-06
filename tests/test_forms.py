@@ -1,8 +1,8 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
-import pytz
+
 from recurring.forms import CalendarEntryForm
 from recurring.models import CalendarEntry, Timezone
 
@@ -129,8 +129,8 @@ class TestCalendarEntryForm:
             {
                 "events": [
                     {
-                        "start_time": datetime.now(pytz.UTC),
-                        "end_time": datetime.now(pytz.UTC) + timedelta(hours=1),
+                        "start_time": datetime.now(timezone.utc),
+                        "end_time": datetime.now(timezone.utc) + timedelta(hours=1),
                         "is_full_day": False,
                         "recurrence_rule": {"frequency": "DAILY", "interval": 1},
                         "exclusions": [],
