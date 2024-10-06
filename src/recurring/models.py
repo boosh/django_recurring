@@ -491,26 +491,31 @@ class CalendarEntry(models.Model):
         self, window_days: int = 365, window_multiple: int = 5
     ) -> None:
         """
-        Recalculates the cached occurrences of the CalendarEntry, including:
+        Recalculates the cached occurrences of the CalendarEntry in **UTC**. Calculated occurrences include:
 
         * first_occurrence/last_occurrence (across all events in the CalendarEntry). Capped based on the window parameters for performance reasons.
         * previous_occurrence/next_occurrence (relative to the time this method was last called)
 
-        :param window_days: The number of days to use as the basis for calculating the delta from now for the the 'first'/'last' occurrences
+        :param window_days: The number of days to use as the basis for calculating the delta from now for the 'first'/'last' occurrences
         :param window_multiple: Multiplied by `occurence_window_days` to create the delta from now to use to calculate the 'first'/'last' occurrences. E.g. if window_days=365 and window_multiple=5, we'll only look forwards and backwards 5 years to calculate the 'first' and 'last' occurrences.
         """
         try:
             rruleset = self.to_rruleset()
+            utc = ZoneInfo("UTC")
             tz = self.timezone.as_tz
             now = datetime.now().astimezone(tz)
 
-            self.next_occurrence = rruleset.after(now)
-            self.previous_occurrence = rruleset.before(now, inc=False)
+            self.next_occurrence = rruleset.after(now).astimezone(utc)
+            self.previous_occurrence = rruleset.before(now, inc=False).astimezone(utc)
 
             window_delta = timedelta(days=window_days * window_multiple)
 
-            self.first_occurrence = rruleset.after(now - window_delta, inc=True)
-            self.last_occurrence = rruleset.before(now + window_delta, inc=True)
+            self.first_occurrence = rruleset.after(
+                now - window_delta, inc=True
+            ).astimezone(utc)
+            self.last_occurrence = rruleset.before(
+                now + window_delta, inc=True
+            ).astimezone(utc)
         except Exception as e:
             print(
                 f"Error recalculating occurrences for CalendarEntry {self.id}: {str(e)}"
