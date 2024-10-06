@@ -29,7 +29,7 @@ Event times can be associated with any timezone. Just create/select them in the 
    :alt: Timezones image
    :align: center
 
-Enter all times in the main widget in the local time in your selected timezone.
+Enter all times in the main widget in your selected timezone's local time.
 
 iCal
 ------
