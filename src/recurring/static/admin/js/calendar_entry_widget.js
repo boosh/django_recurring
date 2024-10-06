@@ -386,7 +386,7 @@ class CalendarEntryForm {
             }
             if (event.recurrence_rule.until) {
                 container.querySelector('input[name^="end-recurrence"][value="until"]').checked = true;
-                untilDateTimeInput.value = this.formatDateTimeForInput(event.recurrence_rule.until);
+                untilDateTimeInput.value = this.formatDateTimeForInput(event.recurrence_rule.until, event.timezone);
             } else if (event.recurrence_rule.count) {
                 container.querySelector('input[name^="end-recurrence"][value="count"]').checked = true;
                 countInput.value = event.recurrence_rule.count;
@@ -700,7 +700,7 @@ class CalendarEntryForm {
 
         // Recurrence information as a human-readable string
         if (event.recurrence_rule) {
-            text += this.recurrenceRuleToText(event.recurrence_rule) + '<br>';
+            text += this.recurrenceRuleToText(event.recurrence_rule, event.timezone) + '<br>';
         }
 
         // Exclusions
@@ -716,7 +716,7 @@ class CalendarEntryForm {
         return text;
     }
 
-    recurrenceRuleToText(rule) {
+    recurrenceRuleToText(rule, eventTimezone) {
         if (!rule || typeof rule !== 'object') {
             return 'Invalid recurrence rule';
         }
@@ -761,8 +761,8 @@ class CalendarEntryForm {
             }
 
             if (rule.until) {
-                const untilDateTime = DateTime.fromISO(rule.until, { zone: 'UTC' }).setZone(event.timezone);
-                text += ` until ${untilDateTime.toLocaleString(DateTime.DATETIME_FULL)} (${event.timezone})`;
+                const untilDateTime = DateTime.fromISO(rule.until, { zone: 'UTC' }).setZone(eventTimezone);
+                text += ` until ${untilDateTime.toLocaleString(DateTime.DATETIME_FULL)} (${eventTimezone})`;
             } else if (rule.count) {
                 text += ` for ${rule.count} occurrences`;
             } else {
