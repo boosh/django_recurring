@@ -688,14 +688,10 @@ class CalendarEntryForm {
     eventToText(event, index) {
         let text = `<strong>Event ${index}:</strong><br>`;
 
-        // Start and end time on one line
-        const startDateTime = DateTime.fromISO(event.start_time, { zone: 'UTC' }).setZone(event.timezone);
-        const endDateTime = event.end_time ? DateTime.fromISO(event.end_time, { zone: 'UTC' }).setZone(event.timezone) : null;
-
         if (event.is_full_day) {
-            text += `All Day Event on ${startDateTime.toLocaleString(DateTime.DATE_FULL)} (${event.timezone})<br>`;
+            text += `All Day Event on ${event.start_time.split('T')[0]} (${event.timezone})<br>`;
         } else {
-            text += `From ${startDateTime.toLocaleString(DateTime.DATETIME_FULL)} to ${endDateTime.toLocaleString(DateTime.DATETIME_FULL)} (${event.timezone})<br>`;
+            text += `From ${event.start_time} to ${event.end_time} (${event.timezone})<br>`;
         }
 
         // Recurrence information as a human-readable string
@@ -707,9 +703,7 @@ class CalendarEntryForm {
         if (event.exclusions.length > 0) {
             text += 'Exclusions:<br>';
             event.exclusions.forEach((exclusion, i) => {
-                const startDate = DateTime.fromISO(exclusion.start_date, { zone: 'UTC' }).setZone(event.timezone);
-                const endDate = DateTime.fromISO(exclusion.end_date, { zone: 'UTC' }).setZone(event.timezone);
-                text += `&nbsp;&nbsp;${i + 1}. From ${startDate.toLocaleString(DateTime.DATE_FULL)} to ${endDate.toLocaleString(DateTime.DATE_FULL)} (${event.timezone})<br>`;
+                text += `&nbsp;&nbsp;${i + 1}. From ${exclusion.start_date} to ${exclusion.end_date} (${event.timezone})<br>`;
             });
         }
 
@@ -761,8 +755,7 @@ class CalendarEntryForm {
             }
 
             if (rule.until) {
-                const untilDateTime = DateTime.fromISO(rule.until, { zone: 'UTC' }).setZone(eventTimezone);
-                text += ` until ${untilDateTime.toLocaleString(DateTime.DATETIME_FULL)} (${eventTimezone})`;
+                text += ` until ${rule.until} (${eventTimezone})`;
             } else if (rule.count) {
                 text += ` for ${rule.count} occurrences`;
             } else {
