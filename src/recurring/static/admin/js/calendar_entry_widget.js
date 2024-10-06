@@ -1,3 +1,5 @@
+const { DateTime, Settings } = window.luxon;
+
 function initCalendarEntryWidget(name) {
     const widget = document.getElementById(`calendar-entry-widget-${name}`);
     const input = document.getElementById(`id_${name}`);
@@ -200,8 +202,8 @@ class CalendarEntryForm {
         const endTimeInput = container.querySelector('.end-datetime');
         const allDayCheckbox = container.querySelector('.all-day-checkbox');
 
-        startTimeInput.value = this.formatDateTimeForInput(event.start_time);
-        endTimeInput.value = this.formatDateTimeForInput(event.end_time);
+        startTimeInput.value = this.formatDateTimeForInput(event.start_time, event.timezone);
+        endTimeInput.value = this.formatDateTimeForInput(event.end_time, event.timezone);
         allDayCheckbox.checked = event.is_full_day;
         endTimeInput.disabled = event.is_full_day;
         if (event.is_full_day) {
@@ -521,8 +523,8 @@ class CalendarEntryForm {
         const endDateInput = exclusionContainer.querySelector('.exclusion-end-date');
 
         if (exclusion) {
-            startDateInput.value = this.formatDateForInput(exclusion.start_date);
-            endDateInput.value = this.formatDateForInput(exclusion.end_date);
+            startDateInput.value = this.formatDateForInput(exclusion.start_date, event.timezone);
+            endDateInput.value = this.formatDateForInput(exclusion.end_date, event.timezone);
         }
 
         const updateEventHandler = () => this.updateEvent(container, event);
@@ -558,14 +560,14 @@ class CalendarEntryForm {
         const byHourInput = container.querySelector('.byhour-input');
         const byMinuteInput = container.querySelector('.byminute-input');
 
-        event.start_time = startTimeInput.value;
+        event.start_time = this.formatDateTimeToUTC(startTimeInput.value, event.timezone);
         event.is_full_day = allDayCheckbox.checked;
-        event.end_time = event.is_full_day ? null : endTimeInput.value;
+        event.end_time = event.is_full_day ? null : this.formatDateTimeToUTC(endTimeInput.value, event.timezone);
 
         event.exclusions = Array.from(exclusionContainers).map(container => {
             return {
-                start_date: container.querySelector('.exclusion-start-date').value,
-                end_date: container.querySelector('.exclusion-end-date').value
+                start_date: this.formatDateTimeToUTC(container.querySelector('.exclusion-start-date').value, event.timezone),
+                end_date: this.formatDateTimeToUTC(container.querySelector('.exclusion-end-date').value, event.timezone)
             };
         });
 
@@ -583,7 +585,7 @@ class CalendarEntryForm {
                 delete event.recurrence_rule.until;
                 delete event.recurrence_rule.count;
             } else if (untilRadio.checked) {
-                event.recurrence_rule.until = untilDateTimeInput.value;
+                event.recurrence_rule.until = this.formatDateTimeToUTC(untilDateTimeInput.value, event.timezone);
                 delete event.recurrence_rule.count;
             } else if (countRadio.checked) {
                 event.recurrence_rule.count = parseInt(countInput.value, 10);
@@ -640,16 +642,21 @@ class CalendarEntryForm {
         }
     }
 
-    formatDateTimeForInput(dateTimeString) {
+    formatDateTimeForInput(dateTimeString, timezone) {
         if (!dateTimeString) return '';
-        const date = new Date(dateTimeString);
-        return date.toISOString().slice(0, 16);
+        const date = DateTime.fromISO(dateTimeString, { zone: 'UTC' }).setZone(timezone);
+        return date.toFormat("yyyy-MM-dd'T'HH:mm");
     }
 
-    formatDateForInput(dateString) {
+    formatDateForInput(dateString, timezone) {
         if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toISOString().slice(0, 10);
+        const date = DateTime.fromISO(dateString, { zone: 'UTC' }).setZone(timezone);
+        return date.toFormat('yyyy-MM-dd');
+    }
+
+    formatDateTimeToUTC(dateTimeString, timezone) {
+        if (!dateTimeString) return '';
+        return DateTime.fromISO(dateTimeString, { zone: timezone }).toUTC().toFormat("yyyy-MM-dd'T'HH:mm:ss");
     }
 
     setEvents(events) {
@@ -682,10 +689,13 @@ class CalendarEntryForm {
         let text = `<strong>Event ${index}:</strong><br>`;
 
         // Start and end time on one line
+        const startDateTime = DateTime.fromISO(event.start_time, { zone: 'UTC' }).setZone(event.timezone);
+        const endDateTime = event.end_time ? DateTime.fromISO(event.end_time, { zone: 'UTC' }).setZone(event.timezone) : null;
+
         if (event.is_full_day) {
-            text += `All Day Event on ${new Date(event.start_time).toLocaleDateString()}<br>`;
+            text += `All Day Event on ${startDateTime.toLocaleString(DateTime.DATE_FULL)} (${event.timezone})<br>`;
         } else {
-            text += `From ${new Date(event.start_time).toLocaleString()} to ${new Date(event.end_time).toLocaleString()}<br>`;
+            text += `From ${startDateTime.toLocaleString(DateTime.DATETIME_FULL)} to ${endDateTime.toLocaleString(DateTime.DATETIME_FULL)} (${event.timezone})<br>`;
         }
 
         // Recurrence information as a human-readable string
@@ -697,7 +707,9 @@ class CalendarEntryForm {
         if (event.exclusions.length > 0) {
             text += 'Exclusions:<br>';
             event.exclusions.forEach((exclusion, i) => {
-                text += `&nbsp;&nbsp;${i + 1}. From ${new Date(exclusion.start_date).toLocaleDateString()} to ${new Date(exclusion.end_date).toLocaleDateString()}<br>`;
+                const startDate = DateTime.fromISO(exclusion.start_date, { zone: 'UTC' }).setZone(event.timezone);
+                const endDate = DateTime.fromISO(exclusion.end_date, { zone: 'UTC' }).setZone(event.timezone);
+                text += `&nbsp;&nbsp;${i + 1}. From ${startDate.toLocaleString(DateTime.DATE_FULL)} to ${endDate.toLocaleString(DateTime.DATE_FULL)} (${event.timezone})<br>`;
             });
         }
 
@@ -749,7 +761,8 @@ class CalendarEntryForm {
             }
 
             if (rule.until) {
-                text += ` until ${new Date(rule.until).toLocaleString()}`;
+                const untilDateTime = DateTime.fromISO(rule.until, { zone: 'UTC' }).setZone(event.timezone);
+                text += ` until ${untilDateTime.toLocaleString(DateTime.DATETIME_FULL)} (${event.timezone})`;
             } else if (rule.count) {
                 text += ` for ${rule.count} occurrences`;
             } else {
@@ -775,6 +788,7 @@ function parseInitialData(jsonString) {
 
     const events = data.events.map(eventData => ({
         id: eventData.id || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timezone: data.timezone,
         start_time: removeTimezone(eventData.start_time),
         end_time: removeTimezone(eventData.end_time),
         is_full_day: eventData.is_full_day,
@@ -806,5 +820,5 @@ function parseInitialData(jsonString) {
 
 function removeTimezone(dateTimeString) {
     if (!dateTimeString) return null;
-    return dateTimeString.replace(/([+-]\d{2}:\d{2}|Z)$/, '');
+    return DateTime.fromISO(dateTimeString, { zone: 'UTC' }).toFormat("yyyy-MM-dd'T'HH:mm:ss");
 }
