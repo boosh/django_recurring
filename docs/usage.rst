@@ -141,7 +141,7 @@ To optimise querying for recurrences within a range, the `CalendarEntry` has pre
 
     E.g. an event occurring at 12:00 noon in Europe/London in July (British Summer Time, UTC+1) will be calculated as 11:00 in UTC. However, the same time in December when there is no daylight saving time (UTC+0), will be calculated as 12:00 in UTC.
 
-    Make sure all your queries use UTC when using these occurrence fields.
+    TLDR; Make sure all your queries use UTC when using these occurrence fields.
 
 To recalculate them, call `calculate_occurrences()`, e.g.:
 
