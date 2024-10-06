@@ -491,17 +491,29 @@ class CalendarEntry(models.Model):
             tz = self.timezone.as_tz
             now = datetime.now().astimezone(tz)
 
-            self.next_occurrence = rruleset.after(now).astimezone(utc)
-            self.previous_occurrence = rruleset.before(now, inc=False).astimezone(utc)
+            next_occurrence_dt = rruleset.after(now)
+            self.next_occurrence = (
+                next_occurrence_dt.astimezone(utc) if next_occurrence_dt else None
+            )
+
+            previous_occurrence_dt = rruleset.before(now, inc=False)
+            self.previous_occurrence = (
+                previous_occurrence_dt.astimezone(utc)
+                if previous_occurrence_dt
+                else None
+            )
 
             window_delta = timedelta(days=window_days * window_multiple)
 
-            self.first_occurrence = rruleset.after(
-                now - window_delta, inc=True
-            ).astimezone(utc)
-            self.last_occurrence = rruleset.before(
-                now + window_delta, inc=True
-            ).astimezone(utc)
+            first_occurrence_dt = rruleset.after(now - window_delta, inc=True)
+            self.first_occurrence = (
+                first_occurrence_dt.astimezone(utc) if first_occurrence_dt else None
+            )
+
+            last_occurrence_dt = rruleset.before(now + window_delta, inc=True)
+            self.last_occurrence = (
+                last_occurrence_dt.astimezone(utc) if last_occurrence_dt else None
+            )
         except Exception as e:
             print(
                 f"Error recalculating occurrences for CalendarEntry {self.id}: {str(e)}"
