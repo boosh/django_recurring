@@ -137,7 +137,7 @@ To optimise querying for recurrences within a range, the `CalendarEntry` has pre
 
 .. attention::
 
-    All occurrence fields are converted to UTC from the `CalendarEntry` timezone. They respect daylight saving time.
+    All occurrence fields are converted to UTC from the `CalendarEntry` timezone and respect daylight saving time.
 
     E.g. an event occurring at 12:00 noon in Europe/London in July (British Summer Time, UTC+1) will be calculated as 11:00 in UTC. However, the same time in December when there is no daylight saving time (UTC+0), will be calculated as 12:00 in UTC.
 
@@ -155,7 +155,9 @@ By default this is called each time a `CalendarEntry` instance is saved. However
 
    calendar_entry_obj.save(recalculate=False)
 
-The main use case for this method is if you need to process your events on a cron. You could easily query for all `CalendarEntry` instances that were last processed before `now()` in UTC (e.g via `last_processed_at` stored in your own model), and whose `next_occurrence` < `now()`. After running your task (e.g. sending emails, etc), call `calendar_entry_obj.save()` to recalculate occurrences for that instance, ready for the next time your cron runs.
+The main use case for this method is if you need to process your events on a cron. You could easily query for all `CalendarEntry` instances that were last processed before `now()` in UTC (e.g via `last_processed_at` stored in your own model), and whose `next_occurrence` < `now()`. You would then be processing events in UTC at the local time of the event in the `CalendarEntry` instance's timezone.
+
+After running your task (e.g. sending emails, etc), call `calendar_entry_obj.save()` or `calendar_entry_obj.calculate_occurrences()` to recalculate occurrences for that instance, ready for the next time your cron runs.
 
 Exporting to iCal Format
 ~~~~~~~~~~~~~~~~~~~~~~~~
