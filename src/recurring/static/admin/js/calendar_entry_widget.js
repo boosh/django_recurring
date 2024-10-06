@@ -560,14 +560,14 @@ class CalendarEntryForm {
         const byHourInput = container.querySelector('.byhour-input');
         const byMinuteInput = container.querySelector('.byminute-input');
 
-        event.start_time = this.formatDateTimeToUTC(startTimeInput.value, event.timezone);
+        event.start_time = this.formatDateTimeToLocal(startTimeInput.value, event.timezone);
         event.is_full_day = allDayCheckbox.checked;
-        event.end_time = event.is_full_day ? null : this.formatDateTimeToUTC(endTimeInput.value, event.timezone);
+        event.end_time = event.is_full_day ? null : this.formatDateTimeToLocal(endTimeInput.value, event.timezone);
 
         event.exclusions = Array.from(exclusionContainers).map(container => {
             return {
-                start_date: this.formatDateTimeToUTC(container.querySelector('.exclusion-start-date').value, event.timezone),
-                end_date: this.formatDateTimeToUTC(container.querySelector('.exclusion-end-date').value, event.timezone)
+                start_date: this.formatDateTimeToLocal(container.querySelector('.exclusion-start-date').value, event.timezone),
+                end_date: this.formatDateTimeToLocal(container.querySelector('.exclusion-end-date').value, event.timezone)
             };
         });
 
@@ -585,7 +585,7 @@ class CalendarEntryForm {
                 delete event.recurrence_rule.until;
                 delete event.recurrence_rule.count;
             } else if (untilRadio.checked) {
-                event.recurrence_rule.until = this.formatDateTimeToUTC(untilDateTimeInput.value, event.timezone);
+                event.recurrence_rule.until = this.formatDateTimeToLocal(untilDateTimeInput.value, event.timezone);
                 delete event.recurrence_rule.count;
             } else if (countRadio.checked) {
                 event.recurrence_rule.count = parseInt(countInput.value, 10);
@@ -654,9 +654,9 @@ class CalendarEntryForm {
         return date.toFormat('yyyy-MM-dd');
     }
 
-    formatDateTimeToUTC(dateTimeString, timezone) {
+    formatDateTimeToLocal(dateTimeString, timezone) {
         if (!dateTimeString) return '';
-        return DateTime.fromISO(dateTimeString, { zone: timezone }).toUTC().toFormat("yyyy-MM-dd'T'HH:mm:ss");
+        return DateTime.fromISO(dateTimeString, { zone: timezone }).toFormat("yyyy-MM-dd'T'HH:mm:ss");
     }
 
     setEvents(events) {

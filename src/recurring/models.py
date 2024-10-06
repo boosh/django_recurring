@@ -397,34 +397,22 @@ class CalendarEntry(models.Model):
         :return: A dictionary representation of the CalendarEntry
         :rtype: Dict[str, Any]
         """
-        tz = self.timezone.as_tz
-
         return {
             "name": self.name,
             "description": self.description,
             "timezone": self.timezone.name,
             "events": [
                 {
-                    "start_time_utc": event.start_time.isoformat(),
-                    "start_time": event.start_time.astimezone(tz).isoformat(),
-                    "end_time_utc": event.end_time.isoformat()
-                    if event.end_time
-                    else None,
-                    "end_time": event.end_time.astimezone(tz).isoformat()
-                    if event.end_time
-                    else None,
+                    "start_time": event.start_time.isoformat(),
+                    "end_time": event.end_time.isoformat() if event.end_time else None,
                     "is_full_day": event.is_full_day,
                     "recurrence_rule": event.recurrence_rule.to_dict()
                     if event.recurrence_rule
                     else {},
                     "exclusions": [
                         {
-                            "start_date_utc": exclusion.start_date.isoformat(),
-                            "start_date": exclusion.start_date.astimezone(
-                                tz
-                            ).isoformat(),
-                            "end_date_utc": exclusion.end_date.isoformat(),
-                            "end_date": exclusion.end_date.astimezone(tz).isoformat(),
+                            "start_date": exclusion.start_date.isoformat(),
+                            "end_date": exclusion.end_date.isoformat(),
                         }
                         for exclusion in event.exclusions.all()
                     ],
@@ -463,9 +451,7 @@ class CalendarEntry(models.Model):
                     interval=rule_data.get("interval", 1),
                     wkst=rule_data.get("wkst"),
                     count=rule_data.get("count"),
-                    until=datetime.fromisoformat(rule_data["until"])
-                    if rule_data.get("until")
-                    else None,
+                    until=rule_data["until"] if rule_data.get("until") else None,
                     bysetpos=rule_data.get("bysetpos"),
                     bymonth=rule_data.get("bymonth"),
                     bymonthday=rule_data.get("bymonthday"),
