@@ -21,6 +21,16 @@ Together, this allows creating complex recurrences like:
 
     Every Monday in Jan & Feb, every Tuesday in Mar and Apr, except the 3rd weeks of Feb and Apr.
 
+Timezones
+---------
+Event times can be associated with any timezone. Just create/select them in the admin:
+
+.. image:: images/admin-timezones.png
+   :alt: Timezones image
+   :align: center
+
+Enter all times in the main widget in the local time in your selected timezone.
+
 iCal
 ------
 The iCal string for the calendar entry is also displayed in the admin and can be downloaded as an ical (.ics) file:

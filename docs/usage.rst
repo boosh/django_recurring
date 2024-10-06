@@ -155,9 +155,11 @@ By default this is called each time a `CalendarEntry` instance is saved. However
 
    calendar_entry_obj.save(recalculate=False)
 
-The main use case for this method is if you need to process your events on a cron. You could easily query for all `CalendarEntry` instances that were last processed before `now()` in UTC (e.g via `last_processed_at` stored in your own model), and whose `next_occurrence` < `now()`. You would then be processing events in UTC at the local time of the event in the `CalendarEntry` instance's timezone.
+The main use case for this method is if you need to process your events on a schedule.
 
-After running your task (e.g. sending emails, etc), call `calendar_entry_obj.save()` or `calendar_entry_obj.calculate_occurrences()` to recalculate occurrences for that instance, ready for the next time your cron runs.
+You could easily query for all `CalendarEntry` instances that were last processed before `now()` in UTC (e.g via a `last_processed_at` field stored in your own model), and whose `next_occurrence` < `now()`. You would then be processing events in UTC at the local time of the event in the `CalendarEntry` instance's timezone.
+
+After running your task (e.g. sending emails, etc), call `calendar_entry_obj.save()` or `calendar_entry_obj.calculate_occurrences()` to recalculate occurrences for that instance, ready for the next time your scheduled task runs.
 
 Exporting to iCal Format
 ~~~~~~~~~~~~~~~~~~~~~~~~

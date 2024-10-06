@@ -115,10 +115,11 @@ class CalendarEntryForm(forms.ModelForm):
                             raise ValueError("Event rule must be a dictionary")
 
                         recurrence_rule = event_data["recurrence_rule"]
-                        until = datetime.fromisoformat(recurrence_rule["until"])
-                        recurrence_rule["until"] = until.replace(
-                            tzinfo=submitted_timezone
-                        )
+                        if "until" in recurrence_rule:
+                            until = datetime.fromisoformat(recurrence_rule["until"])
+                            recurrence_rule["until"] = until.replace(
+                                tzinfo=submitted_timezone
+                            )
 
                     if "exclusions" in event_data:
                         if not isinstance(event_data["exclusions"], list):

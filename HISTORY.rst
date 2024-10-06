@@ -1,14 +1,19 @@
 =======
 History
 =======
-0.3.x (2024-10-03)
+0.3.x (2024-10-06)
+------------------
+* Full timezone support
+    * Display local datetimes in the admin widget
+    * Correctly convert to UTC when saving data
+
+0.3.3 (2024-10-03)
 ------------------
 * Add an option to repeat events forever
 * Calculate prev/next occurrences more efficiently
 * Also calculate the first/last occurrences within a bounded range
 * Make the calendar entry name mandatory
 * Support hourly and minutely repeating events
-* Improve timezone support
 
 0.3.0 (2024-10-02)
 ------------------
