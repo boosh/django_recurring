@@ -1,7 +1,7 @@
 =======
 History
 =======
-0.3.x (2024-10-06)
+0.3.4 (2024-10-06)
 ------------------
 * Full timezone support
     * Display local datetimes in the admin widget
