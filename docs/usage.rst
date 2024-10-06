@@ -128,6 +128,20 @@ You can access the rruleset for a CalendarEntry and individual rrules for each e
            rrule = event.recurrence_rule.to_rrule(event.start_time)
            # Use the rrule object as needed
 
+Timezones
+---------
+
+All times are stored internally as UTC.
+
+If you're using timezones other than UTC you need to convert them at the point of use (either server-side or client-side) before displaying them, e.g.:
+
+.. code-block:: python
+
+    calendar_entry = CalendarEntry.objects.first()
+    timezone = calendar_entry.timezone.as_tz
+    for event in calendar_entry.events.all():
+        start_time = event.start_time.astimezone(timezone)
+
 .. _recalculating-occurrences:
 
 Recalculating Occurrences
