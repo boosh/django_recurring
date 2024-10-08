@@ -196,6 +196,7 @@ class TestCalendarEntryOccurrences:
     @pytest.mark.parametrize(
         "timezone_name, summer_offset, winter_offset",
         [
+            ("America/New_York", -4, -5),
             ("Europe/London", 1, 0),
             ("Europe/Berlin", 2, 1),
             ("Europe/Kiev", 3, 2),
@@ -264,6 +265,7 @@ class TestCalendarEntryOccurrences:
     @pytest.mark.parametrize(
         "timezone_name, summer_offset, winter_offset",
         [
+            ("America/New_York", -4, -5),
             ("Europe/London", 1, 0),
             ("Europe/Berlin", 2, 1),
             ("Europe/Kiev", 3, 2),
