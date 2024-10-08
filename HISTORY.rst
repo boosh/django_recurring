@@ -1,6 +1,10 @@
 =======
 History
 =======
+0.3.5 (2024-10-08)
+------------------
+* Take into account DST of when a calendar entry was created vs retrieved (e.g. events created in summer time and then retrieved in winter need massaging)
+
 0.3.4 (2024-10-06)
 ------------------
 * Full timezone support
