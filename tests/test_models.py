@@ -198,10 +198,11 @@ class TestCalendarEntryOccurrences:
         [
             ("Europe/London", 1, 0),
             ("Europe/Berlin", 2, 1),
+            ("Europe/Kiev", 3, 2),
         ],
     )
     @patch("recurring.models.datetime")
-    def test_calculate_occurrences_dst_change(
+    def test_calculate_occurrences_dst_change_updated_summer(
         self, mock_datetime, timezone_name, summer_offset, winter_offset
     ):
         # Create timezone
@@ -209,6 +210,8 @@ class TestCalendarEntryOccurrences:
 
         # Create CalendarEntry in July (summer time)
         summer_time = datetime(2024, 7, 1, 12, 0, tzinfo=ZoneInfo(timezone_name))
+        winter_time = datetime(2024, 12, 1, 12, 0, tzinfo=ZoneInfo(timezone_name))
+
         mock_datetime.now.return_value = summer_time
 
         # create the calendar entry when DST is in effect
@@ -245,11 +248,78 @@ class TestCalendarEntryOccurrences:
         assert calendar_entry.last_occurrence.time().hour == 12 - summer_offset
 
         # Calculate occurrences in December (winter time)
-        winter_time = datetime(2024, 12, 1, 12, 0, tzinfo=ZoneInfo(timezone_name))
         mock_datetime.now.return_value = winter_time
         # still work as if we created the calendar entry in summer time
         print("Updated at=summer time, current time=winter time")
         calendar_entry.updated_at = summer_time
+        calendar_entry.calculate_occurrences()
+
+        # Check occurrences in December
+        assert calendar_entry.next_occurrence.time().hour == 12 - winter_offset
+        assert calendar_entry.previous_occurrence.time().hour == 12 - winter_offset
+        # first event is in summer
+        assert calendar_entry.first_occurrence.time().hour == 12 - summer_offset
+        assert calendar_entry.last_occurrence.time().hour == 12 - winter_offset
+
+    @pytest.mark.parametrize(
+        "timezone_name, summer_offset, winter_offset",
+        [
+            ("Europe/London", 1, 0),
+            ("Europe/Berlin", 2, 1),
+            ("Europe/Kiev", 3, 2),
+        ],
+    )
+    @patch("recurring.models.datetime")
+    def test_calculate_occurrences_dst_change_updated_winter(
+        self, mock_datetime, timezone_name, summer_offset, winter_offset
+    ):
+        # Create timezone
+        timezone_obj, _ = Timezone.objects.get_or_create(name=timezone_name)
+
+        # Create CalendarEntry in July (summer time)
+        summer_time = datetime(2024, 7, 1, 12, 0, tzinfo=ZoneInfo(timezone_name))
+        winter_time = datetime(2024, 12, 1, 12, 0, tzinfo=ZoneInfo(timezone_name))
+
+        mock_datetime.now.return_value = summer_time
+
+        # create the calendar entry when DST is in effect
+        calendar_entry = CalendarEntry.objects.create(
+            name="Test Entry",
+            timezone=timezone_obj,
+        )
+
+        # Create Event
+        event = Event.objects.create(
+            calendar_entry=calendar_entry,
+            start_time=summer_time,
+            end_time=summer_time + timedelta(hours=1),
+            is_full_day=False,
+        )
+
+        # Create RecurrenceRule
+        recurrence_rule = RecurrenceRule.objects.create(
+            frequency=RecurrenceRule.Frequency.DAILY,
+            interval=1,
+        )
+        event.recurrence_rule = recurrence_rule
+        event.save()
+
+        print("Updated at=winter time, current time=summer time")
+        # Calculate occurrences in July, but entry created in winter
+        calendar_entry.updated_at = winter_time
+        calendar_entry.calculate_occurrences()
+
+        # Check occurrences in July
+        assert calendar_entry.next_occurrence.time().hour == 12 - summer_offset
+        # assert calendar_entry.previous_occurrence is None
+        assert calendar_entry.first_occurrence.time().hour == 12 - summer_offset
+        assert calendar_entry.last_occurrence.time().hour == 12 - summer_offset
+
+        # Calculate occurrences in December (winter time)
+        mock_datetime.now.return_value = winter_time
+        # still work as if we created the calendar entry in winter time
+        print("Updated at=winter time, current time=winter time")
+        calendar_entry.updated_at = winter_time
         calendar_entry.calculate_occurrences()
 
         # Check occurrences in December
