@@ -493,29 +493,27 @@ class CalendarEntry(models.Model):
             tz = self.timezone.as_tz
             now = datetime.now().astimezone(tz)
 
+            def adjust_for_dst(dt):
+                if dt is None:
+                    return None
+                updated_at_dst = self.updated_at.astimezone(tz).dst()
+                current_dst = now.dst()
+                dst_difference = current_dst - updated_at_dst
+                return (dt - dst_difference).astimezone(utc)
+
             next_occurrence_dt = rruleset.after(now)
-            self.next_occurrence = (
-                next_occurrence_dt.astimezone(utc) if next_occurrence_dt else None
-            )
+            self.next_occurrence = adjust_for_dst(next_occurrence_dt)
 
             previous_occurrence_dt = rruleset.before(now, inc=False)
-            self.previous_occurrence = (
-                previous_occurrence_dt.astimezone(utc)
-                if previous_occurrence_dt
-                else None
-            )
+            self.previous_occurrence = adjust_for_dst(previous_occurrence_dt)
 
             window_delta = timedelta(days=window_days * window_multiple)
 
             first_occurrence_dt = rruleset.after(now - window_delta, inc=True)
-            self.first_occurrence = (
-                first_occurrence_dt.astimezone(utc) if first_occurrence_dt else None
-            )
+            self.first_occurrence = adjust_for_dst(first_occurrence_dt)
 
             last_occurrence_dt = rruleset.before(now + window_delta, inc=True)
-            self.last_occurrence = (
-                last_occurrence_dt.astimezone(utc) if last_occurrence_dt else None
-            )
+            self.last_occurrence = adjust_for_dst(last_occurrence_dt)
         except Exception as e:
             print(
                 f"Error recalculating occurrences for CalendarEntry {self.id}: {str(e)}"

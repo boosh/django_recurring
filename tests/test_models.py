@@ -207,7 +207,6 @@ class TestCalendarEntryOccurrences:
 
         # Create CalendarEntry in July (summer time)
         summer_time = datetime(2024, 7, 1, 12, 0, tzinfo=ZoneInfo(timezone_name))
-        end_time = summer_time + timedelta(hours=2)
 
         calendar_entry = CalendarEntry.objects.create(
             name="Test Entry",
@@ -218,7 +217,7 @@ class TestCalendarEntryOccurrences:
         event = Event.objects.create(
             calendar_entry=calendar_entry,
             start_time=summer_time,
-            end_time=end_time,
+            end_time=summer_time + timedelta(hours=1),
             is_full_day=False,
         )
 
@@ -234,16 +233,22 @@ class TestCalendarEntryOccurrences:
         with django_timezone.override(summer_time.tzinfo):
             calendar_entry.calculate_occurrences()
 
-        # Check next_occurrence in July
-        assert calendar_entry.next_occurrence.time().hour == 11 - summer_offset
+        # Check occurrences in July
+        assert calendar_entry.next_occurrence.time().hour == 12 - summer_offset
+        assert calendar_entry.previous_occurrence is None
+        assert calendar_entry.first_occurrence.time().hour == 12 - summer_offset
+        assert calendar_entry.last_occurrence.time().hour == 12 - summer_offset
 
         # Calculate occurrences in December (winter time)
         winter_time = datetime(2024, 12, 1, 12, 0, tzinfo=ZoneInfo(timezone_name))
         with django_timezone.override(winter_time.tzinfo):
             calendar_entry.calculate_occurrences()
 
-        # Check next_occurrence in December
+        # Check occurrences in December
         assert calendar_entry.next_occurrence.time().hour == 12 - winter_offset
+        assert calendar_entry.previous_occurrence.time().hour == 12 - winter_offset
+        assert calendar_entry.first_occurrence.time().hour == 12 - winter_offset
+        assert calendar_entry.last_occurrence.time().hour == 12 - winter_offset
 
     def test_calculate_occurrences_window(self):
         timezone_obj, _ = Timezone.objects.get_or_create(name="UTC")
