@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from django.utils import timezone as django_timezone
@@ -187,6 +188,101 @@ class TestCalendarEntry:
         ical_string = calendar_entry.to_ical(prod_id=custom_prodid)
 
         assert f"PRODID:{custom_prodid}" in ical_string
+
+
+@pytest.mark.django_db
+class TestCalendarEntryOccurrences:
+    @pytest.mark.parametrize(
+        "timezone_name, summer_offset, winter_offset",
+        [
+            ("Europe/London", 1, 0),
+            ("Europe/Berlin", 2, 1),
+        ],
+    )
+    def test_calculate_occurrences_dst_change(
+        self, timezone_name, summer_offset, winter_offset
+    ):
+        # Create timezone
+        timezone_obj, _ = Timezone.objects.get_or_create(name=timezone_name)
+
+        # Create CalendarEntry in July (summer time)
+        summer_time = datetime(2024, 7, 1, 12, 0, tzinfo=ZoneInfo(timezone_name))
+        end_time = summer_time + timedelta(hours=2)
+
+        calendar_entry = CalendarEntry.objects.create(
+            name="Test Entry",
+            timezone=timezone_obj,
+        )
+
+        # Create Event
+        event = Event.objects.create(
+            calendar_entry=calendar_entry,
+            start_time=summer_time,
+            end_time=end_time,
+            is_full_day=False,
+        )
+
+        # Create RecurrenceRule
+        recurrence_rule = RecurrenceRule.objects.create(
+            frequency=RecurrenceRule.Frequency.DAILY,
+            interval=1,
+        )
+        event.recurrence_rule = recurrence_rule
+        event.save()
+
+        # Calculate occurrences in July
+        with django_timezone.override(summer_time.tzinfo):
+            calendar_entry.calculate_occurrences()
+
+        # Check next_occurrence in July
+        assert calendar_entry.next_occurrence.time().hour == 11 - summer_offset
+
+        # Calculate occurrences in December (winter time)
+        winter_time = datetime(2024, 12, 1, 12, 0, tzinfo=ZoneInfo(timezone_name))
+        with django_timezone.override(winter_time.tzinfo):
+            calendar_entry.calculate_occurrences()
+
+        # Check next_occurrence in December
+        assert calendar_entry.next_occurrence.time().hour == 12 - winter_offset
+
+    def test_calculate_occurrences_window(self):
+        timezone_obj, _ = Timezone.objects.get_or_create(name="UTC")
+        calendar_entry = CalendarEntry.objects.create(
+            name="Test Entry",
+            timezone=timezone_obj,
+        )
+        start_time = django_timezone.now().replace(
+            hour=12, minute=0, second=0, microsecond=0
+        )
+        end_time = start_time + timedelta(hours=2)
+        event = Event.objects.create(
+            calendar_entry=calendar_entry,
+            start_time=start_time,
+            end_time=end_time,
+            is_full_day=False,
+        )
+        recurrence_rule = RecurrenceRule.objects.create(
+            frequency=RecurrenceRule.Frequency.DAILY,
+            interval=1,
+        )
+        event.recurrence_rule = recurrence_rule
+        event.save()
+
+        # Calculate occurrences with default window
+        calendar_entry.calculate_occurrences()
+        assert calendar_entry.first_occurrence is not None
+        assert calendar_entry.last_occurrence is not None
+        assert (
+            calendar_entry.last_occurrence - calendar_entry.first_occurrence
+        ).days <= 365 * 5
+
+        # Calculate occurrences with custom window
+        calendar_entry.calculate_occurrences(window_days=30, window_multiple=2)
+        assert calendar_entry.first_occurrence is not None
+        assert calendar_entry.last_occurrence is not None
+        assert (
+            calendar_entry.last_occurrence - calendar_entry.first_occurrence
+        ).days <= 30 * 2
 
 
 @pytest.mark.django_db
