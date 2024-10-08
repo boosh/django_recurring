@@ -498,8 +498,12 @@ class CalendarEntry(models.Model):
                     return None
                 updated_at_dst = self.updated_at.astimezone(tz).dst()
                 current_dst = now.dst()
-                dst_difference = current_dst - updated_at_dst
-                return (dt - dst_difference).astimezone(utc)
+                # dst_difference = current_dst - updated_at_dst
+
+                if current_dst != updated_at_dst:
+                    return (dt - current_dst).astimezone(utc)
+                else:
+                    return dt.astimezone(utc)
 
             next_occurrence_dt = rruleset.after(now)
             self.next_occurrence = adjust_for_dst(next_occurrence_dt)

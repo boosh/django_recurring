@@ -233,7 +233,9 @@ class TestCalendarEntryOccurrences:
         event.recurrence_rule = recurrence_rule
         event.save()
 
+        print("Updated at=summer time, current time=summer time")
         # Calculate occurrences in July
+        calendar_entry.updated_at = summer_time
         calendar_entry.calculate_occurrences()
 
         # Check occurrences in July
@@ -245,12 +247,16 @@ class TestCalendarEntryOccurrences:
         # Calculate occurrences in December (winter time)
         winter_time = datetime(2024, 12, 1, 12, 0, tzinfo=ZoneInfo(timezone_name))
         mock_datetime.now.return_value = winter_time
+        # still work as if we created the calendar entry in summer time
+        print("Updated at=summer time, current time=winter time")
+        calendar_entry.updated_at = summer_time
         calendar_entry.calculate_occurrences()
 
         # Check occurrences in December
         assert calendar_entry.next_occurrence.time().hour == 12 - winter_offset
         assert calendar_entry.previous_occurrence.time().hour == 12 - winter_offset
-        assert calendar_entry.first_occurrence.time().hour == 12 - winter_offset
+        # first event is in summer
+        assert calendar_entry.first_occurrence.time().hour == 12 - summer_offset
         assert calendar_entry.last_occurrence.time().hour == 12 - winter_offset
 
     def test_calculate_occurrences_window(self):
