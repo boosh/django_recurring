@@ -58,7 +58,7 @@ class CalendarEntryAdmin(admin.ModelAdmin):
     actions = [recalculate_occurrences]
     search_fields = ("name",)
     list_filter = ("timezone",)
-    readonly_fields = ("ical_string", "ical_download_link")
+    readonly_fields = ("updated_at", "ical_string", "ical_download_link")
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)

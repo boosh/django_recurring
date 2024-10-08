@@ -332,6 +332,8 @@ class CalendarEntry(models.Model):
         default=UTC_ID,
         help_text=_("The timezone for this calendar entry"),
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     first_occurrence = models.DateTimeField(
         null=True,
         blank=True,
