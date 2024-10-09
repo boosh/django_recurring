@@ -512,7 +512,16 @@ class CalendarEntry(models.Model):
 
             window_delta = timedelta(days=window_days * window_multiple)
 
-            first_occurrence_dt = rruleset.after(now - window_delta, inc=True)
+            # Find the earliest event start time
+            earliest_event_start = min(event.start_time for event in self.events.all())
+
+            # Use the earlier of window_delta or earliest event start time
+            if earliest_event_start > (now - window_delta):
+                first_occurrence_dt = earliest_event_start
+            else:
+                first_occurrence_start = now - window_delta
+                first_occurrence_dt = rruleset.after(first_occurrence_start, inc=True)
+
             self.first_occurrence = adjust_for_dst(first_occurrence_dt)
 
             last_occurrence_dt = rruleset.before(now + window_delta, inc=True)
