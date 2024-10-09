@@ -378,12 +378,13 @@ class CalendarEntry(models.Model):
         rset = rruleset()
 
         for event in self.events.all():
+            # add the event as a single event in case it isn't
+            # included in any recurrence rules
+            rset.rdate(event.start_time)
+
             if event.recurrence_rule:
                 rrule_obj = event.recurrence_rule.to_rrule(event.start_time)
                 rset.rrule(rrule_obj)
-            else:
-                # If there's no recurrence rule, add the event as a single occurrence
-                rset.rdate(event.start_time)
 
             for exclusion in event.exclusions.all():
                 # the time component is kept in sync with the event start time
@@ -512,16 +513,7 @@ class CalendarEntry(models.Model):
 
             window_delta = timedelta(days=window_days * window_multiple)
 
-            # Find the earliest event start time
-            earliest_event_start = min(event.start_time for event in self.events.all())
-
-            # Use the earlier of window_delta or earliest event start time
-            if earliest_event_start > (now - window_delta):
-                first_occurrence_dt = earliest_event_start
-            else:
-                first_occurrence_start = now - window_delta
-                first_occurrence_dt = rruleset.after(first_occurrence_start, inc=True)
-
+            first_occurrence_dt = rruleset.after(now - window_delta, inc=True)
             self.first_occurrence = adjust_for_dst(first_occurrence_dt)
 
             last_occurrence_dt = rruleset.before(now + window_delta, inc=True)
