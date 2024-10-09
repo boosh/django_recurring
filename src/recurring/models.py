@@ -477,7 +477,7 @@ class CalendarEntry(models.Model):
                 )
 
     def calculate_occurrences(
-        self, window_days: int = 365, window_multiple: int = 5
+        self, window_days: int = 365, window_multiple: int = 3
     ) -> None:
         """
         Recalculates the cached occurrences of the CalendarEntry in **UTC**. Calculated occurrences include:

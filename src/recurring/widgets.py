@@ -12,7 +12,7 @@ class CalendarEntryWidget(forms.Widget):
 
     class Media:
         js = (
-            "admin/js/vendor/luxon.min.js",
+            "admin/js/vendor/luxon-3.5.0.min.js",
             "admin/js/calendar_entry_widget.js",
         )
         css = {"all": ("admin/css/calendar_entry_widget.css",)}
