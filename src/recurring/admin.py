@@ -15,6 +15,23 @@ from .models import (
 )
 
 
+# Uncomment these if you're debugging things, otherwise they'll
+# probably just confuse admins
+# @admin.register(RecurrenceRule)
+# class RecurrenceRuleAdmin(admin.ModelAdmin):
+#     pass
+#
+#
+# @admin.register(Event)
+# class EventAdmin(admin.ModelAdmin):
+#     pass
+#
+#
+# @admin.register(ExclusionDateRange)
+# class ExclusionDateRangeAdmin(admin.ModelAdmin):
+#     pass
+
+
 @admin.action(description="Recalculate occurrences for selected")
 def recalculate_occurrences(modeladmin, request, queryset):
     count = 0
