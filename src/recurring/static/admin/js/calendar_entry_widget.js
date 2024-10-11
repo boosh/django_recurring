@@ -182,13 +182,12 @@ class CalendarEntryForm {
                             <input type="datetime-local" class="end-datetime">
                         </label>
                         <div class="end-date-links">
-                          <a href="#" class="set-now-end">Now</a>
-                          <a href="#" class="set-far-future">Far Future</a>
-                        </div>
-                        <label>
+                          <a href="#" class="copy-start-end">Copy start</a>
+                          <label>
                             <input type="checkbox" class="all-day-checkbox">
                             All Day
-                        </label>
+                          </label>
+                        </div>
                     </div>
                     <div></div>
                 </div>
@@ -230,18 +229,10 @@ class CalendarEntryForm {
             updateEventHandler();
         });
 
-        const setNowEndLink = container.querySelector('.set-now-end');
-        setNowEndLink.addEventListener('click', (e) => {
+        const copyStartToEndLink = container.querySelector('.copy-start-end');
+        copyStartToEndLink.addEventListener('click', (e) => {
             e.preventDefault();
-            const now = new Date();
-            endTimeInput.value = now.toISOString().slice(0, 16);
-            updateEventHandler();
-        });
-
-        const setFarFutureLink = container.querySelector('.set-far-future');
-        setFarFutureLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            endTimeInput.value = '2999-01-01T00:00';
+            endTimeInput.value = startTimeInput.value;
             updateEventHandler();
         });
 

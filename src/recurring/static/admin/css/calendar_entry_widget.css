@@ -66,6 +66,8 @@ input[type="datetime-local"] {
 .end-date-links {
     display: flex;
     gap: 30px;
+    align-items: center;
+    text-wrap: nowrap;
 }
 
 .end-recurrence input[type="radio"] {
