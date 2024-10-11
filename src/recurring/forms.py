@@ -42,7 +42,8 @@ class CalendarEntryForm(forms.ModelForm):
             calendar_entry_data = self.cleaned_data.get("calendar_entry")
             if calendar_entry_data:
                 logger.info("Clearing existing events")
-                instance.events.all().delete()
+                for event in instance.events.all():
+                    event.delete()
 
                 logger.info("Adding new events and exclusions")
                 instance.from_dict(calendar_entry_data)

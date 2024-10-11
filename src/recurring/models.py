@@ -1,3 +1,4 @@
+import logging
 import traceback
 import uuid
 from datetime import datetime, timedelta
@@ -32,13 +33,18 @@ from icalendar import Calendar, Event as ICalEvent
 # created in migrations
 UTC_ID = 1
 
-MONDAY = "MO"
-TUESDAY = "TU"
-WEDNESDAY = "WE"
-THURSDAY = "TH"
-FRIDAY = "FR"
-SATURDAY = "SA"
-SUNDAY = "SU"
+
+class WeekDay:
+    MONDAY = repr(MO)  # e.g. 'MO', etc.
+    TUESDAY = repr(TU)
+    WEDNESDAY = repr(WE)
+    THURSDAY = repr(TH)
+    FRIDAY = repr(FR)
+    SATURDAY = repr(SA)
+    SUNDAY = repr(SU)
+
+
+logger = logging.getLogger(__name__)
 
 
 class Timezone(models.Model):
@@ -49,7 +55,6 @@ class Timezone(models.Model):
     :type name: str
     """
 
-    # todo - validate the tz name on save to prevent creating instances that aren't real
     name = models.CharField(
         max_length=64, unique=True, help_text=_("The name of the timezone")
     )
@@ -112,13 +117,13 @@ class RecurrenceRule(models.Model):
         SECONDLY = SECONDLY, _("SECONDLY")
 
     WEEKDAYS = (
-        (MO.weekday, MONDAY),
-        (TU.weekday, TUESDAY),
-        (WE.weekday, WEDNESDAY),
-        (TH.weekday, THURSDAY),
-        (FR.weekday, FRIDAY),
-        (SA.weekday, SATURDAY),
-        (SU.weekday, SUNDAY),
+        (MO.weekday, WeekDay.MONDAY),
+        (TU.weekday, WeekDay.TUESDAY),
+        (WE.weekday, WeekDay.WEDNESDAY),
+        (TH.weekday, WeekDay.THURSDAY),
+        (FR.weekday, WeekDay.FRIDAY),
+        (SA.weekday, WeekDay.SATURDAY),
+        (SU.weekday, WeekDay.SUNDAY),
     )
 
     frequency = models.IntegerField(
@@ -223,13 +228,13 @@ class RecurrenceRule(models.Model):
         :rtype: Dict[str, Any]
         """
         weekday_map = {
-            MONDAY: MO,
-            TUESDAY: TU,
-            WEDNESDAY: WE,
-            THURSDAY: TH,
-            FRIDAY: FR,
-            SATURDAY: SA,
-            SUNDAY: SU,
+            WeekDay.MONDAY: MO,
+            WeekDay.TUESDAY: TU,
+            WeekDay.WEDNESDAY: WE,
+            WeekDay.THURSDAY: TH,
+            WeekDay.FRIDAY: FR,
+            WeekDay.SATURDAY: SA,
+            WeekDay.SUNDAY: SU,
         }
 
         kwargs: Dict[str, Any] = {
@@ -546,7 +551,6 @@ class CalendarEntry(models.Model):
         :param args: Variable length argument list
         :param kwargs: Arbitrary keyword arguments
         """
-        # todo - is this required? everything is on delete cascade
         for event in self.events.all():
             event.recurrence_rule.delete()
             event.delete()
@@ -694,6 +698,18 @@ class Event(models.Model):
         :rtype: str
         """
         return f"Event for {self.calendar_entry.name}: {self.start_time}"
+
+    def delete(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Deletes all associated recurrence rules.
+
+        :param args: Variable length argument list
+        :param kwargs: Arbitrary keyword arguments
+        """
+        if self.recurrence_rule:
+            logger.info("Deleting event recurrence rules")
+            self.recurrence_rule.delete()
+        return super().delete(*args, **kwargs)
 
 
 class ExclusionDateRange(models.Model):
