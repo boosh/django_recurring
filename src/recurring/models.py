@@ -51,6 +51,10 @@ class Timezone(models.Model):
     """
     Represents a timezone in the system.
 
+    This is just an optimisation to denormalise data. You'll probably
+    want your own Timezone model with extra fields that you actually
+    display to users (if you let them select timezones, etc).
+
     :param name: The name of the timezone
     :type name: str
     """

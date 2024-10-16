@@ -142,6 +142,14 @@ If you're using timezones other than UTC you need to convert them at the point o
     for event in calendar_entry.events.all():
         start_time = event.start_time.astimezone(timezone)
 
+.. note::
+
+    Django-recurring includes its own Timezone class which is
+    used internally. However, you're also likely to want your
+    own Timezone class with extra fields to show to your users.
+
+    You shouldn't associate the Timezone class in this package with your users, etc.
+
 .. _recalculating-occurrences:
 
 Recalculating Occurrences
@@ -154,6 +162,8 @@ To optimise querying for recurrences within a range, the `CalendarEntry` has pre
     All occurrence fields are converted to UTC from the `CalendarEntry` timezone and respect daylight saving time.
 
     E.g. an event occurring at 12:00 noon in Europe/London in July (British Summer Time, UTC+1) will be calculated as 11:00 in UTC. However, the same time in December when there is no daylight saving time (UTC+0), will be calculated as 12:00 in UTC.
+
+    Also, note the precomputed fields such as first_occurrence, next_occurrence, etc are displayed in UTC in the admin list view.
 
     TLDR; Make sure all your queries use UTC when using these occurrence fields.
 
