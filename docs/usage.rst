@@ -148,7 +148,7 @@ If you're using timezones other than UTC you need to convert them at the point o
     used internally. However, you're also likely to want your
     own Timezone class with extra fields to show to your users.
 
-    You shouldn't associate the Timezone class in this package with your users, etc.
+    You shouldn't associate the Timezone class in this package with your users, etc. (and will need to translate between them in that case).
 
 .. _recalculating-occurrences:
 
