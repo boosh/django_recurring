@@ -152,6 +152,59 @@ class TestCalendarEntryForm:
         assert widget.__class__.__name__ == "CalendarEntryWidget"
         assert widget.attrs["style"] == "display: none;"
 
+    def test_update_remove_recurrence_rule(self, timezone_obj):
+        """Test updating a CalendarEntry to remove a recurrence rule."""
+        # Create initial CalendarEntry with a recurring event
+        initial_entry = CalendarEntry.objects.create(
+            name="Initial Entry",
+            description="An entry with a recurring event",
+            timezone=timezone_obj,
+        )
+        initial_entry.from_dict(
+            {
+                "events": [
+                    {
+                        "start_time": datetime(2023, 1, 1, tzinfo=timezone.utc),
+                        "end_time": datetime(2023, 1, 1, 1, tzinfo=timezone.utc),
+                        "is_full_day": False,
+                        "recurrence_rule": {"frequency": "DAILY", "interval": 1},
+                    }
+                ]
+            }
+        )
+        initial_entry.save()
+
+        # Prepare update data (same event, but without recurrence rule)
+        update_data = {
+            "name": "Updated Entry",
+            "description": "An entry without a recurring event",
+            "timezone": timezone_obj.id,
+            "calendar_entry": json.dumps(
+                {
+                    "events": [
+                        {
+                            "start_time": "2023-01-01T00:00:00+00:00",
+                            "end_time": "2023-01-01T01:00:00+00:00",
+                            "is_full_day": False,
+                        }
+                    ]
+                }
+            ),
+        }
+
+        # Use the form to update the entry
+        form = CalendarEntryForm(data=update_data, instance=initial_entry)
+        assert form.is_valid(), form.errors
+        updated_entry = form.save()
+
+        # Check that the update was successful
+        assert updated_entry.pk == initial_entry.pk
+        assert updated_entry.name == "Updated Entry"
+        assert updated_entry.description == "An entry without a recurring event"
+        assert updated_entry.events.count() == 1
+        updated_event = updated_entry.events.first()
+        assert updated_event.recurrence_rule is None
+
     @pytest.mark.parametrize(
         "invalid_field,invalid_value",
         [
