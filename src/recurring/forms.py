@@ -112,6 +112,8 @@ class CalendarEntryForm(forms.ModelForm):
 
                     # Rule and exclusions are optional
                     if "recurrence_rule" in event_data:
+                        if not event_data["recurrence_rule"]:
+                            event_data["recurrence_rule"] = {}
                         if not isinstance(event_data["recurrence_rule"], dict):
                             raise ValueError("Event rule must be a dictionary")
 
