@@ -1,6 +1,10 @@
 =======
 History
 =======
+1.1.0
+------------------
+* Don't require calendar entries to have events
+
 1.0.0 (2024-10-16)
 ------------------
 * First proper release.

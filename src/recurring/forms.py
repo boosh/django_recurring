@@ -179,14 +179,6 @@ class CalendarEntryForm(forms.ModelForm):
                     "calendar_entry", f"Error processing calendar entry data: {str(e)}"
                 )
 
-        # Check if at least one event is added
-        if not hasattr(self, "calendar_entry_data") or not self.calendar_entry_data.get(
-            "events"
-        ):
-            self.add_error(
-                None, "You must add at least one event to the calendar entry."
-            )
-
         cleaned_data["calendar_entry"] = getattr(self, "calendar_entry_data", {})
         logger.info(f"Cleaned data: {cleaned_data}")
 
