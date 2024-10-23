@@ -1,7 +1,7 @@
 =======
 History
 =======
-1.1.0
+1.1.0 (2024-10-22)
 ------------------
 * Don't require calendar entries to have events
 * Allow removing recurrence rules from events via the admin widget
