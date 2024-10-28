@@ -380,13 +380,15 @@ class CalendarEntry(models.Model):
         ),
     )
 
-    def __str__(self):
+    def __str__(self, format_template=None):
         """
         Returns a human-readable description of when this calendar entry occurs.
-        The format can be customized via the CALENDAR_ENTRY_FORMAT setting.
+        The format can be customized via the format_template parameter or the CALENDAR_ENTRY_FORMAT setting.
 
         Default format is like: "Every Mon, Wed, Fri at 12:00 (Europe/London) from today until 31 Dec 24"
 
+        :param format_template: Optional string template with {name} and {occurrences} placeholders
+        :type format_template: Optional[str]
         :return: A string describing when the calendar entry occurs
         :rtype: str
         """
@@ -453,10 +455,11 @@ class CalendarEntry(models.Model):
 
             parts.append(" ".join(event_str))
 
-        # Allow custom formatting via settings
-        format_template = getattr(
-            settings, "CALENDAR_ENTRY_FORMAT", "{name}: {occurrences}"
-        )
+        # Allow custom formatting via parameter or settings
+        if format_template is None:
+            format_template = getattr(
+                settings, "CALENDAR_ENTRY_FORMAT", "{name}: {occurrences}"
+            )
         return format_template.format(name=self.name, occurrences=", then ".join(parts))
 
     def to_rruleset(self):

@@ -218,6 +218,14 @@ Example outputs:
 
 The format can be slightly customized by setting CALENDAR_ENTRY_FORMAT in Django settings, e.g.:
 
-  CALENDAR_ENTRY_FORMAT = "{occurrences} ({name})"  # To put the name at the end
+.. code-block:: python
+
+   CALENDAR_ENTRY_FORMAT = "{occurrences} ({name})"  # To put the name at the end
+
+or by passing in this format to `__str__`, e.g.:
+
+.. code-block:: python
+
+   print(entry.__str__("{occurrences} ({name})"))
 
 The default format is "{name}: {occurrences}" which puts the name first followed by the occurrence pattern.
