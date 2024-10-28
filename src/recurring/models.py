@@ -26,6 +26,7 @@ from dateutil.rrule import (
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.template.defaultfilters import date as date_filter
 from django.utils import timezone as django_timezone
 from django.utils.translation import gettext_lazy as _
 from icalendar import Calendar, Event as ICalEvent
@@ -370,12 +371,80 @@ class CalendarEntry(models.Model):
 
     def __str__(self):
         """
-        Returns a string representation of the CalendarEntry.
+        Returns a human-readable description of when this calendar entry occurs.
+        The format can be customized via the CALENDAR_ENTRY_FORMAT setting.
 
-        :return: A string describing the CalendarEntry
+        Default format is like: "Every Mon, Wed, Fri at 12:00 (Europe/London) from today until 31 Dec 24"
+
+        :return: A string describing when the calendar entry occurs
         :rtype: str
         """
-        return f"{self.name} (Timezone: {self.timezone.name})"
+        if not self.events.exists():
+            return f"{self.name} (No events)"
+
+        def format_datetime(dt):
+            if not dt:
+                return "forever"
+            return date_filter(dt, "j M y")
+
+        def format_time(dt):
+            if not dt:
+                return ""
+            return date_filter(dt, "H:i")
+
+        parts = []
+        for event in self.events.all():
+            event_str = []
+
+            if event.recurrence_rule:
+                rule = event.recurrence_rule
+                freq_name = rule.frequency_name.lower()
+
+                if freq_name == "daily":
+                    event_str.append("Every day")
+                elif freq_name == "weekly":
+                    if rule.byweekday:
+                        weekdays = [day.split("[")[0] for day in rule.byweekday]
+                        event_str.append(f"Every {', '.join(weekdays)}")
+                    else:
+                        event_str.append("Every week")
+                elif freq_name == "monthly":
+                    if rule.bymonthday:
+                        days = [str(d) for d in rule.bymonthday]
+                        event_str.append(f"Every month on the {', '.join(days)}")
+                    else:
+                        event_str.append("Every month")
+                elif freq_name == "yearly":
+                    event_str.append("Every year")
+
+                if rule.interval > 1:
+                    event_str[-1] = event_str[-1].replace(
+                        "Every", f"Every {rule.interval}"
+                    )
+            else:
+                event_str.append("Once")
+
+            if not event.is_full_day:
+                event_str.append(f"at {format_time(event.start_time)}")
+                if event.end_time:
+                    event_str[-1] += f"-{format_time(event.end_time)}"
+
+            event_str.append(f"({self.timezone.name})")
+
+            if event.recurrence_rule:
+                rule = event.recurrence_rule
+                if rule.until:
+                    event_str.append(f"until {format_datetime(rule.until)}")
+                elif rule.count:
+                    event_str.append(f"for {rule.count} occurrences")
+
+            parts.append(" ".join(event_str))
+
+        # Allow custom formatting via settings
+        format_template = getattr(
+            settings, "CALENDAR_ENTRY_FORMAT", "{name}: {occurrences}"
+        )
+        return format_template.format(name=self.name, occurrences=", then ".join(parts))
 
     def to_rruleset(self):
         """

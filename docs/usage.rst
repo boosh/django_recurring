@@ -203,3 +203,21 @@ django-recurring supports exporting CalendarEntries to iCal format:
        f.write(ical_string)
 
 This will create an iCal file containing all events and their recurrence rules, which can be imported into most calendar applications.
+
+Formatting for display
+----------------------
+`CalendarEntry` has a `__str__` method that returns a human-readable summary of the events it contains.
+
+Example outputs:
+
+ * "Team Meeting: Every Mon, Wed, Fri at 09:00 (Europe/London) until 31 Dec 24"
+ * "Daily Standup: Every day at 10:00 (America/New_York)"
+ * "Monthly Review: Every month on the 1, 15 at 14:00 (UTC) for 12 occurrences"
+ * "Annual Planning: Every year at 09:00 (Asia/Tokyo) until 31 Dec 25"
+ * "One-off Event: Once at 15:00 until 16:00 (Europe/Paris)"
+
+The format can be slightly customized by setting CALENDAR_ENTRY_FORMAT in Django settings, e.g.:
+
+  CALENDAR_ENTRY_FORMAT = "{occurrences} ({name})"  # To put the name at the end
+
+The default format is "{name}: {occurrences}" which puts the name first followed by the occurrence pattern.
