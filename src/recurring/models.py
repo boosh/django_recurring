@@ -318,6 +318,17 @@ class RecurrenceRule(models.Model):
         }
 
 
+WEEKDAY_ABBR = {
+    "MO": "Mon",
+    "TU": "Tue",
+    "WE": "Wed",
+    "TH": "Thu",
+    "FR": "Fri",
+    "SA": "Sat",
+    "SU": "Sun",
+}
+
+
 class CalendarEntry(models.Model):
     """
     Represents a calendar entry with associated events and recurrence rules.
@@ -404,7 +415,9 @@ class CalendarEntry(models.Model):
                     event_str.append("Every day")
                 elif freq_name == "weekly":
                     if rule.byweekday:
-                        weekdays = [day.split("[")[0] for day in rule.byweekday]
+                        weekdays = [
+                            WEEKDAY_ABBR[day.split("[")[0]] for day in rule.byweekday
+                        ]
                         event_str.append(f"Every {', '.join(weekdays)}")
                     else:
                         event_str.append("Every week")
