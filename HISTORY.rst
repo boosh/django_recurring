@@ -1,6 +1,10 @@
 =======
 History
 =======
+1.2.0 (2024-10-28)
+------------------
+* Allow printing out a human-readable summary of a CalendarEntry in a barely configurable format.
+
 1.1.0 (2024-10-22)
 ------------------
 * Don't require calendar entries to have events

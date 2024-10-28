@@ -210,11 +210,11 @@ Formatting for display
 
 Example outputs:
 
- * "Team Meeting: Every Mon, Wed, Fri at 09:00 (Europe/London) until 31 Dec 24"
- * "Daily Standup: Every day at 10:00 (America/New_York)"
- * "Monthly Review: Every month on the 1, 15 at 14:00 (UTC) for 12 occurrences"
- * "Annual Planning: Every year at 09:00 (Asia/Tokyo) until 31 Dec 25"
- * "One-off Event: Once at 15:00 until 16:00 (Europe/Paris)"
+ * "Team Meeting: Every Mon, Wed, Fri at 09:00-09:30 (Europe/London) until 31 Dec 24"
+ * "Daily Standup: Every day at 10:00-11:00 (America/New_York)"
+ * "Monthly Review: Every month on the 1, 15 at 14:00-15:00 (UTC) for 12 occurrences"
+ * "Annual Planning: Every year at 09:00-09:30 (Asia/Tokyo) until 31 Dec 25"
+ * "One-off Event: Once at 15:00-16:00 (Europe/Paris)"
 
 The format can be slightly customized by setting CALENDAR_ENTRY_FORMAT in Django settings, e.g.:
 
