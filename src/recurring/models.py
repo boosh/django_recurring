@@ -392,8 +392,14 @@ class CalendarEntry(models.Model):
         :return: A string describing when the calendar entry occurs
         :rtype: str
         """
+        # Allow custom formatting via parameter or settings
+        if format_template is None:
+            format_template = getattr(
+                settings, "CALENDAR_ENTRY_FORMAT", "{name}: {occurrences}"
+            )
+
         if not self.events.exists():
-            return f"{self.name} (No events)"
+            return format_template.format(name=self.name, occurrences="No events")
 
         def format_datetime(dt):
             if not dt:
@@ -455,11 +461,6 @@ class CalendarEntry(models.Model):
 
             parts.append(" ".join(event_str))
 
-        # Allow custom formatting via parameter or settings
-        if format_template is None:
-            format_template = getattr(
-                settings, "CALENDAR_ENTRY_FORMAT", "{name}: {occurrences}"
-            )
         return format_template.format(name=self.name, occurrences=", then ".join(parts))
 
     def to_rruleset(self):
