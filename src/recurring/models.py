@@ -642,7 +642,6 @@ class CalendarEntry(models.Model):
         :param kwargs: Arbitrary keyword arguments
         """
         for event in self.events.all():
-            event.recurrence_rule.delete()
             event.delete()
         super().delete(*args, **kwargs)
 

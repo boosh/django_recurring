@@ -1,6 +1,10 @@
 =======
 History
 =======
+1.2.1 (2024-10-30)
+------------------
+* CalendarEntry instances can now be properly deleted
+
 1.2.0 (2024-10-28)
 ------------------
 * Allow printing out a human-readable summary of a CalendarEntry in a barely configurable format.
