@@ -258,8 +258,10 @@ class RecurrenceRule(models.Model):
             kwargs["byweekday"] = [weekday_map[day] for day in self.byweekday]
         if self.count is not None:
             kwargs["count"] = self.count
-        if self.until and timezone:
-            kwargs["until"] = self.until.astimezone(timezone)
+        if self.until is not None:
+            kwargs["until"] = (
+                self.until.astimezone(timezone) if timezone else self.until
+            )
         if self.bysetpos:
             kwargs["bysetpos"] = self.bysetpos
         if self.bymonth:

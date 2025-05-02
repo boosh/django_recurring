@@ -1,6 +1,10 @@
 =======
 History
 =======
+1.3.2 (2025-05-02)
+------------------
+* Fix else case. Fixes #3 after conversation
+
 1.3.1 (2025-05-02)
 ------------------
 * Convert the `until` time to the same tz as dtstart in RecurrenceRule. Fixes #3 after conversation
