@@ -59,7 +59,7 @@ class TestCalendarEntry:
     def test_calendar_entry_creation(self, calendar_entry):
         assert calendar_entry.name == "Test Calendar Entry"
         assert calendar_entry.description == "A test calendar entry"
-        assert str(calendar_entry) == "Test Calendar Entry (Timezone: UTC)"
+        assert str(calendar_entry) == "Test Calendar Entry: No events"
 
     def test_to_rruleset(self, calendar_entry, event, recurrence_rule):
         event.recurrence_rule = recurrence_rule
