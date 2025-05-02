@@ -255,7 +255,7 @@ class RecurrenceRule(models.Model):
         if self.count is not None:
             kwargs["count"] = self.count
         if self.until is not None:
-            kwargs["until"] = self.until
+            kwargs["until"] = self.until.astimezone(ZoneInfo("UTC"))
         if self.bysetpos:
             kwargs["bysetpos"] = self.bysetpos
         if self.bymonth:

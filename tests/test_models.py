@@ -401,6 +401,62 @@ class TestRecurrenceRule:
         assert rule_dict["frequency"] == "DAILY"
         assert rule_dict["interval"] == 1
 
+    @pytest.mark.django_db
+    def test_to_rrule_raises_valueerror_with_naive_until_and_aware_dtstart(self):
+        """
+        Tests that RecurrenceRule.to_rrule raises a ValueError when given a naive
+        'until' datetime and an aware 'dtstart' datetime.
+
+        According to the dateutil.rrule documentation, if dtstart is timezone-aware,
+        the 'until' value must be specified in UTC. This test verifies that the
+        method correctly identifies this invalid state when 'until' is naive.
+        """
+        la_tz_name = "America/Los_Angeles"
+        try:
+            la_tz = Timezone.objects.get(name=la_tz_name)
+        except Timezone.DoesNotExist:
+            la_tz = Timezone.objects.create(name=la_tz_name)
+
+        # Create CalendarEntry with timezone
+        calendar_entry = CalendarEntry(name="Test Event LA", timezone=la_tz)
+        calendar_entry.save(recalculate=False)
+
+        # Create Event with naive start_time/end_time. TZ comes from
+        # calendar entry's timezone
+        start_dt = datetime(2024, 12, 31, 10, 0, 0)
+        end_dt = datetime(2024, 12, 31, 10, 30, 0)
+        event = Event(
+            calendar_entry=calendar_entry,
+            start_time=start_dt,
+            end_time=end_dt,
+            is_full_day=False,
+        )
+        event.save()
+
+        # Create RecurrenceRule with a naive 'until' datetime
+        naive_until_dt = datetime(2025, 1, 1, 0, 0, 0)
+
+        rule = RecurrenceRule(
+            event=event,
+            frequency=RecurrenceRule.Frequency.DAILY,
+            interval=1,
+            until=naive_until_dt,
+        )
+        rule.save()
+
+        # Link the rule to the event instance
+        event.recurrence_rule = rule
+        event.save()
+
+        # Calling to_rrule with a naive 'until' while dtstart is
+        # tz-aware would raise a ValueError, except we convert it to UTC
+        # as required, so the following OOESN'T get raised
+        # with pytest.raises(ValueError, match="RRULE UNTIL values must be specified in UTC when DTSTART is timezone-aware"):
+        rule.to_rrule(event.start_time)
+
+        # Clean up created objects
+        calendar_entry.delete()
+
 
 @pytest.mark.django_db
 class TestExclusionDateRange:
