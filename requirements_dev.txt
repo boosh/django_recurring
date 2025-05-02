@@ -1,4 +1,4 @@
-aider-chat==0.58.1
+aider-chat==0.60.1
 aiohappyeyeballs==2.4.0
 aiohttp==3.10.5
 aiosignal==1.3.1
@@ -23,7 +23,7 @@ diskcache==5.6.3
 distlib==0.3.8
 distro==1.9.0
 Django==5.1.1
--e git+ssh://git@github.com/boosh/django_recurring.git@d33e8e0a0df061081178e7270578059409ea2a80#egg=django_recurring
+-e git+ssh://git@github.com/boosh/django_recurring.git@0f8af4cb5dcae4713f21439e64a40eb37f281641#egg=django_recurring
 docutils==0.21.2
 filelock==3.16.1
 flake8==7.1.1
@@ -37,6 +37,7 @@ httpcore==1.0.5
 httpx==0.27.2
 huggingface-hub==0.25.0
 icalendar==6.0.0
+id==1.5.0
 identify==2.6.1
 idna==3.10
 imagesize==1.4.1
@@ -66,7 +67,7 @@ nh3==0.2.18
 nodeenv==1.9.1
 numpy==1.26.4
 openai==1.47.0
-packaging==24.1
+packaging==25.0
 pathspec==0.12.1
 pexpect==4.9.0
 pillow==10.4.0
@@ -123,7 +124,7 @@ tokenizers==0.19.1
 tqdm==4.66.5
 tree-sitter==0.21.3
 tree-sitter-languages==1.10.2
-twine==5.1.1
+twine==6.1.0
 typing_extensions==4.12.2
 tzdata==2024.2
 urllib3==2.2.3
