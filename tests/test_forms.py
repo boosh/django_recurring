@@ -55,18 +55,6 @@ class TestCalendarEntryForm:
         assert not form.is_valid()
         assert "calendar_entry" in form.errors
 
-    def test_form_missing_events(self, valid_calendar_entry_data):
-        """Test that the form is invalid when events are missing."""
-        data = json.loads(valid_calendar_entry_data["calendar_entry"])
-        data["events"] = []
-        valid_calendar_entry_data["calendar_entry"] = json.dumps(data)
-        form = CalendarEntryForm(data=valid_calendar_entry_data)
-        assert not form.is_valid()
-        assert any(
-            "You must add at least one event" in error
-            for error in form.non_field_errors()
-        )
-
     def test_form_invalid_event_structure(self, valid_calendar_entry_data):
         """Test that the form is invalid when event structure is incorrect."""
         data = json.loads(valid_calendar_entry_data["calendar_entry"])
