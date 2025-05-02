@@ -1,6 +1,10 @@
 =======
 History
 =======
+1.3.0 (2025-05-02)
+------------------
+* Convert RecurrenceRule.until to UTC (fixes #3)
+
 1.2.1 (2024-10-30)
 ------------------
 * CalendarEntry instances can now be properly deleted
