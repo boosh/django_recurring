@@ -1,6 +1,10 @@
 =======
 History
 =======
+1.3.1 (2025-05-02)
+------------------
+* Convert the `until` time to the same tz as dtstart in RecurrenceRule. Fixes #3 after conversation
+
 1.3.0 (2025-05-02)
 ------------------
 * Convert RecurrenceRule.until to UTC (fixes #3)

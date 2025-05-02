@@ -242,10 +242,14 @@ class RecurrenceRule(models.Model):
             WeekDay.SUNDAY: SU,
         }
 
+        timezone = (
+            self.event.calendar_entry.timezone.as_tz if hasattr(self, "event") else None
+        )
+
         kwargs: Dict[str, Any] = {
             "freq": self.frequency,
             "interval": self.interval,
-            "dtstart": start_date.astimezone(self.event.calendar_entry.timezone.as_tz),
+            "dtstart": start_date.astimezone(timezone) if timezone else start_date,
         }
 
         if self.wkst is not None:
@@ -254,8 +258,8 @@ class RecurrenceRule(models.Model):
             kwargs["byweekday"] = [weekday_map[day] for day in self.byweekday]
         if self.count is not None:
             kwargs["count"] = self.count
-        if self.until is not None:
-            kwargs["until"] = self.until.astimezone(ZoneInfo("UTC"))
+        if self.until and timezone:
+            kwargs["until"] = self.until.astimezone(timezone)
         if self.bysetpos:
             kwargs["bysetpos"] = self.bysetpos
         if self.bymonth:
