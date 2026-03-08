@@ -192,6 +192,95 @@ class TestCalendarEntry:
 
 
 @pytest.mark.django_db
+class TestCalendarEntryStr:
+    """Tests for CalendarEntry.__str__ timezone conversion."""
+
+    def test_str_non_utc_timezone_shows_converted_times(self):
+        """Times should be displayed in the entry's timezone, not UTC."""
+        ny_tz, _ = Timezone.objects.get_or_create(name="America/New_York")
+        entry = CalendarEntry.objects.create(
+            name="NY Meeting",
+            timezone=ny_tz,
+        )
+        # 14:00 UTC = 09:00 Eastern (EST, UTC-5)
+        utc = ZoneInfo("UTC")
+        start = datetime(2024, 1, 15, 14, 0, tzinfo=utc)
+        end = datetime(2024, 1, 15, 15, 0, tzinfo=utc)
+        Event.objects.create(
+            calendar_entry=entry,
+            start_time=start,
+            end_time=end,
+            is_full_day=False,
+        )
+        result = str(entry)
+        # Should show 09:00 (Eastern) not 14:00 (UTC)
+        assert (
+            "09:00" in result
+        ), f"Expected '09:00' (Eastern) in '{result}', got UTC time instead"
+        assert (
+            "14:00" not in result
+        ), f"Time '14:00' (UTC) should not appear in '{result}'"
+
+    def test_str_non_utc_with_end_time(self):
+        """Both start and end times should be converted to entry timezone."""
+        ny_tz, _ = Timezone.objects.get_or_create(name="America/New_York")
+        entry = CalendarEntry.objects.create(
+            name="NY Meeting",
+            timezone=ny_tz,
+        )
+        utc = ZoneInfo("UTC")
+        # 14:00-15:30 UTC = 09:00-10:30 Eastern
+        start = datetime(2024, 1, 15, 14, 0, tzinfo=utc)
+        end = datetime(2024, 1, 15, 15, 30, tzinfo=utc)
+        Event.objects.create(
+            calendar_entry=entry,
+            start_time=start,
+            end_time=end,
+            is_full_day=False,
+        )
+        result = str(entry)
+        assert "09:00" in result, f"Expected start '09:00' (Eastern) in '{result}'"
+        assert "10:30" in result, f"Expected end '10:30' (Eastern) in '{result}'"
+
+    def test_str_utc_timezone_unchanged(self):
+        """UTC entries should display UTC times (no conversion needed)."""
+        utc_tz, _ = Timezone.objects.get_or_create(name="UTC")
+        entry = CalendarEntry.objects.create(
+            name="UTC Meeting",
+            timezone=utc_tz,
+        )
+        utc = ZoneInfo("UTC")
+        start = datetime(2024, 1, 15, 14, 0, tzinfo=utc)
+        end = datetime(2024, 1, 15, 15, 0, tzinfo=utc)
+        Event.objects.create(
+            calendar_entry=entry,
+            start_time=start,
+            end_time=end,
+            is_full_day=False,
+        )
+        result = str(entry)
+        assert "14:00" in result, f"Expected '14:00' in '{result}'"
+
+    def test_str_full_day_event_no_time(self):
+        """Full-day events should not show any time, regardless of timezone."""
+        ny_tz, _ = Timezone.objects.get_or_create(name="America/New_York")
+        entry = CalendarEntry.objects.create(
+            name="All Day",
+            timezone=ny_tz,
+        )
+        utc = ZoneInfo("UTC")
+        Event.objects.create(
+            calendar_entry=entry,
+            start_time=datetime(2024, 1, 15, 0, 0, tzinfo=utc),
+            is_full_day=True,
+        )
+        result = str(entry)
+        assert (
+            "at " not in result
+        ), f"Full-day event should not show 'at <time>' in '{result}'"
+
+
+@pytest.mark.django_db
 class TestCalendarEntryOccurrences:
     @pytest.mark.parametrize(
         "timezone_name, summer_offset, winter_offset",
