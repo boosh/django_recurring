@@ -1,6 +1,10 @@
 =======
 History
 =======
+1.3.3 (2025-03-08)
+------------------
+* Fix CalendarEntry.__str__ not converting times to the entry's timezone. Times were displayed in UTC instead of the configured timezone. Fixes #4
+
 1.3.2 (2025-05-02)
 ------------------
 * Fix else case. Fixes #3 after conversation
