@@ -407,15 +407,17 @@ class CalendarEntry(models.Model):
         if not self.events.exists():
             return format_template.format(name=self.name, occurrences="No events")
 
+        tz = self.timezone.as_tz
+
         def format_datetime(dt):
             if not dt:
                 return "forever"
-            return date_filter(dt, "j M y")
+            return date_filter(dt.astimezone(tz), "j M y")
 
         def format_time(dt):
             if not dt:
                 return ""
-            return date_filter(dt, "H:i")
+            return date_filter(dt.astimezone(tz), "H:i")
 
         parts = []
         for event in self.events.all():
