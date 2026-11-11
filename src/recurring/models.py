@@ -28,7 +28,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.template.defaultfilters import date as date_filter
 from django.utils import timezone as django_timezone
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, ngettext
 from icalendar import Calendar, Event as ICalEvent
 
 # created in migrations
@@ -121,6 +121,30 @@ class RecurrenceRule(models.Model):
         MINUTELY = MINUTELY, _("MINUTELY")
         SECONDLY = SECONDLY, _("SECONDLY")
 
+        def every(self, interval: int = 1) -> str:
+            """
+            Returns the human-readable period of this frequency for the given
+            interval, e.g. "Every day" or "Every 3 weeks".
+            """
+            n = {"n": interval}
+            match self:
+                case RecurrenceRule.Frequency.YEARLY:
+                    return ngettext("Every year", "Every %(n)d years", interval) % n
+                case RecurrenceRule.Frequency.MONTHLY:
+                    return ngettext("Every month", "Every %(n)d months", interval) % n
+                case RecurrenceRule.Frequency.WEEKLY:
+                    return ngettext("Every week", "Every %(n)d weeks", interval) % n
+                case RecurrenceRule.Frequency.DAILY:
+                    return ngettext("Every day", "Every %(n)d days", interval) % n
+                case RecurrenceRule.Frequency.HOURLY:
+                    return ngettext("Every hour", "Every %(n)d hours", interval) % n
+                case RecurrenceRule.Frequency.MINUTELY:
+                    return ngettext("Every minute", "Every %(n)d minutes", interval) % n
+                case RecurrenceRule.Frequency.SECONDLY:
+                    return ngettext("Every second", "Every %(n)d seconds", interval) % n
+                case _:  # pragma: no cover
+                    raise ValueError(f"Unsupported frequency: {self!r}")
+
     WEEKDAYS = (
         (MO.weekday, WeekDay.MONDAY),
         (TU.weekday, WeekDay.TUESDAY),
@@ -138,6 +162,22 @@ class RecurrenceRule(models.Model):
     @property
     def frequency_name(self):
         return RecurrenceRule.Frequency(self.frequency).name.lower()
+
+    def every(self) -> str:
+        """
+        Returns the human-readable period of this rule, including its weekday
+        or month-day qualifier, e.g. "Every 2 weeks on Mon, Wed".
+        """
+        period = self.Frequency(self.frequency).every(self.interval)
+        match self.frequency:
+            case self.Frequency.WEEKLY if self.byweekday:
+                weekdays = [WEEKDAY_ABBR[day.split("[")[0]] for day in self.byweekday]
+                return f"{period} on {', '.join(weekdays)}"
+            case self.Frequency.MONTHLY if self.bymonthday:
+                return f"{period} on the {', '.join(str(d) for d in self.bymonthday)}"
+            case _:
+                # The period alone describes the rule.
+                return period
 
     interval = models.IntegerField(
         default=1, help_text=_("The interval between each freq iteration")
@@ -391,7 +431,7 @@ class CalendarEntry(models.Model):
         Returns a human-readable description of when this calendar entry occurs.
         The format can be customized via the format_template parameter or the CALENDAR_ENTRY_FORMAT setting.
 
-        Default format is like: "Every Mon, Wed, Fri at 12:00 (Europe/London) from today until 31 Dec 24"
+        Default format is like: "Every week on Mon, Wed, Fri at 12:00 (Europe/London) from today until 31 Dec 24"
 
         :param format_template: Optional string template with {name} and {occurrences} placeholders
         :type format_template: Optional[str]
@@ -424,32 +464,7 @@ class CalendarEntry(models.Model):
             event_str = []
 
             if event.recurrence_rule:
-                rule = event.recurrence_rule
-                freq_name = rule.frequency_name.lower()
-
-                if freq_name == "daily":
-                    event_str.append("Every day")
-                elif freq_name == "weekly":
-                    if rule.byweekday:
-                        weekdays = [
-                            WEEKDAY_ABBR[day.split("[")[0]] for day in rule.byweekday
-                        ]
-                        event_str.append(f"Every {', '.join(weekdays)}")
-                    else:
-                        event_str.append("Every week")
-                elif freq_name == "monthly":
-                    if rule.bymonthday:
-                        days = [str(d) for d in rule.bymonthday]
-                        event_str.append(f"Every month on the {', '.join(days)}")
-                    else:
-                        event_str.append("Every month")
-                elif freq_name == "yearly":
-                    event_str.append("Every year")
-
-                if rule.interval > 1:
-                    event_str[-1] = event_str[-1].replace(
-                        "Every", f"Every {rule.interval}"
-                    )
+                event_str.append(event.recurrence_rule.every())
             else:
                 event_str.append("Once")
 

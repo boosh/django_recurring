@@ -592,3 +592,76 @@ class TestExclusionDateRange:
         assert all_dates[0].date() == start_date.date()
         assert all_dates[-1].date() == end_date.date()
         assert (all_dates[-1] - all_dates[0]).days == 2
+
+
+class TestFrequencyEvery:
+    """Tests for RecurrenceRule.Frequency.every."""
+
+    @pytest.mark.parametrize(
+        "frequency, interval, expected",
+        [
+            (RecurrenceRule.Frequency.YEARLY, 1, "Every year"),
+            (RecurrenceRule.Frequency.YEARLY, 2, "Every 2 years"),
+            (RecurrenceRule.Frequency.MONTHLY, 1, "Every month"),
+            (RecurrenceRule.Frequency.MONTHLY, 2, "Every 2 months"),
+            (RecurrenceRule.Frequency.WEEKLY, 1, "Every week"),
+            (RecurrenceRule.Frequency.WEEKLY, 2, "Every 2 weeks"),
+            (RecurrenceRule.Frequency.DAILY, 1, "Every day"),
+            (RecurrenceRule.Frequency.DAILY, 2, "Every 2 days"),
+            (RecurrenceRule.Frequency.HOURLY, 1, "Every hour"),
+            (RecurrenceRule.Frequency.HOURLY, 2, "Every 2 hours"),
+            (RecurrenceRule.Frequency.MINUTELY, 1, "Every minute"),
+            (RecurrenceRule.Frequency.MINUTELY, 2, "Every 2 minutes"),
+            (RecurrenceRule.Frequency.SECONDLY, 1, "Every second"),
+            (RecurrenceRule.Frequency.SECONDLY, 2, "Every 2 seconds"),
+        ],
+    )
+    def test_every(self, frequency, interval, expected):
+        assert frequency.every(interval) == expected
+
+
+@pytest.mark.django_db
+class TestCalendarEntryStrRecurrence:
+    """Tests for the recurrence part of CalendarEntry.__str__."""
+
+    @pytest.mark.parametrize(
+        "rule_kwargs, expected",
+        [
+            (
+                {
+                    "frequency": RecurrenceRule.Frequency.WEEKLY,
+                    "byweekday": ["MO", "WE"],
+                },
+                "Entry: Every week on Mon, Wed (UTC)",
+            ),
+            (
+                {
+                    "frequency": RecurrenceRule.Frequency.WEEKLY,
+                    "interval": 2,
+                    "byweekday": ["MO", "WE"],
+                },
+                "Entry: Every 2 weeks on Mon, Wed (UTC)",
+            ),
+            (
+                {
+                    "frequency": RecurrenceRule.Frequency.MONTHLY,
+                    "interval": 3,
+                    "bymonthday": [1, 15],
+                },
+                "Entry: Every 3 months on the 1, 15 (UTC)",
+            ),
+            (
+                {"frequency": RecurrenceRule.Frequency.HOURLY, "interval": 4},
+                "Entry: Every 4 hours (UTC)",
+            ),
+        ],
+    )
+    def test_str_recurrence(self, timezone_obj, rule_kwargs, expected):
+        entry = CalendarEntry.objects.create(name="Entry", timezone=timezone_obj)
+        Event.objects.create(
+            calendar_entry=entry,
+            start_time=datetime(2024, 1, 15, 14, 0, tzinfo=ZoneInfo("UTC")),
+            is_full_day=True,
+            recurrence_rule=RecurrenceRule.objects.create(**rule_kwargs),
+        )
+        assert str(entry) == expected
