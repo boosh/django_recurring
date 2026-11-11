@@ -119,6 +119,9 @@ class RecurrenceRule(models.Model):
         DAILY = DAILY, _("DAILY")
         HOURLY = HOURLY, _("HOURLY")
         MINUTELY = MINUTELY, _("MINUTELY")
+        # XXX: The admin widget does not offer SECONDLY, so such a rule can only
+        # be created in code and does not display or edit properly in the
+        # admin. It should probably be removed from here too.
         SECONDLY = SECONDLY, _("SECONDLY")
 
         def every(self, interval: int = 1) -> str:

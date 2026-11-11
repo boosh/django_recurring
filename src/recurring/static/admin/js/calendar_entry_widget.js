@@ -1,5 +1,17 @@
 const { DateTime, Settings } = window.luxon;
 
+// The frequencies the widget offers, with the unit each one counts in. Feeds
+// both the frequency dropdown and the recurrence summary. The unit names match
+// RecurrenceRule.Frequency.every() on the Python side.
+const FREQUENCY_UNITS = {
+    YEARLY: 'year',
+    MONTHLY: 'month',
+    WEEKLY: 'week',
+    DAILY: 'day',
+    HOURLY: 'hour',
+    MINUTELY: 'minute',
+};
+
 function initCalendarEntryWidget(name) {
     const widget = document.getElementById(`calendar-entry-widget-${name}`);
     const input = document.getElementById(`id_${name}`);
@@ -254,6 +266,10 @@ class CalendarEntryForm {
     }
 
     createRecurrenceRuleForm(container, event) {
+        const frequencyOptions = Object.entries(FREQUENCY_UNITS)
+            .map(([code, unit]) => `<option value="${code}">${unit[0].toUpperCase()}${unit.slice(1)}s</option>`)
+            .join('\n                            ');
+
         container.innerHTML = `
             <div class="recurrence-rule-form">
                 <label>
@@ -267,12 +283,7 @@ class CalendarEntryForm {
                             <input type="number" class="interval-input" min="1" value="1">
                         </label>
                         <select class="frequency-select">
-                            <option value="YEARLY">Years</option>
-                            <option value="MONTHLY">Months</option>
-                            <option value="WEEKLY">Weeks</option>
-                            <option value="DAILY">Days</option>
-                            <option value="HOURLY">Hours</option>
-                            <option value="MINUTELY">Minutes</option>
+                            ${frequencyOptions}
                         </select>
                     </div>
                     <div class="end-recurrence">
@@ -709,12 +720,13 @@ class CalendarEntryForm {
         let text = '';
 
         if (rule.frequency) {
-            const frequency = rule.frequency.toLowerCase();
-            const interval = rule.interval || 1;
-            text += `Repeats ${frequency}`;
+            const unit = FREQUENCY_UNITS[rule.frequency];
+            const interval = parseInt(rule.interval, 10) || 1;
 
             if (interval > 1) {
-                text += ` every ${interval} ${frequency}s`;
+                text += `Repeats every ${interval} ${unit}s`;
+            } else {
+                text += `Repeats every ${unit}`;
             }
 
             if (rule.byweekday && rule.byweekday.length > 0) {
