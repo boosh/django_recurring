@@ -654,6 +654,47 @@ class TestCalendarEntryStrRecurrence:
                 {"frequency": RecurrenceRule.Frequency.HOURLY, "interval": 4},
                 "Entry: Every 4 hours (UTC)",
             ),
+            (
+                {
+                    "frequency": RecurrenceRule.Frequency.MONTHLY,
+                    "byweekday": ["FR"],
+                    "bysetpos": [1, -1],
+                },
+                "Entry: Every month on the 1st, last Fri (UTC)",
+            ),
+            (
+                {
+                    "frequency": RecurrenceRule.Frequency.MONTHLY,
+                    "byweekday": ["MO", "TU", "WE", "TH", "FR"],
+                    "bymonth": [12],
+                    "bysetpos": [-1],
+                },
+                "Entry: Every month on the last of Mon, Tue, Wed, Thu, Fri in Dec (UTC)",
+            ),
+            (
+                {
+                    "frequency": RecurrenceRule.Frequency.MONTHLY,
+                    "bymonthday": [1, 15],
+                    "bysetpos": [-1],
+                },
+                "Entry: Every month on the 1, 15 on the last occurrence (UTC)",
+            ),
+            (
+                {
+                    "frequency": RecurrenceRule.Frequency.YEARLY,
+                    "bymonth": [1, 2],
+                    "bymonthday": [15],
+                },
+                "Entry: Every year in Jan, Feb on the 15 (UTC)",
+            ),
+            (
+                {
+                    "frequency": RecurrenceRule.Frequency.DAILY,
+                    "byhour": [9, 17],
+                    "byminute": [30],
+                },
+                "Entry: Every day at hours 9, 17 at minute 30 (UTC)",
+            ),
         ],
     )
     def test_str_recurrence(self, timezone_obj, rule_kwargs, expected):

@@ -729,8 +729,15 @@ class CalendarEntryForm {
                 text += `Repeats every ${unit}`;
             }
 
-            if (rule.byweekday && rule.byweekday.length > 0) {
-                const days = rule.byweekday.map(day => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].indexOf(day)]);
+            const days = (rule.byweekday || []).map(day => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].indexOf(day)]);
+            const positions = (rule.bysetpos || []).map(pos => pos === -1 ? 'last' : this.getOrdinal(pos));
+
+            if (days.length > 0 && positions.length > 0) {
+                // The positions pick among the weekdays: "on the last Friday", or
+                // "on the last of Monday, Friday" when there are several to pick from.
+                const of = days.length > 1 ? 'of ' : '';
+                text += ` on the ${positions.join(', ')} ${of}${days.join(', ')}`;
+            } else if (days.length > 0) {
                 text += ` on ${days.join(', ')}`;
             }
 
@@ -741,11 +748,10 @@ class CalendarEntryForm {
             }
 
             if (rule.bymonthday && rule.bymonthday.length > 0) {
-                text += ` on day${rule.bymonthday.length > 1 ? 's' : ''} ${rule.bymonthday.join(', ')} of the month`;
+                text += ` on the ${rule.bymonthday.join(', ')}`;
             }
 
-            if (rule.bysetpos && rule.bysetpos.length > 0) {
-                const positions = rule.bysetpos.map(pos => pos === -1 ? 'last' : this.getOrdinal(pos));
+            if (positions.length > 0 && days.length === 0) {
                 text += ` on the ${positions.join(', ')} occurrence`;
             }
 

@@ -1,3 +1,4 @@
+import calendar
 import logging
 import traceback
 import uuid
@@ -24,6 +25,7 @@ from dateutil.rrule import (
     rruleset,
 )
 from django.conf import settings
+from django.contrib.humanize.templatetags.humanize import ordinal
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.template.defaultfilters import date as date_filter
@@ -168,19 +170,45 @@ class RecurrenceRule(models.Model):
 
     def every(self) -> str:
         """
-        Returns the human-readable period of this rule, including its weekday
-        or month-day qualifier, e.g. "Every 2 weeks on Mon, Wed".
+        Returns the human-readable period of this rule followed by its
+        qualifiers, e.g. "Every 2 weeks on Mon, Wed" or
+        "Every month on the last Fri".
         """
-        period = self.Frequency(self.frequency).every(self.interval)
-        match self.frequency:
-            case self.Frequency.WEEKLY if self.byweekday:
-                weekdays = [WEEKDAY_ABBR[day.split("[")[0]] for day in self.byweekday]
-                return f"{period} on {', '.join(weekdays)}"
-            case self.Frequency.MONTHLY if self.bymonthday:
-                return f"{period} on the {', '.join(str(d) for d in self.bymonthday)}"
-            case _:
-                # The period alone describes the rule.
-                return period
+        parts = [self.Frequency(self.frequency).every(self.interval)]
+
+        weekdays = ", ".join(
+            WEEKDAY_ABBR[day.split("[")[0]] for day in self.byweekday or []
+        )
+        positions = ", ".join(
+            "last" if pos == -1 else ordinal(pos) for pos in self.bysetpos or []
+        )
+        if weekdays and positions:
+            # The positions pick among the weekdays: "on the last Fri", or
+            # "on the last of Mon, Fri" when there are several to pick from.
+            of = "of " if len(self.byweekday) > 1 else ""
+            parts.append(f"on the {positions} {of}{weekdays}")
+        elif weekdays:
+            parts.append(f"on {weekdays}")
+
+        if self.bymonth:
+            months = [calendar.month_abbr[month] for month in self.bymonth]
+            parts.append(f"in {', '.join(months)}")
+
+        if self.bymonthday:
+            parts.append(f"on the {', '.join(str(d) for d in self.bymonthday)}")
+
+        if positions and not weekdays:
+            parts.append(f"on the {positions} occurrence")
+
+        if self.byhour:
+            label = "hours" if len(self.byhour) > 1 else "hour"
+            parts.append(f"at {label} {', '.join(str(h) for h in self.byhour)}")
+
+        if self.byminute:
+            label = "minutes" if len(self.byminute) > 1 else "minute"
+            parts.append(f"at {label} {', '.join(str(m) for m in self.byminute)}")
+
+        return " ".join(parts)
 
     interval = models.IntegerField(
         default=1, help_text=_("The interval between each freq iteration")
